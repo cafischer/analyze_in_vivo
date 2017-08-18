@@ -9,8 +9,8 @@ from grid_cell_stimuli.remove_APs import remove_APs, plot_v_APs_removed
 if __name__ == '__main__':
 
     folder = 'schmidthieber'
-    save_dir = './results/' + folder + '/APs_removed'
-    save_dir_data = './results/' + folder + '/data'
+    save_dir = '../results/' + folder + '/APs_removed'
+    save_dir_data = '../results/' + folder + '/data'
 
     # parameters
     t_before = 3

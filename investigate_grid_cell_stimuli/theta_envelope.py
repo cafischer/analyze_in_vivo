@@ -7,8 +7,8 @@ from grid_cell_stimuli.theta_envelope import compute_envelope, plot_envelope
 if __name__ == '__main__':
 
     folder = 'schmidthieber'
-    save_dir = './results/' + folder + '/ramp_and_theta'
-    save_dir_data = './results/' + folder + '/ramp_and_theta'
+    save_dir = '../results/' + folder + '/ramp_and_theta'
+    save_dir_data = '../results/' + folder + '/ramp_and_theta'
 
     # over all field crossings
     for file_name in os.listdir(save_dir_data):
@@ -22,9 +22,10 @@ if __name__ == '__main__':
         theta_envelope = compute_envelope(theta)
 
         # save and plot
-        if not os.path.exists(save_dir):
-            os.makedirs(save_dir)
+        save_dir_cell_field_crossing = os.path.join(save_dir, file_name)
+        if not os.path.exists(save_dir_cell_field_crossing):
+            os.makedirs(save_dir_cell_field_crossing)
 
-        np.save(os.path.join(save_dir, 'theta_envelope.npy'), theta_envelope)
+        np.save(os.path.join(save_dir_cell_field_crossing, 'theta_envelope.npy'), theta_envelope)
 
-        plot_envelope(theta, theta_envelope, t, save_dir)
+        plot_envelope(theta, theta_envelope, t, save_dir_cell_field_crossing)

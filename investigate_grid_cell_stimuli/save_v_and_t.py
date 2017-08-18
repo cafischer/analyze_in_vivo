@@ -8,7 +8,7 @@ from load import load_field_crossings, get_stellate_info
 if __name__ == '__main__':
 
     folder = 'schmidthieber'
-    save_dir = './results/' + folder + '/data'
+    save_dir = '../results/' + folder + '/data'
     save_dir_data = '../data/'
 
     # load and save v and t
@@ -33,7 +33,16 @@ if __name__ == '__main__':
                 np.save(os.path.join(save_dir_cell_field_crossing, 'pos_t.npy'), pos_t)
 
                 # pl.figure()
-                # pl.plot(t, v)
+                # pl.plot(t, v, 'k')
                 # pl.ylabel('Membrane potential (mV)', fontsize=16)
                 # pl.xlabel('Time (ms)', fontsize=16)
+                # pl.savefig(os.path.join(save_dir_cell_field_crossing, 'v.svg'))
                 # pl.show()
+
+                pl.figure()
+                pl.title(cell_id + '_' + str(field) + '_' + str(crossing))
+                pl.plot(pos_t, y_pos, 'k')
+                pl.ylabel('Position (cm)', fontsize=16)
+                pl.xlabel('Time (ms)', fontsize=16)
+                pl.savefig(os.path.join(save_dir_cell_field_crossing, 'y_pos.svg'))
+                pl.show()

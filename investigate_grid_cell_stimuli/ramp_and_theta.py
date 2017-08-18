@@ -9,8 +9,8 @@ from grid_cell_stimuli.ramp_and_theta import get_ramp_and_theta, plot_filter, pl
 if __name__ == '__main__':
 
     folder = 'schmidthieber'
-    save_dir = './results/'+folder+'/ramp_and_theta'
-    save_dir_data = './results/'+folder+'/downsampled'
+    save_dir = '../results/'+folder+'/ramp_and_theta'
+    save_dir_data = '../results/'+folder+'/downsampled'
 
     # parameters
     cutoff_ramp = 3  # Hz
@@ -26,7 +26,7 @@ if __name__ == '__main__':
     for file_name in os.listdir(save_dir_data):
 
         # load
-        v = np.load(os.path.join(save_dir_data, file_name, 'v.npy'))
+        v = np.load(os.path.join(save_dir_data, file_name, 'v_AP_removed.npy'))
         t = np.load(os.path.join(save_dir_data, file_name, 't.npy'))
         dt = t[1] - t[0]
         dt_sec = dt / 1000
@@ -50,6 +50,6 @@ if __name__ == '__main__':
         with open(os.path.join(save_dir_cell_field_crossing, 'params'), 'w') as f:
             json.dump(params, f)
 
-        #plot_filter(filter_ramp, filter_theta, dt, save_dir_cell)
-        #plot_spectrum(v, ramp, theta, dt, save_dir_cell)
-        #plot_v_ramp_theta(v, t, ramp, theta, t_ramp_theta, save_dir_cell)
+        plot_filter(filter_ramp, filter_theta, dt, save_dir_cell_field_crossing)
+        plot_spectrum(v, ramp, theta, dt, save_dir_cell_field_crossing)
+        plot_v_ramp_theta(v, t, ramp, theta, t_ramp_theta, save_dir_cell_field_crossing)

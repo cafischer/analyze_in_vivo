@@ -10,8 +10,8 @@ from grid_cell_stimuli.ISI_hist import get_ISI_hist, get_ISI_hists_into_outof_fi
 if __name__ == '__main__':
 
     folder = 'schmidthieber'
-    save_dir = './results/' + folder + '/doublets'
-    save_dir_data = './results/' + folder + '/data'
+    save_dir = '../results/' + folder + '/ISI_hist'
+    save_dir_data = '../results/' + folder + '/data'
 
     # parameter
     AP_thresholds = [-40, -40, -50, -30, -40, -50]

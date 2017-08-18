@@ -8,8 +8,9 @@ from grid_cell_stimuli.downsample import antialias_and_downsample, plot_v_downsa
 if __name__ == '__main__':
 
     folder = 'schmidthieber'
-    save_dir = './results/'+folder+'/downsampled'
-    save_dir_data = './results/'+folder+'/APs_removed'
+    save_dir = '../results/'+folder+'/downsampled'
+    save_dir_data = '../results/' + folder + '/data'
+    save_dir_AP_removed = '../results/'+folder+'/APs_removed'
 
     # parameters
     cutoff_freq = 2000  # Hz
@@ -25,10 +26,14 @@ if __name__ == '__main__':
         # load
         v = np.load(os.path.join(save_dir_data, file_name, 'v.npy'))
         t = np.load(os.path.join(save_dir_data, file_name, 't.npy'))
+        v_AP_removed = np.load(os.path.join(save_dir_data, file_name, 'v.npy'))
         dt = t[1] - t[0]
 
         # downsample
-        v_downsampled, t_downsampled, filter = antialias_and_downsample(v, dt, ripple_attenuation, transition_width,
+        v_AP_removed_downsampled, t_downsampled, filter = antialias_and_downsample(v, dt, ripple_attenuation,
+                                                                                   transition_width, cutoff_freq,
+                                                                                   dt_new_max)
+        v_downsampled, t_downsampled, filter = antialias_and_downsample(v_AP_removed, dt, ripple_attenuation, transition_width,
                                                                         cutoff_freq, dt_new_max)
 
         # save and plot
@@ -37,6 +42,7 @@ if __name__ == '__main__':
             os.makedirs(save_dir_cell_field_crossing)
 
         np.save(os.path.join(save_dir_cell_field_crossing, 'v.npy'), v_downsampled)
+        np.save(os.path.join(save_dir_cell_field_crossing, 'v_AP_removed.npy'), v_AP_removed_downsampled)
         np.save(os.path.join(save_dir_cell_field_crossing, 't.npy'), t_downsampled)
 
         with open(os.path.join(save_dir_cell_field_crossing, 'params'), 'w') as f:
