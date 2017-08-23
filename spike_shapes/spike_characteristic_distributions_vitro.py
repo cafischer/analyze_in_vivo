@@ -53,9 +53,9 @@ if __name__ == '__main__':
     # get spike characteristics
     AP_interval = int(round(3 / dt))
     std_idxs = (-int(round(2 / dt)), -int(round(1 / dt)))
-    DAP_interval = int(round(10 / dt))
+    DAP_interval = int(round(5 / dt))
     order_fAHP_min = int(round(0.3 / dt))  # how many points to consider for the minimum
-    order_DAP_max = int(round(1.0 / dt))  # how many points to consider for the minimum
+    order_DAP_max = int(round(2.0 / dt))  # how many points to consider for the minimum
     dist_to_DAP_max = int(round(1 / dt))
 
 
@@ -63,13 +63,14 @@ if __name__ == '__main__':
     t_window = np.arange(np.shape(AP_matrix)[1]) * dt
     AP_amp, AP_width, DAP_amp, DAP_deflection, DAP_width, DAP_time, DAP_lin_slope, DAP_exp_slope = \
         get_spike_characteristics(AP_matrix, t_window, AP_interval, std_idxs, DAP_interval, np.min(AP_matrix, 1),
-                                  order_fAHP_min, order_DAP_max, dist_to_DAP_max, check=True)
+                                  order_fAHP_min, order_DAP_max, dist_to_DAP_max, check=False)
     spike_characteristics_mat = np.vstack((AP_amp, AP_width, DAP_amp, DAP_deflection, DAP_width, DAP_time, DAP_lin_slope,
                                           DAP_exp_slope)).T
     not_nan = np.logical_not(np.any(np.isnan(spike_characteristics_mat), 1))
     spike_characteristics_mat = spike_characteristics_mat[not_nan, :]
     spike_characteristics_names = ['AP_amp', 'AP_width', 'DAP_amp', 'DAP_deflection', 'DAP_width', 'DAP_time',
                                    'DAP_lin_slope', 'DAP_exp_slope']
+    AP_matrix = AP_matrix[not_nan, :]
 
     # plot AP_matrix
     # pl.figure()
@@ -84,4 +85,7 @@ if __name__ == '__main__':
         pl.hist(spike_characteristics_mat[:, i])
         pl.show()
 
+    np.save(os.path.join(save_dir, 'spike_characteristics_names.npy'), spike_characteristics_names)
     np.save(os.path.join(save_dir, 'spike_characteristics_mat_vitro.npy'), spike_characteristics_mat)
+    np.save(os.path.join(save_dir, 'AP_mat_vitro.npy'), AP_matrix)
+    np.save(os.path.join(save_dir, 't_vitro.npy'), t_window)
