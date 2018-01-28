@@ -23,6 +23,10 @@ if __name__ == '__main__':
               'ripple_attenuation': ripple_attenuation}
 
     # over all field crossings
+    max_ramp = []
+    min_ramp = []
+    max_theta = []
+    min_theta = []
     for file_name in os.listdir(save_dir_data):
 
         # load
@@ -43,6 +47,11 @@ if __name__ == '__main__':
         if not os.path.exists(save_dir_cell_field_crossing):
             os.makedirs(save_dir_cell_field_crossing)
 
+        max_ramp.append(np.max(ramp))
+        min_ramp.append(np.min(ramp))
+        max_theta.append(np.max(theta))
+        min_theta.append(np.min(theta))
+
         np.save(os.path.join(save_dir_cell_field_crossing, 'ramp.npy'), ramp)
         np.save(os.path.join(save_dir_cell_field_crossing, 'theta.npy'), theta)
         np.save(os.path.join(save_dir_cell_field_crossing, 't.npy'), t_ramp_theta)
@@ -53,3 +62,8 @@ if __name__ == '__main__':
         plot_filter(filter_ramp, filter_theta, dt, save_dir_cell_field_crossing)
         plot_spectrum(v, ramp, theta, dt, save_dir_cell_field_crossing)
         plot_v_ramp_theta(v, t, ramp, theta, t_ramp_theta, save_dir_cell_field_crossing)
+
+    print 'Mean Ramp_{max-min}: %.2f' % np.mean(np.array(max_ramp) - np.array(min_ramp))
+    print 'Std Ramp_{max-min}: %.2f' % np.std(np.array(max_ramp) - np.array(min_ramp))
+    print 'Mean Theta_{max-min}: %.2f' % np.mean(np.array(max_theta) - np.array(min_theta))
+    print 'Std Theta_{max-min}: %.2f' % np.std(np.array(max_theta) - np.array(min_theta))

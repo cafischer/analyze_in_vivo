@@ -2,7 +2,8 @@ import numpy as np
 import matplotlib.pyplot as pl
 import os
 from spike_shape import get_first_spikes, split_first_and_other_spikes, make_spike_mat, cut_at_fAHP_min
-from cell_fitting.read_heka import get_v_and_t_from_heka, get_i_inj, set_v_rest
+from cell_fitting.read_heka import get_v_and_t_from_heka, get_i_inj_from_function
+from cell_fitting.data import set_v_rest
 from cell_fitting.DAP_population import get_spike_characteristics
 
 
@@ -21,7 +22,7 @@ if __name__ == '__main__':
         v_mat, t_mat, sweep_idxs = get_v_and_t_from_heka(os.path.join(data_dir, cell_id + '.dat'), protocol,
                                                          return_sweep_idxs=True)
         t = t_mat[0, :]
-        i_inj = get_i_inj(protocol, sweep_idxs)
+        i_inj = get_i_inj_from_function(protocol, sweep_idxs, t[-1], t[1]-t[0])
         dt = t[1] - t[0]
         after_fAHP_idx = int(round(30 / dt))
         start_step = np.where(np.diff(np.abs(i_inj[0, :])) > 0.05)[0][0] + 1

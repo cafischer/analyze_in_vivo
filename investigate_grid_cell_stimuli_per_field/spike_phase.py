@@ -4,6 +4,7 @@ import os
 from cell_characteristics.analyze_APs import get_AP_onset_idxs
 from grid_cell_stimuli.spike_phase import get_spike_phases, plot_phase_hist, plot_phase_vs_position_per_run, \
     compute_phase_precession, plot_phase_precession
+from scipy.stats import circmean
 
 
 if __name__ == '__main__':

@@ -30,10 +30,10 @@ if __name__ == '__main__':
         dt = t[1] - t[0]
 
         # downsample
-        v_AP_removed_downsampled, t_downsampled, filter = antialias_and_downsample(v, dt, ripple_attenuation,
+        v_AP_removed_downsampled, t_downsampled, filter = antialias_and_downsample(v_AP_removed, dt, ripple_attenuation,
                                                                                    transition_width, cutoff_freq,
                                                                                    dt_new_max)
-        v_downsampled, t_downsampled, filter = antialias_and_downsample(v_AP_removed, dt, ripple_attenuation, transition_width,
+        v_downsampled, t_downsampled, filter = antialias_and_downsample(v, dt, ripple_attenuation, transition_width,
                                                                         cutoff_freq, dt_new_max)
 
         # save and plot

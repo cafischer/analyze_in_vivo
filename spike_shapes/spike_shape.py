@@ -4,7 +4,8 @@ import os
 from load import load_VI
 from cell_characteristics.analyze_APs import get_AP_onset_idxs
 from cell_characteristics.analyze_APs import get_fAHP_min_idx_using_splines, get_AP_max_idx
-from cell_fitting.read_heka import set_v_rest
+from cell_fitting.data import set_v_rest
+from cell_characteristics import to_idx
 
 
 def get_first_spikes(v_mat, start_step, end_step, AP_threshold, least_n_spikes=3):
@@ -14,22 +15,24 @@ def get_first_spikes(v_mat, start_step, end_step, AP_threshold, least_n_spikes=3
             return v_mat[i, :], AP_onset_idxs
 
 
-def split_first_and_other_spikes(v, dt, AP_onset_idxs, ISI_doublet, end_step):
+def split_first_and_other_spikes(v, dt, AP_onset_idxs, ISI_doublet, end_step, before_onset=None):
+
+    before_onset_idx = 0 if before_onset is None else to_idx(before_onset, dt)
 
     AP_onset_idxs = np.concatenate((AP_onset_idxs, np.array([end_step])))
 
     if (AP_onset_idxs[1] - AP_onset_idxs[0]) * dt < ISI_doublet:
-        first_spikes = v[AP_onset_idxs[0]:AP_onset_idxs[2]]
+        first_spikes = v[AP_onset_idxs[0]-before_onset_idx:AP_onset_idxs[2]]
         other_spikes = []
         for s, e in zip(AP_onset_idxs[2:-1], AP_onset_idxs[3:]):
             if (e - s) * dt >= 15:
-                other_spikes.append(v[s:e])
+                other_spikes.append(v[s-before_onset_idx:e])
     else:
-        first_spikes = v[AP_onset_idxs[0]:AP_onset_idxs[1]]
+        first_spikes = v[AP_onset_idxs[0]-before_onset_idx:AP_onset_idxs[1]]
         other_spikes = []
         for s, e in zip(AP_onset_idxs[1:-1], AP_onset_idxs[2:]):
             if (e - s) * dt >= 15:
-                other_spikes.append(v[s:e])
+                other_spikes.append(v[s-before_onset_idx:e])
 
     return first_spikes, other_spikes
 
