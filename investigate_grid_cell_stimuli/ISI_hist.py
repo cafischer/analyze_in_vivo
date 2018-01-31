@@ -46,7 +46,7 @@ if __name__ == '__main__':
         v, t, x_pos, y_pos, pos_t, speed, speed_t = load_full_runs(data_dir, cell_id)
         dt = t[1] - t[0]
 
-        AP_threshold = np.min(v) + 2./3 * np.abs(np.min(v) - np.max(v)) - 5  # TODO
+        AP_threshold = np.min(v) + 2./3 * np.abs(np.min(v) - np.max(v)) - 5
 
         # ISI histogram
         ISI_hist[i, :], ISIs = get_ISI_hist(v, t, AP_threshold, bins)

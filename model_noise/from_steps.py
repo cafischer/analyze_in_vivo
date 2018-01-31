@@ -7,6 +7,7 @@ from scipy.optimize import curve_fit
 from grid_cell_stimuli.remove_APs import remove_APs
 from grid_cell_stimuli.downsample import antialias_and_downsample
 from grid_cell_stimuli.ramp_and_theta import get_ramp_and_theta, plot_spectrum
+from model_noise.estimate_passive_parameters import estimate_passive_parameters
 
 
 def remove_theta(v_mat, t):
@@ -74,22 +75,28 @@ if __name__ == '__main__':
     t_before = 3
     t_after = 6
 
-    Ei = 0 # TODO
-    Ee = -60 # TODO
-    g_pas = 0 # TODO
-    E_pas = -70 # TODO
-    a = 1 # TODO
-    tau_e = 1 # TODO
-    tau_i = 1 # TODO
-    c_m = 1 # TODO
+    Ei = 0  # mV  # TODO: from Fernandez
+    Ee = -75  # mV  # TODO: from Fernandez
+
+    E_pas = -85  # mV  # TODO: how to estimate?
+
+    tau_e = 2.5  # ms  # TODO: how to estimate?
+    tau_i = 5  # ms  # TODO: how to estimate?
+
+    c_m = 1  # uF/cm^2
 
     for cell_id in cell_ids:
+        # estimate passive parameters
         v_mat, t, i_inj_mat = load_VI(data_dir, cell_id)
+        assert i_inj_mat[0, int(round(len(i_inj_mat[0, :])/2))] < 0  # negative injected current
+        area, g_pas = estimate_passive_parameters(v_mat[0, :], t, i_inj_mat[0, :])
+
+        # estimate ge0, gi0, var_e, var_i
         dt = t[1] - t[0]
         start_step = np.where(np.diff(np.abs(i_inj_mat[0, :])) > 0.05)[0][0] + 1
         end_step = np.where(-np.diff(np.abs(i_inj_mat[0, :])) > 0.05)[0][0]
-        start_step += 5000  # TODO
-        end_step -= 5000  # TODO
+        start_step += 5000
+        end_step -= 5000
 
         pl.figure()
         for v in v_mat:
@@ -149,15 +156,30 @@ if __name__ == '__main__':
                 i_amp2 = i_amp
                 mu2, sig2 = p_opt
 
-        ge0 = ((i_amp1 - i_amp2) * (sig2**2 * (Ei - mu1)**2 - sig1**2 * (Ei - mu2)**2)) / \
-              (((Ee - mu1) * (Ei - mu2) + (Ee - mu2) * (Ei - mu1)) * (Ee - Ei) * (mu1 - mu2)**2) \
-              - ((i_amp1 - i_amp2) * (Ei -mu2) + (i_amp2 - g_pas * a * (Ei - E_pas))*(mu1 - mu2)) / \
-              ((Ee - Ei) * (mu1 - mu2))
-        gi0 = ((i_amp1 - i_amp2) * (sig2**2 * (Ee - mu1)**2 - sig1**2 * (Ee - mu2)**2)) / \
-              (((Ee - mu1) * (Ei - mu2) + (Ee - mu2) * (Ei - mu1)) * (Ei - Ee) * (mu1 - mu2)**2) \
-              - ((i_amp1 - i_amp2) * (Ee -mu2) + (i_amp2 - g_pas * a * (Ee - E_pas))*(mu1 - mu2)) / \
-              ((Ei - Ee) * (mu1 - mu2))
-        var_e = (2 * a * c_m * (i_amp1 - i_amp2) * (sig1**2 * (Ei - mu2)**2 - sig2**2 * (Ei - mu1)**2)) \
-                / (tau_e * ((Ee - mu1)*(Ei - mu2) + (Ee - mu2)*(Ei - mu1)) * (Ee - Ei) * (mu1 - mu2)**2)
-        var_i = (2 * a * c_m * (i_amp1 - i_amp2) * (sig1**2 * (Ee - mu2)**2 - sig2**2 * (Ee - mu1)**2)) \
-                / (tau_i * ((Ee - mu1)*(Ei - mu2) + (Ee - mu2)*(Ei - mu1)) * (Ei - Ee) * (mu1 - mu2)**2)
+        ge0 = (((i_amp1 - i_amp2) * (sig2**2 * (Ei - mu1)**2 - sig1**2 * (Ei - mu2)**2)) /
+              (((Ee - mu1) * (Ei - mu2) + (Ee - mu2) * (Ei - mu1)) * (Ee - Ei) * (mu1 - mu2)**2)
+              - ((i_amp1 - i_amp2) * (Ei -mu2) + (i_amp2 - g_pas * area * 1e6 * (Ei - E_pas)) * (mu1 - mu2)) /
+              ((Ee - Ei) * (mu1 - mu2)))
+        gi0 = (((i_amp1 - i_amp2) * (sig2**2 * (Ee - mu1)**2 - sig1**2 * (Ee - mu2)**2)) /
+              (((Ee - mu1) * (Ei - mu2) + (Ee - mu2) * (Ei - mu1)) * (Ei - Ee) * (mu1 - mu2)**2)
+              - ((i_amp1 - i_amp2) * (Ee -mu2) + (i_amp2 - g_pas * area * 1e6 * (Ee - E_pas)) * (mu1 - mu2)) /
+              ((Ei - Ee) * (mu1 - mu2)))
+        var_e = np.abs((2 * area * c_m * 1e3 * (i_amp1 - i_amp2) * (sig1 ** 2 * (Ei - mu2) ** 2 - sig2 ** 2 * (Ei - mu1) ** 2))
+                / (tau_e * ((Ee - mu1)*(Ei - mu2) + (Ee - mu2)*(Ei - mu1)) * (Ee - Ei) * (mu1 - mu2)**2))
+        var_i = np.abs((2 * area * c_m * 1e3 * (i_amp1 - i_amp2) * (sig1 ** 2 * (Ee - mu2) ** 2 - sig2 ** 2 * (Ee - mu1) ** 2))
+                / (tau_i * ((Ee - mu1)*(Ei - mu2) + (Ee - mu2)*(Ei - mu1)) * (Ei - Ee) * (mu1 - mu2)**2))
+
+        print 'ge0: %.5f' % ge0 + ' uS'
+        print 'gi0: %.5f' % gi0 + ' uS'
+        print 'std_e: %.5f' % np.sqrt(var_e) + ' uS'
+        print 'std_i: %.5f' % np.sqrt(var_i) + ' uS'
+        pl.show()
+
+
+        # TODO: Problems:
+        # good estimates for parameters area, g_pas -> jump in step traces at the beginning, too much noise, probably i_inj amp to high
+        # values from literature for Ei, Ee, tau_e, tau_i, E_pas
+        # gaussian shape of Vm
+        # var_e, var_i, ge0, gi0 can get negative!? (var_e or var_i gets negative
+        # because (i_amp1 - i_amp2) < 0 and
+        # ((Ee - mu1)*(Ei - mu2) + (Ee - mu2)*(Ei - mu1)) < 0 and (Ei - Ee) <{e}/>{i} 0)
