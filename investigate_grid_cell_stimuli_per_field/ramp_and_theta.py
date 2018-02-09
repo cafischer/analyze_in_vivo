@@ -33,7 +33,6 @@ if __name__ == '__main__':
         v = np.load(os.path.join(save_dir_data, file_name, 'v_AP_removed.npy'))
         t = np.load(os.path.join(save_dir_data, file_name, 't.npy'))
         dt = t[1] - t[0]
-        dt_sec = dt / 1000
 
         # get ramp and theta
         ramp, theta, t_ramp_theta, filter_ramp, filter_theta = get_ramp_and_theta(v, dt, ripple_attenuation,

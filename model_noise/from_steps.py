@@ -103,9 +103,9 @@ if __name__ == '__main__':
             pl.plot(np.arange(len(v)) * dt, v)
         #pl.show()
 
-        save_dir_fig = os.path.join(save_dir, cell_id)
-        if not os.path.exists(save_dir_fig):
-            os.makedirs(save_dir_fig)
+        save_dir_img = os.path.join(save_dir, cell_id)
+        if not os.path.exists(save_dir_img):
+            os.makedirs(save_dir_img)
 
         v_mat_during_step = np.zeros((len(v_mat), end_step-start_step))
         for i in range(np.shape(v_mat)[0]):
@@ -164,9 +164,9 @@ if __name__ == '__main__':
               (((Ee - mu1) * (Ei - mu2) + (Ee - mu2) * (Ei - mu1)) * (Ei - Ee) * (mu1 - mu2)**2)
               - ((i_amp1 - i_amp2) * (Ee -mu2) + (i_amp2 - g_pas * area * 1e6 * (Ee - E_pas)) * (mu1 - mu2)) /
               ((Ei - Ee) * (mu1 - mu2)))
-        var_e = np.abs((2 * area * c_m * 1e3 * (i_amp1 - i_amp2) * (sig1 ** 2 * (Ei - mu2) ** 2 - sig2 ** 2 * (Ei - mu1) ** 2))
+        var_e = max(0, (2 * area * c_m * 1e3 * (i_amp1 - i_amp2) * (sig1 ** 2 * (Ei - mu2) ** 2 - sig2 ** 2 * (Ei - mu1) ** 2))
                 / (tau_e * ((Ee - mu1)*(Ei - mu2) + (Ee - mu2)*(Ei - mu1)) * (Ee - Ei) * (mu1 - mu2)**2))
-        var_i = np.abs((2 * area * c_m * 1e3 * (i_amp1 - i_amp2) * (sig1 ** 2 * (Ee - mu2) ** 2 - sig2 ** 2 * (Ee - mu1) ** 2))
+        var_i = max(0, (2 * area * c_m * 1e3 * (i_amp1 - i_amp2) * (sig1 ** 2 * (Ee - mu2) ** 2 - sig2 ** 2 * (Ee - mu1) ** 2))
                 / (tau_i * ((Ee - mu1)*(Ei - mu2) + (Ee - mu2)*(Ei - mu1)) * (Ei - Ee) * (mu1 - mu2)**2))
 
         print 'ge0: %.5f' % ge0 + ' uS'

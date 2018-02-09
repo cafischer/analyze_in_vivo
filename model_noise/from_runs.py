@@ -5,6 +5,7 @@ from load import load_full_runs
 from cell_characteristics.analyze_APs import get_AP_onset_idxs
 from spatial_firing_rate import get_spatial_firing_rate, identify_firing_fields, get_start_end_idxs_in_out_field_in_time
 from scipy.interpolate import interp1d
+from grid_cell_stimuli.remove_APs import remove_APs
 
 
 if __name__ == '__main__':
@@ -64,7 +65,8 @@ if __name__ == '__main__':
         ax[2].set_xlabel('Time (ms)', fontsize=14)
 
         # identify in and out field regions
-        in_field_idxs_per_field, out_field_idxs_per_field = identify_firing_fields(spatial_firing_rate)
+        in_field_idxs_per_field, out_field_idxs_per_field = identify_firing_fields(spatial_firing_rate,
+                                                                                   fraction_from_peak_rate=0.10)
 
         fig, ax = pl.subplots(2, 1, sharex=True)
         ax[0].plot(interp1d(pos_t, y_pos)(t[:np.where(t >= pos_t[-1])[0][0]]), v[:np.where(t >= pos_t[-1])[0][0]], 'k')
@@ -91,25 +93,24 @@ if __name__ == '__main__':
             pl.plot(t[start_idx:end_idx], v[start_idx:end_idx], 'orange')
         for start_idx, end_idx in start_end_idx_out_field:
             pl.plot(t[start_idx:end_idx], v[start_idx:end_idx], 'b')
-        pl.show()
+        #pl.show()
 
         # remove APs
-        #TODO: v_APs_removed = remove_APs(v, t, AP_threshold, t_before, t_after)
-        #v = v_APs_removed
+        v_APs_removed = []
+        for start_idx, end_idx in start_end_idx_out_field:
+            v_APs_removed.append(remove_APs(v[start_idx:end_idx], t[start_idx:end_idx], AP_threshold, t_before, t_after))
 
-        # print 'Mean: %.2f' % np.mean(v)
-        # print 'Std: %.2f' % np.std(v)
-        #
-        # pl.figure()
-        # pl.plot(t, v, 'k')
-        # pl.ylabel('Membrane Potential (mV)', fontsize=16)
-        # pl.xlabel('Time (ms)', fontsize=16)
-        #
-        # pl.figure()
-        # pl.hist(v, bins=100)
-        # pl.xlabel('Membrane Potential (mV)', fontsize=16)
-        # pl.ylabel('Count', fontsize=16)
-        # pl.show()
+        # histogram of v out field
+        v_concatenated = np.concatenate(v_APs_removed)
+
+        print 'Mean: %.2f' % np.mean(v_concatenated)
+        print 'Std: %.2f' % np.std(v_concatenated)
+
+        pl.figure()
+        pl.hist(v_concatenated, bins=100)
+        pl.xlabel('Membrane Potential (mV)', fontsize=16)
+        pl.ylabel('Count', fontsize=16)
+        pl.show()
 
 
 # TODO:

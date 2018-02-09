@@ -33,15 +33,15 @@ def get_spatial_firing_rate(v, t, x_pos, pos_t, h=3, AP_threshold=0, bin_size=0.
     return firing_rate, positions, location_spikes
 
 
-def identify_firing_fields(spatial_firing_rate):
+def identify_firing_fields(spatial_firing_rate, fraction_from_peak_rate=0.20, minimum_bins=16, minimum_freq=1):
     peak_rate = np.nanmax(spatial_firing_rate)
-    in_field_idxs_tmp = np.where(spatial_firing_rate > peak_rate * 0.20)[0]  # firing rate > 20% of the peak rate
+    in_field_idxs_tmp = np.where(spatial_firing_rate > peak_rate * fraction_from_peak_rate)[0]  # firing rate > 20% of the peak rate
     in_field_idxs_per_field_tmp = divide_idxs_into_fields(in_field_idxs_tmp)
     in_field_idxs_per_field = []
     for in_field_idxs in in_field_idxs_per_field_tmp:
-        if (len(in_field_idxs) >= 16  # contiguous region of at least 16 bins
+        if (len(in_field_idxs) >= minimum_bins  # contiguous region of at least x bins
                 and np.max(spatial_firing_rate[
-                               in_field_idxs]) >= 1):  # peak rate >= 1Hz
+                               in_field_idxs]) >= minimum_freq):  # peak rate >= x Hz
             in_field_idxs_per_field.append(in_field_idxs)
 
     out_field_idxs = np.setdiff1d(np.arange(len(spatial_firing_rate)), np.array(flatten_list(in_field_idxs_per_field)),
