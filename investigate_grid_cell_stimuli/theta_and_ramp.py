@@ -1,13 +1,14 @@
 from __future__ import division
 import numpy as np
 import os
-from load import load_full_runs
+from analyze_in_vivo.load import load_full_runs
 from grid_cell_stimuli.remove_APs import remove_APs
 from grid_cell_stimuli.ramp_and_theta import get_ramp_and_theta, plot_spectrum, plot_v_ramp_theta
 from grid_cell_stimuli.downsample import antialias_and_downsample
 from scipy.signal import spectrogram
 import matplotlib.pyplot as pl
-from spatial_firing_rate import get_spatial_firing_rate, identify_firing_fields, get_start_end_idxs_in_out_field_in_time
+from analyze_in_vivo.spatial_firing_rate import get_spatial_firing_rate, identify_firing_fields, \
+    get_start_end_idxs_in_out_field_in_time
 
 
 if __name__ == '__main__':

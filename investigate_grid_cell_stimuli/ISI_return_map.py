@@ -1,9 +1,10 @@
 from __future__ import division
 import matplotlib.pyplot as pl
+from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 import os
 from grid_cell_stimuli.ISI_hist import get_ISIs
-from load import load_full_runs
+from analyze_in_vivo.load import load_full_runs
 pl.style.use('paper')
 
 
@@ -33,6 +34,7 @@ if __name__ == '__main__':
         if not os.path.exists(save_dir_cell):
             os.makedirs(save_dir_cell)
 
+        # 2d return
         pl.figure()
         pl.title(cell_id.split('_')[1], fontsize=16)
         pl.plot(ISIs_per_cell[i][:-1], ISIs_per_cell[i][1:], color='k', marker='o', linestyle='', markersize=6)
@@ -43,6 +45,22 @@ if __name__ == '__main__':
         pl.tight_layout()
         pl.savefig(os.path.join(save_dir_cell, 'ISI_return_map.png'))
         #pl.show()
+
+        # 3d return
+        fig = pl.figure()
+        ax = fig.add_subplot(111, projection='3d')
+        ax.set_title(cell_id.split('_')[1], fontsize=16)
+        ax.scatter(ISIs_per_cell[i][:-2], ISIs_per_cell[i][1:-1], ISIs_per_cell[i][2:],
+                   color='k', marker='o') #, markersize=6)
+        ax.set_xlabel('ISI(n)', fontsize=16)
+        ax.set_ylabel('ISI(n+1)', fontsize=16)
+        ax.set_zlabel('ISI(n+2)', fontsize=16)
+        ax.set_xlim3d(0, 200)
+        ax.set_ylim3d(200, 0)
+        ax.set_zlim3d(0, 200)
+        pl.tight_layout()
+        pl.savefig(os.path.join(save_dir_cell, 'ISI_return_map_3d.png'))
+        pl.show()
 
     # save and plot
     cm = pl.cm.get_cmap('plasma')

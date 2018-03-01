@@ -25,30 +25,6 @@ if __name__ == '__main__':
         AP_threshold = np.min(v) + 2. / 3 * np.abs(np.min(v) - np.max(v)) - 5  # not capture all APs but seems
                                                                                # to be a good estimate
 
-        # # detrend
-        # cutoff_freq = 2000  # Hz
-        # dt_new_max = 1. / cutoff_freq * 1000  # ms
-        # transition_width = 5.0  # Hz
-        # ripple_attenuation = 60.0  # db
-        # v_downsampled, t_downsampled, filter = antialias_and_downsample(remove_APs(v, t, AP_threshold, t_before, t_after),
-        #                                                                 dt, ripple_attenuation, transition_width,
-        #                                                                 cutoff_freq, dt_new_max)
-        # cutoff_ramp = 3  # Hz
-        # cutoff_theta_low = 5  # Hz
-        # cutoff_theta_high = 11  # Hz
-        # transition_width = 1  # Hz
-        # ripple_attenuation = 60.0  # db
-        # dt = t_downsampled[1] - t_downsampled[0]
-        # ramp, theta, t_ramp_theta, filter_ramp, filter_theta = get_ramp_and_theta(v_downsampled, dt, ripple_attenuation,
-        #                                                                           transition_width, cutoff_ramp,
-        #                                                                           cutoff_theta_low,
-        #                                                                           cutoff_theta_high,
-        #                                                                           pad_if_to_short=True)
-        # ramp -= np.mean(v)
-        # v_detrend = v - interp1d(t_downsampled, ramp)(t)
-        # AP_threshold = np.min(v_detrend) + np.abs(np.max(v_detrend) - np.min(v_detrend)) * (1./2)
-        # print AP_threshold
-
         # only use v out of field
         spatial_firing_rate, positions, loc_spikes = get_spatial_firing_rate(v, t, y_pos, pos_t, h=3,
                                                                              AP_threshold=AP_threshold, bin_size=0.5,
