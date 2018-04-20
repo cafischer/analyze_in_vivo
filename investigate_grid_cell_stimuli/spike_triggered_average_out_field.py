@@ -105,13 +105,13 @@ if __name__ == '__main__':
         pl.savefig(os.path.join(save_dir_cell, 'v_APs.png'))
         #pl.show()
 
-        # pl.figure()
-        # pl.plot(t, v)
-        # pl.xlabel('Time (ms)')
-        # pl.ylabel('Membrane Potential (mV)')
-        # pl.tight_layout()
-        # pl.savefig(os.path.join(save_dir_cell, 'v.png'))
-        #pl.show()
+        pl.figure()
+        pl.plot(t, v)
+        pl.xlabel('Time (ms)')
+        pl.ylabel('Membrane Potential (mV)')
+        pl.tight_layout()
+        pl.savefig(os.path.join(save_dir_cell, 'v.png'))
+        pl.show()
 
         # STC
         if len(v_APs) > 10:

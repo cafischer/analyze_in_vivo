@@ -124,27 +124,28 @@ if __name__ == '__main__':
             plots_stc(v_APs, t_AP, back_projection, chosen_eigvecs, expl_var, save_dir_img)
 
             # Group by AP_max
-            mean_high, std_high, mean_low, std_low, AP_max_high_labels = group_by_AP_max(v_APs)
+            mean_high, std_high, mean_low, std_low, AP_max_high_labels, AP_max = group_by_AP_max(v_APs)
             plot_group_by_AP_max(mean_high, std_high, mean_low, std_low, t_AP, save_dir_img)
             mean_high_centered = mean_high - np.mean(v_APs, 0)
             mean_low_centered = mean_low - np.mean(v_APs, 0)
 
             # ICA
-            # ica = FastICA(n_components=3, whiten=True)
-            # ica_source = ica.fit_transform(v_APs_centered)
-            # plot_ICA(v_APs, t_AP, ica.mixing_, save_dir_img)
+            ica = FastICA(n_components=3, whiten=True)
+            ica_source = ica.fit_transform(v_APs_centered)
+            plot_ICA(v_APs, t_AP, ica.mixing_, save_dir_img)
 
             # plot together
-            # plot_all_in_one(v_APs, t_AP, back_projection, mean_high, std_high, mean_low, std_low,
-            #                 chosen_eigvecs, expl_var, ica.mixing_, save_dir_img)
-            # plot_backtransform(v_APs_centered, t_AP, mean_high_centered, mean_low_centered, std_high, std_low,
-            #                    chosen_eigvecs, ica_source, ica.mixing_, save_dir_img)
+            plot_all_in_one(v_APs, t_AP, back_projection, mean_high, std_high, mean_low, std_low,
+                            chosen_eigvecs, expl_var, ica.mixing_, save_dir_img)
+            plot_backtransform(v_APs_centered, t_AP, mean_high_centered, mean_low_centered, std_high, std_low,
+                               chosen_eigvecs, expl_var, ica_source, ica.mixing_, save_dir_img)
 
-            plot_PCA_3D(v_APs_centered, chosen_eigvecs, AP_max_high_labels, save_dir_img)
-            # plot_ICA_3D(v_APs_centered, ica_source, AP_max_high_labels, save_dir_img)
-            pl.close('all')
-            plot_clustering_kmeans(v_APs_centered, chosen_eigvecs, 4, save_dir_img)
-            pl.show()
+            #pl.close('all')
+            plot_PCA_3D(v_APs_centered, chosen_eigvecs, AP_max_high_labels, AP_max, save_dir_img=save_dir_img)
+            #   pl.show()
+            plot_ICA_3D(v_APs_centered, ica_source, AP_max_high_labels, save_dir_img)
+            plot_clustering_kmeans(v_APs, v_APs_centered, t_AP, chosen_eigvecs, 2, save_dir_img)
+
 
             # save as .npy
             np.save(os.path.join(save_dir_img, 'v_APs.npy'), v_APs)
