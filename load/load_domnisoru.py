@@ -13,32 +13,72 @@ def load_data(cell_name, param_list, save_dir):
         data = file[param]
         if 'Y' in param:
             data += 200  # to bring position between 0 and 400
-        data_set[param] = data[:, 0]
+        shape = np.shape(file[param])
+        if shape[0] == 1:
+            data_set[param] = data[0, :]
+        elif shape[1] == 1:
+            data_set[param] = data[:, 0]
+        else:
+            data_set[param] = data
 
     # add time
-    dt = 0.05
-    t = np.arange(0, len(data)) * dt
-    data_set['t'] = t
+    data_set['dt'] = 0.05
     return data_set
 
 
-def load_grid_cell_names(save_dir):
-    grid_cell_names_ = loadmat(os.path.join(save_dir, 'cl_ah.mat'))
-    grid_cell_names = [str(x[0]) for x in grid_cell_names_['cl_ah'][0][0][0][0]]
-    return grid_cell_names
+def load_field_indices(cell_name, save_dir):
+    file_name = cell_name+'_all_fields_fY_ah.mat'
+    file = loadmat(os.path.join(save_dir, file_name))
+    in_field_idxs = file['fininds'][:, 0] - 1  # -1 for matlab indices
+    out_field_idxs = file['foutinds'][:, 0] - 1
+    return in_field_idxs, out_field_idxs
+
+
+def load_cell_names(save_dir, cell_type='grid_cells'):
+    file = loadmat(os.path.join(save_dir, 'cl_ah.mat'))['cl_ah']
+    grid_cells_tmp = file['gridlist']
+    grid_cells = [str(x[0]) for x in grid_cells_tmp[0][0][0]]
+    pyramidal_cells_tmp = file['pyramidal_grid']
+    pyramidal_cells = [str(x[0][0]) for x in pyramidal_cells_tmp[0][0]]
+    stellate_cells_tmp = file['stellate_grid']
+    stellate_cells = [str(x[0][0]) for x in stellate_cells_tmp[0][0]]
+    layer2_cells_tmp = file['l2_grid']
+    layer2_cells = [str(x[0]) for x in layer2_cells_tmp[0, 0][0]]
+    layer3_cells_tmp = file['l3_grid']
+    layer3_cells = [str(x[0]) for x in layer3_cells_tmp[0, 0][0]]
+
+    if cell_type == 'grid_cells':
+        return grid_cells
+    elif cell_type == 'stellate_layer2':
+        return list(set(layer2_cells).intersection(stellate_cells))
+    elif cell_type == 'pyramidal_layer2':
+        return list(set(layer2_cells).intersection(pyramidal_cells))
+    elif cell_type == 'pyramidal_layer3':
+        return list(set(layer3_cells).intersection(pyramidal_cells))
+    else:
+        raise ValueError('Cell type not available!')
 
 
 if __name__ == '__main__':
     save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
-    grid_cell_names = load_grid_cell_names(save_dir)
+    grid_cell_names = load_cell_names(save_dir, 'stellate_layer2')
 
     grid_cell_name = grid_cell_names[0]
     param_list = ['Vm_ljpc', 'Y_cm']
     data = load_data(grid_cell_name, param_list, save_dir)
 
+    fig, axes = pl.subplots(1, 1, sharex='all')
+    axes.plot(np.arange(len(data['Vm_ljpc'])) * data['dt'] / 1000., data['Vm_ljpc'], 'k')
+    axes.set_ylabel('Membrane Potential')
+    axes.set_xlabel('Time (s)')
+    pl.tight_layout()
+    pl.show()
+
     fig, axes = pl.subplots(len(data), 1, sharex='all')
     for i, (param, trace) in enumerate(data.iteritems()):
-        axes[i].plot(data['t'] / 1000., trace, 'k')
+        if param == 'dt':
+            continue
+        axes[i].plot(np.arange(len(data['Vm_ljpc'])) * data['dt'] / 1000., trace, 'k')
         axes[i].set_ylabel(param)
     axes[-1].set_xlabel('Time (s)')
     pl.tight_layout()
