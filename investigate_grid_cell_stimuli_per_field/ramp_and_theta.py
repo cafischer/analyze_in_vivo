@@ -2,7 +2,7 @@ from __future__ import division
 import numpy as np
 import os
 import json
-from load import load_field_crossings
+from analyze_in_vivo.load.load_schmidt_hieber import load_field_crossings
 from grid_cell_stimuli.ramp_and_theta import get_ramp_and_theta, plot_filter, plot_spectrum, plot_v_ramp_theta
 
 

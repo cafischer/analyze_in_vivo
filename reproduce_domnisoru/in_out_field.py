@@ -12,7 +12,11 @@ from scipy.ndimage.filters import convolve
 from cell_fitting.util import init_nan
 
 
-def get_spike_train(v, AP_threshold, dt):
+def get_spike_idxs(v, AP_threshold, dt):
+    """
+    At max of AP
+    :return:
+    """
     AP_onsets = get_AP_onset_idxs(v, AP_threshold)
     AP_onsets = np.concatenate((AP_onsets, np.array([len(v)])))
     AP_max_idxs_ = np.array([get_AP_max_idx(v, AP_onsets[i], AP_onsets[i + 1], interval=int(round(2. / dt))) for i in
@@ -20,16 +24,21 @@ def get_spike_train(v, AP_threshold, dt):
     idxs_not_none = ~np.array([x is None for x in AP_max_idxs_], dtype=bool)
     AP_max_idxs = np.array(AP_max_idxs_[idxs_not_none], dtype=int)
 
-    spike_train = np.zeros(len(v))
-    spike_train[AP_max_idxs] = 1
-
     # # for testing:
+    # t = np.arange(len(v)) * dt
     # pl.figure()
-    # pl.plot(t, v)
+    # pl.plot(t, v, 'k')
     # pl.plot(t[AP_onsets[:-1]], v[AP_onsets[:-1]], 'or')
     # pl.plot(t[AP_onsets[:-1][~idxs_not_none]], v[AP_onsets[:-1][~idxs_not_none]], 'ob')
     # pl.show()
+    return AP_max_idxs
 
+
+def get_spike_train(v, AP_threshold, dt):
+    AP_max_idxs = get_spike_idxs(v, AP_threshold, dt)
+
+    spike_train = np.zeros(len(v))
+    spike_train[AP_max_idxs] = 1
     return spike_train, AP_max_idxs
 
 
@@ -150,13 +159,13 @@ def get_v_and_t_per_run(v, t, position):
 
 def threshold_by_velocity(v, t, position, velocity, threshold=1):
     """
-
-    :param v:
-    :param t:
-    :param position:
-    :param velocity: (cm/sec)
-    :param threshold:
-    :return:
+    Remove regions where velocity < threshold from the data. Note: Data will contain discontinuities.
+    :param v: (mV)
+    :param t: (ms)
+    :param position: (cm).
+    :param velocity: (cm/sec).
+    :param threshold: Threshold (cm/sec) below which to cut out the data.
+    :return: v, t, position, velocity with regions removed where velocity < threshold.
     """
     to_low = velocity < threshold
     v = v[~to_low]
@@ -168,7 +177,7 @@ def threshold_by_velocity(v, t, position, velocity, threshold=1):
 
 def smooth_firing_rate(firing_rate, std=1):
     window = scipy.signal.gaussian(3, std)
-    firing_rate_smoothed = convolve(firing_rate, window/window.sum(), mode='reflect')
+    firing_rate_smoothed = convolve(firing_rate, window/window.sum(), mode='nearest')
 
     # # for testing:
     # pl.figure()
@@ -181,22 +190,21 @@ def smooth_firing_rate(firing_rate, std=1):
 
 def get_in_out_field_idxs_domnisoru(cell_name, save_dir, bins):
     run_start_idxs = np.where(np.diff(position) < -track_len / 2.)[0] + 1  # +1 because diff shifts one to front
-
-    # in_field_positions = position_thresholded[in_field]
-    # out_field_positions = position_thresholded[out_field]
+    n_runs = len(run_start_idxs) + 1  # +1 for first start at 0
+    n_bins = len(bins) - 1
 
     in_field, out_field = load_field_indices(cell_name, save_dir)
     position_thresholded = load_data(cell_name, ['fY_cm'], save_dir)['fY_cm']
     in_field_bool = np.zeros(len(position_thresholded))
-    in_field_bool[in_field] == 1
+    in_field_bool[in_field] = 1
     out_field_bool = np.zeros(len(position_thresholded))
-    out_field_bool[out_field] == 1
+    out_field_bool[out_field] = 1
     in_field_per_run = np.split(in_field_bool, run_start_idxs)
     out_field_per_run = np.split(out_field_bool, run_start_idxs)
     pos_per_run = np.split(position_thresholded, run_start_idxs)
-    in_field_per_run_binned = init_nan((len(run_start_idxs), len(bins)))
-    out_field_per_run_binned = init_nan((len(run_start_idxs), len(bins)))
-    for run_i in range(len(run_start_idxs)):
+    in_field_per_run_binned = init_nan((n_runs, n_bins))
+    out_field_per_run_binned = init_nan((n_runs, n_bins))
+    for run_i in range(n_runs):
         pos_binned = np.digitize(pos_per_run[run_i], bins) - 1
         in_field_grouped = pd.Series(in_field_per_run[run_i]).groupby(pos_binned).apply(lambda x: [x.values]).values
         check = [np.all(a == a[0]) for a in in_field_grouped]
@@ -221,11 +229,11 @@ if __name__ == '__main__':
     cell_names = load_cell_names(save_dir, 'stellate_layer2')
     cell_name = cell_names[0]
     param_list = ['Vm_ljpc', 'Y_cm', 'vel_100ms', 'spiketimes']
-    AP_threshold = -60 #-45  # save dict for each cell
+    AP_threshold = -60  # -45  # save dict for each cell
 
     # parameters
     seed = 1
-    n_shuffles = 100  # TODO 1000
+    n_shuffles = 1000  # TODO 1000
     bin_size = 5  # cm
     params = {'seed': seed, 'n_shuffles': n_shuffles, 'bin_size': bin_size}
     track_len = 400  # cm
@@ -269,23 +277,24 @@ if __name__ == '__main__':
 
         # compute P-value: percent of shuffled firing rates that were higher than the cells real firing rate
         p_value += (firing_rate_shuffled > firing_rate_real).astype(int)
-        for i_run, firing_rate_run in enumerate(firing_rate_per_run):
-            p_value_per_run[i_run, :] += (firing_rate_shuffled > firing_rate_run).astype(int)
 
     mean_firing_rate_shuffled /= n_shuffles
     p_value /= n_shuffles
-    p_value_per_run /= n_shuffles
 
     # get in-field and out-field
     in_field, out_field = get_in_out_field(p_value, firing_rate_per_run, n_bins)
-    # TODO
-    in_field_per_run = np.zeros((len(firing_rate_per_run), n_bins))
-    out_field_per_run = np.zeros((len(firing_rate_per_run), n_bins))
-    for i_run, p_value_run in enumerate(p_value_per_run):
-        in_field_per_run[i_run], out_field_per_run[i_run] = get_in_out_field(p_value_run, firing_rate_per_run, n_bins)
 
-    # TODO
+    # for comparison Domnisorus fields
     in_field_domnisoru, out_field_domnisoru = get_in_out_field_idxs_domnisoru(cell_name, save_dir, bins)
+    pl.figure()
+    pl.title('Domnisoru')
+    con = np.vstack((in_field_domnisoru, np.array([in_field])))
+    pl.imshow(con)
+    pl.figure()
+    pl.title('Domnisoru')
+    con = np.vstack((out_field_domnisoru, np.array([out_field])))
+    pl.imshow(con)
+    pl.show()
 
     # save and plot
     if not os.path.exists(save_dir_img):

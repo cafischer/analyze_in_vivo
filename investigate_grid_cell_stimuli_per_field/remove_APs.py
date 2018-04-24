@@ -25,7 +25,7 @@ if __name__ == '__main__':
         dt = t[1] - t[0]
 
         # remove APs
-        AP_threshold = np.max(v) - np.abs((np.min(v) - np.max(v)) / 3)
+        AP_threshold = np.max(v) - np.abs((np.min(v) - np.max(v)) / 3.)
         v_APs_removed = remove_APs(v, t, AP_threshold, t_before, t_after)
 
         # save and plot
