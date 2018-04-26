@@ -2,17 +2,17 @@ from __future__ import division
 import numpy as np
 import matplotlib.pyplot as pl
 import os
-from analyze_in_vivo.load.load_domnisoru import load_cell_names, load_data
-from analyze_in_vivo.reproduce_domnisoru.in_out_field import threshold_by_velocity
+from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data
+from analyze_in_vivo.reproduce_domnisoru.check_basic.in_out_field import threshold_by_velocity
 from scipy.ndimage.filters import convolve
-from sklearn.metrics import mean_squared_error
+
 pl.style.use('paper')
 
 
 if __name__ == '__main__':
     save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/check/velocity'
     save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
-    cell_names = load_cell_names(save_dir, 'stellate_layer2')
+    cell_names = load_cell_ids(save_dir, 'stellate_layer2')
     param_list = ['Vm_ljpc', 'Y_cm', 'fY_cm', 'vel_100ms']
     track_len = 400
 

@@ -34,7 +34,7 @@ def load_field_indices(cell_name, save_dir):
     return in_field_idxs, out_field_idxs
 
 
-def load_cell_names(save_dir, cell_type='grid_cells'):
+def load_cell_ids(save_dir, cell_type='grid_cells'):
     file = loadmat(os.path.join(save_dir, 'cl_ah.mat'))['cl_ah']
     grid_cells_tmp = file['gridlist']
     grid_cells = [str(x[0]) for x in grid_cells_tmp[0][0][0]]
@@ -61,9 +61,10 @@ def load_cell_names(save_dir, cell_type='grid_cells'):
 
 if __name__ == '__main__':
     save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
-    grid_cell_names = load_cell_names(save_dir, 'stellate_layer2')
+    grid_cell_names = load_cell_ids(save_dir, 'stellate_layer2')
 
-    grid_cell_name = grid_cell_names[0]
+    grid_cell_name = grid_cell_names[3]
+    print grid_cell_name
     param_list = ['Vm_ljpc', 'Y_cm']
     data = load_data(grid_cell_name, param_list, save_dir)
 
@@ -71,15 +72,5 @@ if __name__ == '__main__':
     axes.plot(np.arange(len(data['Vm_ljpc'])) * data['dt'] / 1000., data['Vm_ljpc'], 'k')
     axes.set_ylabel('Membrane Potential')
     axes.set_xlabel('Time (s)')
-    pl.tight_layout()
-    pl.show()
-
-    fig, axes = pl.subplots(len(data), 1, sharex='all')
-    for i, (param, trace) in enumerate(data.iteritems()):
-        if param == 'dt':
-            continue
-        axes[i].plot(np.arange(len(data['Vm_ljpc'])) * data['dt'] / 1000., trace, 'k')
-        axes[i].set_ylabel(param)
-    axes[-1].set_xlabel('Time (s)')
     pl.tight_layout()
     pl.show()

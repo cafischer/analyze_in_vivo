@@ -3,7 +3,7 @@ import matplotlib.pyplot as pl
 import numpy as np
 import os
 from grid_cell_stimuli.ISI_hist import get_ISIs
-from load import load_full_runs
+from analyze_in_vivo.load.load_schmidt_hieber import load_full_runs
 pl.style.use('paper')
 
 

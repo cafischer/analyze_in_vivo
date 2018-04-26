@@ -1,7 +1,7 @@
 from __future__ import division
 import numpy as np
 import os
-from analyze_in_vivo.load import load_full_runs
+from analyze_in_vivo.load.load_schmidt_hieber import load_full_runs
 from analyze_in_vivo.investigate_grid_cell_stimuli import detrend
 from cell_characteristics.analyze_APs import get_AP_onset_idxs, get_AP_max_idx
 from cell_characteristics import to_idx
@@ -10,7 +10,6 @@ from cell_characteristics.sta_stc import get_sta, plots_sta, get_stc, choose_eig
     plot_PCA_3D, plot_ICA_3D, plot_clustering_kmeans
 import matplotlib.pyplot as pl
 from sklearn.decomposition import FastICA
-
 pl.style.use('paper')
 
 
