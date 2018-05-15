@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as pl
 import os
 from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data
-from analyze_in_vivo.reproduce_domnisoru.check_basic.in_out_field import threshold_by_velocity
+from analyze_in_vivo.analyze_domnisoru.check_basic.in_out_field import threshold_by_velocity
 from scipy.ndimage.filters import convolve
 
 pl.style.use('paper')
@@ -42,7 +42,7 @@ if __name__ == '__main__':
         velocity_smoothed = convolve(velocity, window, mode='nearest')
 
         # threshold by velocity
-        v, t, position, velocity = threshold_by_velocity(v, t, position, velocity)
+        [v, t, position], velocity = threshold_by_velocity([v, t, position], velocity)
 
         # check same length
         print 'Length Domisoru - me (s): ', (len(data['fY_cm']) - len(position)) * data['dt'] / 1000

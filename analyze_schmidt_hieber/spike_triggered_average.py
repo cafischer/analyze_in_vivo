@@ -5,7 +5,7 @@ from analyze_in_vivo.load.load_schmidt_hieber import load_full_runs
 from analyze_in_vivo.investigate_grid_cell_stimuli import detrend
 from cell_characteristics.analyze_APs import get_AP_onset_idxs, get_AP_max_idx
 from cell_characteristics import to_idx
-from cell_characteristics.sta_stc import get_sta, plots_sta, get_stc, choose_eigvecs, \
+from cell_characteristics.sta_stc import get_sta, plot_sta, get_stc, choose_eigvecs, \
     project_back, plots_stc, group_by_AP_max, plot_group_by_AP_max, plot_ICA, plot_all_in_one, plot_backtransform, \
     plot_PCA_3D, plot_ICA_3D, plot_clustering_kmeans
 import matplotlib.pyplot as pl
@@ -106,7 +106,7 @@ if __name__ == '__main__':
         t_AP = np.arange(after_AP_idx_sta + before_AP_idx_sta + 1) * dt
         sta, sta_std = get_sta(v_APs)
 
-        plots_sta(v_APs, t_AP, sta, sta_std, save_dir_img)
+        plot_sta(v_APs, t_AP, sta, sta_std, save_dir_img)
 
         # STC & Group by AP_max & ICA
         v_APs = find_all_APs_in_v_trace(v, before_AP_idx_stc, after_AP_idx_stc, AP_threshold,

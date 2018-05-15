@@ -46,17 +46,28 @@ def load_cell_ids(save_dir, cell_type='grid_cells'):
     layer2_cells = [str(x[0]) for x in layer2_cells_tmp[0, 0][0]]
     layer3_cells_tmp = file['l3_grid']
     layer3_cells = [str(x[0]) for x in layer3_cells_tmp[0, 0][0]]
+    giant_theta_cells_tmp = file['giant_theta_grid']
+    giant_theta_cells = [str(x[0][0]) for x in giant_theta_cells_tmp[0, 0]]
+    small_theta_cells_tmp = file['st_grid']  # small theta
+    small_theta_cells = [str(x[0][0]) for x in small_theta_cells_tmp[0, 0]]
 
     if cell_type == 'grid_cells':
-        return grid_cells
+        cells = grid_cells
     elif cell_type == 'stellate_layer2':
-        return list(set(layer2_cells).intersection(stellate_cells))
+        cells = list(set(layer2_cells).intersection(stellate_cells))
     elif cell_type == 'pyramidal_layer2':
-        return list(set(layer2_cells).intersection(pyramidal_cells))
+        cells = list(set(layer2_cells).intersection(pyramidal_cells))
     elif cell_type == 'pyramidal_layer3':
-        return list(set(layer3_cells).intersection(pyramidal_cells))
+        cells = list(set(layer3_cells).intersection(pyramidal_cells))
+    elif cell_type == 'giant_theta':
+        cells = giant_theta_cells
+    elif cell_type == 'small_theta':
+        cells = small_theta_cells
     else:
         raise ValueError('Cell type not available!')
+
+    cells = sorted(cells, key=lambda x: int(x[1:].split('_')[0]))
+    return cells
 
 
 if __name__ == '__main__':

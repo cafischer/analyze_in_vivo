@@ -10,12 +10,28 @@ from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data, load_f
 import scipy.signal
 from scipy.ndimage.filters import convolve
 from cell_fitting.util import init_nan
-from grid_cell_stimuli.remove_APs import get_spike_idxs
+from grid_cell_stimuli import get_AP_max_idxs
+
+
+def threshold_by_velocity(arrays_to_shorten, velocity, threshold=1):
+    """
+    Remove regions where velocity < threshold from the data. Note: Data will contain discontinuities.
+    :param v: (mV)
+    :param t: (ms)
+    :param position: (cm).
+    :param velocity: (cm/sec).
+    :param threshold: Threshold (cm/sec) below which to cut out the data.
+    :return: v, t, position, velocity with regions removed where velocity < threshold.
+    """
+    to_low = velocity < threshold
+    for i in range(len(arrays_to_shorten)):
+        arrays_to_shorten[i] = arrays_to_shorten[i][~to_low]
+    velocity = velocity[~to_low]
+    return arrays_to_shorten, velocity
 
 
 def get_spike_train(v, AP_threshold, dt, interval=2, v_diff_onset_max=5):
-    AP_max_idxs = get_spike_idxs(v, AP_threshold, dt, interval=interval, v_diff_onset_max=v_diff_onset_max)
-
+    AP_max_idxs = get_AP_max_idxs(v, AP_threshold, dt, interval=interval, v_diff_onset_max=v_diff_onset_max)
     spike_train = np.zeros(len(v))
     spike_train[AP_max_idxs] = 1
     return spike_train, AP_max_idxs
@@ -139,24 +155,6 @@ def get_v_and_t_per_run(v, t, position):
     return v_runs, t_runs
 
 
-def threshold_by_velocity(v, t, position, velocity, threshold=1):
-    """
-    Remove regions where velocity < threshold from the data. Note: Data will contain discontinuities.
-    :param v: (mV)
-    :param t: (ms)
-    :param position: (cm).
-    :param velocity: (cm/sec).
-    :param threshold: Threshold (cm/sec) below which to cut out the data.
-    :return: v, t, position, velocity with regions removed where velocity < threshold.
-    """
-    to_low = velocity < threshold
-    v = v[~to_low]
-    t = t[~to_low]
-    position = position[~to_low]
-    velocity = velocity[~to_low]
-    return v, t, position, velocity
-
-
 def smooth_firing_rate(firing_rate, std=1):
     window = scipy.signal.gaussian(3, std)
     firing_rate_smoothed = convolve(firing_rate, window/window.sum(), mode='nearest')
@@ -205,10 +203,11 @@ def get_in_out_field_idxs_domnisoru(cell_name, save_dir, bins):
 if __name__ == '__main__':
     save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/in_out_field'
     save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
-    cell_ids = load_cell_ids(save_dir, 'stellate_layer2')
+    cell_type = 'pyramidal_layer2'
+    cell_ids = load_cell_ids(save_dir, cell_type)
     param_list = ['Vm_ljpc', 'Y_cm', 'vel_100ms', 'spiketimes']
-    AP_thresholds = {'s117_0002': -60, 's119_0004': -50, 's104_0007': -55, 's79_0003': -50, 's76_0002': -50,
-                     's101_0009': -45}
+    AP_thresholds = {'s73_0004': -55, 's90_0006': -45, 's82_0002': -35,
+                     's117_0002': -60, 's119_0004': -50, 's104_0007': -55, 's79_0003': -50, 's76_0002': -50, 's101_0009': -45}
 
     # parameters
     seed = 1
@@ -216,10 +215,11 @@ if __name__ == '__main__':
     bin_size = 5  # cm
     params = {'seed': seed, 'n_shuffles': n_shuffles, 'bin_size': bin_size}
     track_len = 400  # cm
+    velocity_threshold = 1  # cm/sec
 
     for cell_id in cell_ids:
         print cell_id
-        save_dir_cell = os.path.join(save_dir_img, cell_id)
+        save_dir_cell = os.path.join(save_dir_img, cell_type, cell_id)
         if not os.path.exists(save_dir_cell):
             os.makedirs(save_dir_cell)
 
@@ -235,7 +235,7 @@ if __name__ == '__main__':
         dt = t[1] - t[0]
 
         # velocity threshold the data
-        v, t, position, velocity = threshold_by_velocity(v, t, position, velocity)
+        [v, t, position], velocity = threshold_by_velocity([v, t, position], velocity, velocity_threshold)
 
         # compute spike train
         spike_train, AP_max_idxs = get_spike_train(v, AP_thresholds[cell_id], dt)
@@ -272,15 +272,21 @@ if __name__ == '__main__':
         start_in, end_in = get_start_end_group_of_ones(in_field)
         start_out, end_out = get_start_end_group_of_ones(out_field)
 
+        # make in_field indicator for whole v vector
+        orig_position_binned = np.digitize(data['Y_cm'], bins) - 1
+        in_field_len_orig = np.array([in_field[p] if p < len(bins)-1 else np.nan
+                                      for p in orig_position_binned], dtype=bool)
+        out_field_len_orig = np.array([out_field[p] if p < len(bins)-1 else np.nan
+                                       for p in orig_position_binned], dtype=bool)
+
         # save and plot
-        if not os.path.exists(save_dir_img):
-            os.makedirs(save_dir_img)
+        np.save(os.path.join(save_dir_cell, 'in_field.npy'), in_field)
+        np.save(os.path.join(save_dir_cell, 'out_field.npy'), out_field)
+        np.save(os.path.join(save_dir_cell, 'in_field_len_orig.npy'), in_field_len_orig)
+        np.save(os.path.join(save_dir_cell, 'out_field_len_orig.npy'), out_field_len_orig)
+        np.save(os.path.join(save_dir_cell, 'firing_rate_real.npy'), firing_rate_real)
 
-        np.save(os.path.join(save_dir_img, 'in_field.npy'), in_field)
-        np.save(os.path.join(save_dir_img, 'out_field.npy'), out_field)
-        np.save(os.path.join(save_dir_img, 'firing_rate_real.npy'), firing_rate_real)
-
-        with open(os.path.join(save_dir_img, 'params.json'), 'w') as f:
+        with open(os.path.join(save_dir_cell, 'params.json'), 'w') as f:
             json.dump(params, f)
 
         in_field_domnisoru, out_field_domnisoru = get_in_out_field_idxs_domnisoru(cell_id, save_dir, bins)
@@ -355,22 +361,84 @@ if __name__ == '__main__':
         pl.legend(fontsize=16)
         pl.savefig(os.path.join(save_dir_cell, 'firing_rate_and_fields.png'))
 
-        v_per_run, t_per_run = get_v_and_t_per_run(v, t, position)
-        i_run = 2
-        start_out = start_out / (n_bins-1) * t_per_run[i_run][-1]
-        end_out = end_out / (n_bins-1) * t_per_run[i_run][-1]
-        start_in = start_in / (n_bins-1) * t_per_run[i_run][-1]
-        end_in = end_in / (n_bins-1) * t_per_run[i_run][-1]
+        # # plot firing fields
+        # start_in, end_in = get_start_end_group_of_ones(in_field_len_orig.astype(int))
+        # n_fields = len(start_in)
+        # for i_field in range(n_fields):
+        #     pl.figure()
+        #     pl.plot(np.arange(len(data['Vm_ljpc'])) * data['dt'][start_in[i_field]:end_in[i_field]],
+        #             data['Vm_ljpc'][start_in[i_field]:end_in[i_field]], 'k')
+        #     pl.show()
+
+        run_start_idxs = np.where(np.diff(data['Y_cm']) < -track_len / 2.)[0] + 1
+        t_orig = np.arange(len(data['Vm_ljpc'])) * data['dt']
+        v_runs = np.split(data['Vm_ljpc'], run_start_idxs)
+        t_runs = np.split(t_orig, run_start_idxs)
+        position_runs = np.split(data['Y_cm'], run_start_idxs)
+        in_field_len_orig_runs = np.split(in_field_len_orig, run_start_idxs)
+        out_field_len_orig_runs = np.split(out_field_len_orig, run_start_idxs)
+        velocity_to_low = data['vel_100ms'] < velocity_threshold
+        velocity_to_low_runs = np.split(velocity_to_low, run_start_idxs)
+
+        for i_run in range(len(run_start_idxs)+1):
+            # pl.figure()
+            # pl.plot(t_runs[i_run], v_runs[i_run], 'k')
+            # v_to_low_run = copy.copy(v_runs[i_run])
+            # v_to_low_run[~velocity_to_low_runs[i_run]] = np.nan
+            # pl.plot(t_runs[i_run], v_to_low_run, '0.5')
+            # start_in_run, end_in_run = get_start_end_group_of_ones(in_field_len_orig_runs[i_run].astype(int))
+            # start_out_run, end_out_run = get_start_end_group_of_ones(out_field_len_orig_runs[i_run].astype(int))
+            # for i, (s, e) in enumerate(zip(start_in_run, end_in_run)):
+            #     pl.hlines(np.min(v_runs[i_run])-1, t_runs[i_run][s], t_runs[i_run][e], 'r', label='In field' if i == 0 else None, linewidth=3)
+            # for i, (s, e) in enumerate(zip(start_out_run, end_out_run)):
+            #     pl.hlines(np.min(v_runs[i_run])-1, t_runs[i_run][s], t_runs[i_run][e], 'b', label='Out field' if i == 0 else None, linewidth=3)
+            # pl.xlim(t_runs[i_run][0], t_runs[i_run][-1])
+            # pl.xlabel('Time (ms)', fontsize=16)
+            # pl.ylabel('Membrane potential (mV)', fontsize=16)
+            # pl.legend(fontsize=16)
+            # pl.savefig(os.path.join(save_dir_cell, 'v_and_fields_run_'+str(i_run)+'.png'))
+
+            fig, axes = pl.subplots(2, 1, sharex='all')
+            axes[0].plot(t_runs[i_run]/1000., v_runs[i_run], 'k')
+            v_to_low_run = copy.copy(v_runs[i_run])
+            v_to_low_run[~velocity_to_low_runs[i_run]] = np.nan
+            axes[0].plot(t_runs[i_run]/1000., v_to_low_run, '0.5')
+            start_in_run, end_in_run = get_start_end_group_of_ones(in_field_len_orig_runs[i_run].astype(int))
+            start_out_run, end_out_run = get_start_end_group_of_ones(out_field_len_orig_runs[i_run].astype(int))
+            for i, (s, e) in enumerate(zip(start_in_run, end_in_run)):
+                axes[0].hlines(np.min(v_runs[i_run])-1, t_runs[i_run][s]/1000., t_runs[i_run][e]/1000., 'r',
+                               label='In field' if i == 0 else None, linewidth=3)
+            for i, (s, e) in enumerate(zip(start_out_run, end_out_run)):
+                axes[0].hlines(np.min(v_runs[i_run])-1, t_runs[i_run][s]/1000., t_runs[i_run][e]/1000., 'b',
+                               label='Out field' if i == 0 else None, linewidth=3)
+            axes[1].plot(t_runs[i_run]/1000., position_runs[i_run], 'k')
+            axes[0].set_xlim(t_runs[i_run][0]/1000., t_runs[i_run][-1]/1000.)
+            axes[0].set_ylabel('Membrane \npotential (mV)', fontsize=16)
+            axes[1].set_ylabel('Position (cm)', fontsize=16)
+            axes[1].set_xlabel('Time (s)', fontsize=16)
+            axes[0].legend(fontsize=16)
+            pl.tight_layout()
+            pl.savefig(os.path.join(save_dir_cell, 'v_fields_and_pos_run_'+str(i_run)+'.png'))
 
         pl.figure()
-        pl.plot(t_per_run[i_run], v_per_run[i_run], 'k', label='')
+        pl.plot(t_orig/1000., data['Vm_ljpc'], 'k', label='')
+        v_to_low = copy.copy(data['Vm_ljpc'])
+        v_to_low[~velocity_to_low] = np.nan
+        pl.plot(t_orig, v_to_low, '0.5')
+        start_in, end_in = get_start_end_group_of_ones(in_field_len_orig.astype(int))
+        start_out, end_out = get_start_end_group_of_ones(out_field_len_orig.astype(int))
         for i, (s, e) in enumerate(zip(start_in, end_in)):
-            pl.hlines(np.min(v_per_run[i_run])-1, s, e, 'r', label='In field' if i == 0 else None, linewidth=3)
+            pl.hlines(np.min(data['Vm_ljpc']) - 1, t_orig[s]/1000., t_orig[e]/1000., 'r',
+                      label='In field' if i == 0 else None,
+                      linewidth=3)
         for i, (s, e) in enumerate(zip(start_out, end_out)):
-            pl.hlines(np.min(v_per_run[i_run])-1, s, e, 'b', label='Out field' if i == 0 else None, linewidth=3)
-        pl.xlabel('Time (ms)', fontsize=16)
+            pl.hlines(np.min(data['Vm_ljpc']) - 1, t_orig[s]/1000., t_orig[e]/1000., 'b',
+                      label='Out field' if i == 0 else None,
+                      linewidth=3)
+        pl.xlabel('Time (s)', fontsize=16)
         pl.ylabel('Membrane potential (mV)', fontsize=16)
         pl.legend(fontsize=16)
         pl.savefig(os.path.join(save_dir_cell, 'v_and_fields.png'))
         #pl.show()
+
         pl.close('all')

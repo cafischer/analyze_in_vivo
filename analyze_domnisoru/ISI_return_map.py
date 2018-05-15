@@ -3,7 +3,7 @@ import matplotlib.pyplot as pl
 from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 import os
-from grid_cell_stimuli import get_spike_idxs
+from grid_cell_stimuli import get_AP_max_idxs
 from grid_cell_stimuli.ISI_hist import get_ISIs
 from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data
 pl.style.use('paper')
@@ -12,11 +12,11 @@ pl.style.use('paper')
 if __name__ == '__main__':
     save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/ISI_return_map'
     save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
-    cell_type = 'stellate_layer2'
+    cell_type = 'pyramidal_layer2'
     cell_ids = load_cell_ids(save_dir, cell_type)
     param_list = ['Vm_ljpc']
-    AP_thresholds = {'s117_0002': -60, 's119_0004': -50, 's104_0007': -55, 's79_0003': -50, 's76_0002': -50,
-                     's101_0009': -45}
+    AP_thresholds = {'s73_0004': -55, 's90_0006': -45, 's82_0002': -35,
+                     's117_0002': -60, 's119_0004': -50, 's104_0007': -55, 's79_0003': -50, 's76_0002': -50, 's101_0009': -45}
     filter_long_ISIs = True
     filter_long_ISIs_max = 200
     if filter_long_ISIs:
@@ -35,7 +35,7 @@ if __name__ == '__main__':
         dt = t[1] - t[0]
 
         # ISIs
-        AP_max_idxs = get_spike_idxs(v, AP_thresholds[cell_id], dt, interval=2, v_diff_onset_max=5)
+        AP_max_idxs = get_AP_max_idxs(v, AP_thresholds[cell_id], dt, interval=2, v_diff_onset_max=5)
         ISIs = get_ISIs(AP_max_idxs, t)
         if filter_long_ISIs:
             ISIs = ISIs[ISIs <= filter_long_ISIs_max]

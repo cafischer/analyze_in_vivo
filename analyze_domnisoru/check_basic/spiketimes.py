@@ -4,7 +4,7 @@ import matplotlib.pyplot as pl
 import os
 from scipy.signal import butter, filtfilt
 from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data
-from analyze_in_vivo.reproduce_domnisoru.check_basic.in_out_field import get_spike_train
+from grid_cell_stimuli.remove_APs import get_AP_max_idxs
 pl.style.use('paper')
 
 
@@ -67,9 +67,9 @@ if __name__ == '__main__':
         #v_filtered = butter_highpass_filter(v, 500, 1. / data['dt'] * 1000, order=5)
 
         # compute spike train
-        _, AP_max_idxs_filtered = get_spike_train(v_filtered, AP_thresholds_filtered[cell_id], data['dt'],
+        _, AP_max_idxs_filtered = get_AP_max_idxs(v_filtered, AP_thresholds_filtered[cell_id], data['dt'],
                                                   v_diff_onset_max=0)
-        _, AP_max_idxs = get_spike_train(v, AP_thresholds[cell_id], data['dt'], v_diff_onset_max=5)
+        _, AP_max_idxs = get_AP_max_idxs(v, AP_thresholds[cell_id], data['dt'], v_diff_onset_max=5)
 
         # spike times Domnisoru
         AP_max_idxs_domnisoru = data['spiketimes']

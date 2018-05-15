@@ -49,8 +49,8 @@ if __name__ == '__main__':
             position = position_reversed
 
         # parameter
-        order = int(round(20 / dt))
-        dist_to_AP = int(round(200 / dt))
+        order = int(round(20. / dt))
+        dist_to_AP = int(round(200. / dt))
 
         # extract phase
         AP_threshold = np.max(v) - np.abs((np.min(v) - np.max(v)) / 3)
