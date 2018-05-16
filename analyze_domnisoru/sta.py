@@ -15,7 +15,7 @@ if __name__ == '__main__':
     save_dir_in_out_field = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/in_out_field'
     save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
     cell_type = 'grid_cells'  #'pyramidal_layer2'  #
-    cell_ids = load_cell_ids(save_dir, cell_type)
+    cell_ids = load_cell_ids(save_dir, cell_type)[14:]
     AP_thresholds = {'s73_0004': -50, 's90_0006': -45, 's82_0002': -38,
                      's117_0002': -60, 's119_0004': -50, 's104_0007': -55, 's79_0003': -50, 's76_0002': -50, 's101_0009': -45}
     AP_thresholds_filtered = {'s73_0004': 2.5, 's90_0006': 6, 's82_0002': 6,
@@ -91,7 +91,7 @@ if __name__ == '__main__':
     pl.close('all')
     n_rows = 1 if len(cell_ids) <= 3 else 2
     fig_height = 4.5 if len(cell_ids) <= 3 else 9
-    fig, axes = pl.subplots(n_rows, int(round(len(cell_ids)/n_rows)), sharex='all', sharey='all', figsize=(12, fig_height))
+    fig, axes = pl.subplots(n_rows, int(round(len(cell_ids)/n_rows)), sharex='all', sharey='all', figsize=(14, fig_height))
     if n_rows == 1:
         axes = np.array([axes])
     cell_idx = 0
@@ -113,8 +113,8 @@ if __name__ == '__main__':
                 axes[i1, i2].set_yticks([])
             cell_idx += 1
     pl.tight_layout()
-    adjust_bottom = 0.12 if len(cell_ids) <= 3 else 0.08
-    pl.subplots_adjust(left=0.08, bottom=adjust_bottom)
+    adjust_bottom = 0.12 if len(cell_ids) <= 3 else 0.07
+    pl.subplots_adjust(left=0.07, bottom=adjust_bottom, top=0.93)
     pl.savefig(os.path.join(save_dir_img, 'sta.png'))
     pl.show()
 
