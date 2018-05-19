@@ -70,6 +70,21 @@ def load_cell_ids(save_dir, cell_type='grid_cells'):
     return cells
 
 
+def get_celltype(cell_id, save_dir):
+    file = loadmat(os.path.join(save_dir, 'cl_ah.mat'))['cl_ah']
+    pyramidal_cells_tmp = file['pyramidal_grid']
+    pyramidal_cells = [str(x[0][0]) for x in pyramidal_cells_tmp[0][0]]
+    stellate_cells_tmp = file['stellate_grid']
+    stellate_cells = [str(x[0][0]) for x in stellate_cells_tmp[0][0]]
+
+    if cell_id in stellate_cells:
+        return 'stellate'
+    elif cell_id in pyramidal_cells:
+        return 'pyramidal'
+    else:
+        return 'not known'
+
+
 if __name__ == '__main__':
     save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
     grid_cell_names = load_cell_ids(save_dir, 'stellate_layer2')

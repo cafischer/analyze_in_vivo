@@ -46,7 +46,7 @@ def plot_n_spikes_in_burst_all_cells(n_spikes_in_burst_groups_per_cell):
 if __name__ == '__main__':
     save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/n_spikes_in_burst'
     save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
-    cell_type = 'stellate_layer2'
+    cell_type = 'pyramidal_layer3'
     cell_ids = load_cell_ids(save_dir, cell_type)
     param_list = ['Vm_ljpc', 'spiketimes']
     AP_thresholds = {'s73_0004': -55, 's90_0006': -45, 's82_0002': -35,
@@ -77,7 +77,11 @@ if __name__ == '__main__':
         # find burst indices
         ISIs = get_ISIs(AP_max_idxs, t)
         burst_ISI_bool = ISIs <= ISI_burst
-        burst_groups = np.split(burst_ISI_bool, np.where(np.abs(np.diff(burst_ISI_bool)) == 1)[0] + 1)
+        groups = np.split(burst_ISI_bool, np.where(np.abs(np.diff(burst_ISI_bool)) == 1)[0] + 1)
+        burst_groups = []
+        for g in groups:
+            if True in g:
+                burst_groups.append(g)
         n_spikes_in_burst_groups = [len(g) + 1 for g in burst_groups]
         n_spikes_in_burst_groups_per_cell.append(n_spikes_in_burst_groups)
 

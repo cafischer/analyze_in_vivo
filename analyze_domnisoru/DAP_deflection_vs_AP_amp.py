@@ -36,7 +36,10 @@ if __name__ == '__main__':
 
     #
     DAP_deflection_per_cell = np.zeros(len(cell_ids))
-    AP_max_per_cell = np.zeros(len(cell_ids))
+    DAP_width_per_cell = np.zeros(len(cell_ids))
+    AP_width_per_cell = np.zeros(len(cell_ids))
+    AP_amp_per_cell = np.zeros(len(cell_ids))
+    v_rest_per_cell = np.zeros(len(cell_ids))
 
     for i, cell_id in enumerate(cell_ids):
         print cell_id
@@ -64,16 +67,36 @@ if __name__ == '__main__':
         sta_mean, sta_std = get_sta(v_APs)
         spike_characteristics_dict = get_spike_characteristics_dict()
         spike_characteristics_dict['AP_max_idx'] = before_AP_idx_sta
-        spike_characteristics_dict['AP_onset'] = 0
-        DAP_deflection = get_spike_characteristics(sta_mean, t_AP, ['DAP_deflection'], sta_mean[0],
-                                                             check=False, **spike_characteristics_dict)[0]
+        spike_characteristics_dict['AP_onset'] = before_AP_idx_sta - to_idx(1, dt)
+        AP_width, DAP_deflection, DAP_width = get_spike_characteristics(sta_mean, t_AP,
+                                                              ['AP_width', 'DAP_deflection', 'DAP_width'], sta_mean[0],
+                                                             check=False, **spike_characteristics_dict)
+        AP_width_per_cell[i] = AP_width
         DAP_deflection_per_cell[i] = DAP_deflection if DAP_deflection is not None else 0
-        AP_max_per_cell[i] = np.max(sta_mean) - sta_mean[before_AP_idx_sta-to_idx(1, dt)]
+        DAP_width_per_cell[i] = DAP_width
+        AP_amp_per_cell[i] = np.max(sta_mean) - sta_mean[before_AP_idx_sta - to_idx(1, dt)]
+        v_rest_per_cell[i] = sta_mean[before_AP_idx_sta - to_idx(1, dt)]
 
     pl.figure()
-    pl.plot(AP_max_per_cell, DAP_deflection_per_cell, 'ok')
+    pl.plot(AP_amp_per_cell, DAP_deflection_per_cell, 'ok')
     pl.ylabel('DAP deflection (mV)')
     pl.xlabel('AP amplitude (mV)')
     pl.tight_layout()
     pl.savefig(os.path.join(save_dir_img, 'DAP_deflection_vs_AP_amp.png'))
+
+    print 'Low AP width: '
+    print np.array(cell_ids)[AP_width_per_cell < 0.7]
+    pl.figure()
+    pl.plot(AP_width_per_cell, DAP_deflection_per_cell, 'ok')
+    pl.ylabel('DAP deflection (mV)')
+    pl.xlabel('AP width (ms)')
+    pl.tight_layout()
+    pl.savefig(os.path.join(save_dir_img, 'DAP_deflection_vs_AP_width.png'))
+
+    pl.figure()
+    pl.plot(v_rest_per_cell, DAP_deflection_per_cell, 'ok')
+    pl.ylabel('DAP deflection (mV)')
+    pl.xlabel('Resting potential (ms)')
+    pl.tight_layout()
+    pl.savefig(os.path.join(save_dir_img, 'DAP_deflection_vs_V_rest.png'))
     pl.show()

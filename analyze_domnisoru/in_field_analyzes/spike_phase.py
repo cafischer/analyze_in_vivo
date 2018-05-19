@@ -66,9 +66,6 @@ def plot_both_phase_hist_all_cells(AP_max_phases1_per_cell, AP_max_phases2_per_c
     for i1 in range(n_rows):
         for i2 in range(int(round(len(cell_ids) / n_rows))):
             if cell_idx < len(cell_ids):
-                pval, _, _ = circ_cmtest([AP_max_phases1_per_cell[cell_idx] / 360. * 2 * np.pi,
-                                          AP_max_phases2_per_cell[cell_idx] / 360. * 2 * np.pi])
-                sig = pval < 0.05
                 med1 = circ_median(AP_max_phases1_per_cell[cell_idx] / 360. * 2 * np.pi) * 360. / (2 * np.pi)
                 med2 = circ_median(AP_max_phases2_per_cell[cell_idx] / 360. * 2 * np.pi) * 360. / (2 * np.pi)
 
@@ -78,10 +75,6 @@ def plot_both_phase_hist_all_cells(AP_max_phases1_per_cell, AP_max_phases2_per_c
                 plot_phase_hist_on_axes(axes[i1, i2], AP_max_phases2_per_cell[cell_idx],
                                         mean_phase=med2, color_hist='0.7', color_mean='0.7', label=labels[1], alpha=0.6,
                                         y_max_vline=0.9)
-                if sig:
-                    ylim_max = axes[i1, i2].get_ylim()[1]
-                    horizontal_square_bracket(axes[i2, i2], '*', x_l=med1, x_r=med2,
-                                              y_d=ylim_max, y_u=ylim_max + 1, y_text=ylim_max + 2)
                 if i1 == (n_rows - 1):
                     axes[i1, i2].set_xlabel('Phase')
                 if i2 == 0:
@@ -93,6 +86,24 @@ def plot_both_phase_hist_all_cells(AP_max_phases1_per_cell, AP_max_phases2_per_c
                 axes[i1, i2].spines['bottom'].set_visible(False)
                 axes[i1, i2].set_xticks([])
                 axes[i1, i2].set_yticks([])
+            cell_idx += 1
+    # for plotting significance stuff
+    cell_idx = 0
+    ylim_max = axes[i1, i2].get_ylim()[1]
+    for i1 in range(n_rows):
+        for i2 in range(int(round(len(cell_ids) / n_rows))):
+            if cell_idx < len(cell_ids):
+                pval, _, _ = circ_cmtest([AP_max_phases1_per_cell[cell_idx] / 360. * 2 * np.pi,
+                                          AP_max_phases2_per_cell[cell_idx] / 360. * 2 * np.pi])
+                med1 = circ_median(AP_max_phases1_per_cell[cell_idx] / 360. * 2 * np.pi) * 360. / (2 * np.pi)
+                med2 = circ_median(AP_max_phases2_per_cell[cell_idx] / 360. * 2 * np.pi) * 360. / (2 * np.pi)
+                sig = pval < 0.05
+                if sig:
+                    horizontal_square_bracket(axes[i1, i2], '*', x_l=med1, x_r=med2,
+                                              y_d=ylim_max, y_u=ylim_max + 1, y_text=ylim_max + 2)
+                else:
+                    horizontal_square_bracket(axes[i1, i2], 'n.s.', x_l=med1, x_r=med2,
+                                              y_d=ylim_max, y_u=ylim_max + 1, y_text=ylim_max + 2)
             cell_idx += 1
     pl.tight_layout()
     adjust_bottom = 0.12 if len(cell_ids) <= 3 else 0.08
@@ -284,7 +295,7 @@ if __name__ == '__main__':
                         std_phase=circstd(AP_max_phases_ramp_all, 360, 0),
                         title='Ramp')
 
-        AP_max_phases_field_all = [item for sublist in AP_max_phases_field for item in sublist]
+        AP_max_phases_field_all = np.array([item for sublist in AP_max_phases_field for item in sublist])
         AP_max_phases_field_per_cell.append(AP_max_phases_field_all)
         plot_phase_hist(AP_max_phases_field_all, os.path.join(save_dir_cell, 'all', 'field.png'),
                         mean_phase=circmean(AP_max_phases_field_all, 360, 0),
@@ -307,7 +318,7 @@ if __name__ == '__main__':
                         std_phase=circstd(AP_max_phases_ramp_all_burst, 360, 0),
                         title='Ramp')
 
-        AP_max_phases_field_all_burst = [item for sublist in AP_max_phases_field_burst for item in sublist]
+        AP_max_phases_field_all_burst = np.array([item for sublist in AP_max_phases_field_burst for item in sublist])
         AP_max_phases_field_burst_per_cell.append(AP_max_phases_field_all_burst)
         plot_phase_hist(AP_max_phases_field_all_burst, os.path.join(save_dir_cell, 'burst', 'field.png'),
                         mean_phase=circmean(AP_max_phases_field_all_burst, 360, 0),
@@ -330,7 +341,7 @@ if __name__ == '__main__':
                         std_phase=circstd(AP_max_phases_ramp_all_single, 360, 0),
                         title='Ramp')
 
-        AP_max_phases_field_all_single = [item for sublist in AP_max_phases_field_single for item in sublist]
+        AP_max_phases_field_all_single = np.array([item for sublist in AP_max_phases_field_single for item in sublist])
         AP_max_phases_field_single_per_cell.append(AP_max_phases_field_all_single)
         plot_phase_hist(AP_max_phases_field_all_single, os.path.join(save_dir_cell, 'single', 'field.png'),
                         mean_phase=circmean(AP_max_phases_field_all_single, 360, 0),
