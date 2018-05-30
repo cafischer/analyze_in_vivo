@@ -19,12 +19,12 @@ if __name__ == '__main__':
     cell_type = 'stellate_layer2'  # 'stellate_layer2'  #pyramidal_layer2
     cell_ids = load_cell_ids(save_dir, cell_type)
     AP_thresholds = {'s73_0004': -50, 's90_0006': -45, 's82_0002': -38,
-                     's117_0002': -60, 's119_0004': -50, 's104_0007': -55, 's79_0003': -50, 's76_0002': -50, 's101_0009': -45}
-    AP_thresholds_filtered = {'s73_0004': 2.5, 's90_0006': 6, 's82_0002': 6,
-                              's117_0002': 7, 's119_0004': 9, 's104_0007': 8, 's79_0003': 8, 's76_0002': 6.5, 's101_0009': 7}
-    param_list = ['Vm_ljpc']
+                     's117_0002': -60, 's119_0004': -50, 's104_0007': -55,
+                     's79_0003': -50, 's76_0002': -50, 's101_0009': -45}
+    param_list = ['Vm_ljpc', 'spiketimes']
 
     # parameters
+    use_AP_max_idxs_domnisoru = True
     do_detrend = False
     in_field = False
     out_field = False
@@ -49,7 +49,10 @@ if __name__ == '__main__':
         after_AP_idx_sta = to_idx(after_AP_sta, dt)
 
         # get APs
-        AP_max_idxs = get_AP_max_idxs(v, AP_thresholds[cell_id], dt)
+        if use_AP_max_idxs_domnisoru:
+            AP_max_idxs = data['spiketimes']
+        else:
+            AP_max_idxs = get_AP_max_idxs(v, AP_thresholds[cell_id], dt)
         if in_field:
             in_field_len_orig = np.load(
                 os.path.join(save_dir_in_out_field, cell_type, cell_id, 'in_field_len_orig.npy'))

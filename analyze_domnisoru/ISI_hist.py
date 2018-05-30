@@ -5,7 +5,7 @@ import os
 from grid_cell_stimuli import get_AP_max_idxs
 from grid_cell_stimuli.ISI_hist import get_ISIs, get_ISI_hist, get_cumulative_ISI_hist, \
     plot_ISI_hist, plot_cumulative_ISI_hist, plot_cumulative_ISI_hist_all_cells, plot_cumulative_comparison_all_cells
-from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data
+from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data, get_celltype
 from scipy.stats import ks_2samp
 from itertools import combinations
 pl.style.use('paper')
@@ -18,13 +18,14 @@ if __name__ == '__main__':
 
     save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/ISI_hist'
     save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
-    cell_type = 'giant_theta'
+    cell_type = 'grid_cells'
     cell_ids = load_cell_ids(save_dir, cell_type)
     param_list = ['Vm_ljpc', 'spiketimes']
     AP_thresholds = {'s73_0004': -55, 's90_0006': -45, 's82_0002': -35,
-                     's117_0002': -60, 's119_0004': -50, 's104_0007': -55, 's79_0003': -50, 's76_0002': -50, 's101_0009': -45}
+                     's117_0002': -60, 's119_0004': -50, 's104_0007': -55,
+                     's79_0003': -50, 's76_0002': -50, 's101_0009': -45}
     use_AP_max_idxs_domnisoru = True
-    filter_long_ISIs = False
+    filter_long_ISIs = True
     max_ISI = 200
     if filter_long_ISIs:
         save_dir_img = os.path.join(save_dir_img, 'cut_ISIs_at_'+str(max_ISI))
@@ -67,10 +68,10 @@ if __name__ == '__main__':
         if not os.path.exists(save_dir_cell):
             os.makedirs(save_dir_cell)
 
-        plot_cumulative_ISI_hist(cum_ISI_hist_x[i], cum_ISI_hist_y[i], xlim=(0, 200), title=cell_id,
-                                 save_dir=save_dir_cell)
-        plot_ISI_hist(ISI_hist[i, :], bins, title=cell_id, save_dir=save_dir_cell)
-        #pl.show()
+        # plot_cumulative_ISI_hist(cum_ISI_hist_x[i], cum_ISI_hist_y[i], xlim=(0, 200), title=cell_id,
+        #                          save_dir=save_dir_cell)
+        # plot_ISI_hist(ISI_hist[i, :], bins, title=cell_id, save_dir=save_dir_cell)
+        # #pl.show()
         pl.close('all')
 
     # plot all cumulative ISI histograms in one
@@ -79,13 +80,75 @@ if __name__ == '__main__':
     plot_cumulative_ISI_hist_all_cells(cum_ISI_hist_y, cum_ISI_hist_x, cum_ISI_hist_y_avg, cum_ISI_hist_x_avg,
                                        cell_ids, max_ISI, os.path.join(save_dir_img, cell_type))
 
-    # for each pair of cells two sample Kolmogorov Smironov test (Note: ISIs are cut at 200 ms (=max(bins)))
-    p_val_dict = {}
-    for i1, i2 in combinations(range(len(cell_ids)), 2):
-        D, p_val = ks_2samp(ISIs_per_cell[i1], ISIs_per_cell[i2])
-        p_val_dict[(i1, i2)] = p_val
-        print 'p-value for cell '+str(cell_ids[i1]) \
-              + ' and cell '+str(cell_ids[i2]) + ': %.3f' % p_val
+    # # for each pair of cells two sample Kolmogorov Smironov test (Note: ISIs are cut at 200 ms (=max(bins)))
+    # p_val_dict = {}
+    # for i1, i2 in combinations(range(len(cell_ids)), 2):
+    #     D, p_val = ks_2samp(ISIs_per_cell[i1], ISIs_per_cell[i2])
+    #     p_val_dict[(i1, i2)] = p_val
+    #     print 'p-value for cell '+str(cell_ids[i1]) \
+    #           + ' and cell '+str(cell_ids[i2]) + ': %.3f' % p_val
+    #
+    # plot_cumulative_comparison_all_cells(cum_ISI_hist_x, cum_ISI_hist_y, cell_ids, p_val_dict,
+    #                                      os.path.join(save_dir_img, cell_type, 'comparison_cum_ISI.png'))
 
-    plot_cumulative_comparison_all_cells(cum_ISI_hist_x, cum_ISI_hist_y, cell_ids, p_val_dict,
-                                         os.path.join(save_dir_img, cell_type, 'comparison_cum_ISI.png'))
+    # plot all ISI hists
+    pl.close('all')
+    if cell_type == 'grid_cells':
+        n_rows = 3
+        n_columns = 9
+        fig, axes = pl.subplots(n_rows, n_columns, sharex='all', sharey='all', figsize=(14, 8.5))
+        cell_idx = 0
+        for i1 in range(n_rows):
+            for i2 in range(n_columns):
+                if cell_idx < len(cell_ids):
+                    if get_celltype(cell_ids[cell_idx], save_dir) == 'stellate':
+                        axes[i1, i2].set_title(cell_ids[cell_idx] + ' ' + u'\u2605', fontsize=12)
+                    elif get_celltype(cell_ids[cell_idx], save_dir) == 'pyramidal':
+                        axes[i1, i2].set_title(cell_ids[cell_idx] + ' ' + u'\u25B4', fontsize=12)
+                    else:
+                        axes[i1, i2].set_title(cell_ids[cell_idx], fontsize=12)
+                    axes[i1, i2].bar(bins[:-1], ISI_hist[cell_idx, :] / np.sum(ISI_hist[cell_idx, :]),
+                                     bins[1] - bins[0], color='0.5')
+                    if i1 == (n_rows - 1):
+                        axes[i1, i2].set_xlabel('ISI (ms)')
+                    if i2 == 0:
+                        axes[i1, i2].set_ylabel('Rel. frequency')
+                else:
+                    axes[i1, i2].spines['left'].set_visible(False)
+                    axes[i1, i2].spines['bottom'].set_visible(False)
+                    axes[i1, i2].set_xticks([])
+                    axes[i1, i2].set_yticks([])
+                cell_idx += 1
+        pl.tight_layout()
+        pl.savefig(os.path.join(save_dir_img, cell_type, 'ISI_hist.png'))
+        pl.show()
+
+    else:
+        n_rows = 1 if len(cell_ids) <= 3 else 2
+        n_columns = int(round(len(cell_ids)/n_rows))
+        fig_height = 4.5 if len(cell_ids) <= 3 else 9
+        fig, axes = pl.subplots(n_rows, n_columns, sharex='all', sharey='all', figsize=(14, fig_height))
+        if n_rows == 1:
+            axes = np.array([axes])
+        cell_idx = 0
+        for i1 in range(n_rows):
+            for i2 in range(n_columns):
+                if cell_idx < len(cell_ids):
+                    axes[i1, i2].set_title(cell_ids[cell_idx], fontsize=12)
+                    axes[i1, i2].bar(bins[:-1], ISI_hist[cell_idx, :] / np.sum(ISI_hist[cell_idx, :]),
+                                     bins[1] - bins[0], color='0.5')
+                    if i1 == (n_rows - 1):
+                        axes[i1, i2].set_xlabel('ISI (ms)')
+                    if i2 == 0:
+                        axes[i1, i2].set_ylabel('Rel. frequency')
+                else:
+                    axes[i1, i2].spines['left'].set_visible(False)
+                    axes[i1, i2].spines['bottom'].set_visible(False)
+                    axes[i1, i2].set_xticks([])
+                    axes[i1, i2].set_yticks([])
+                cell_idx += 1
+        pl.tight_layout()
+        adjust_bottom = 0.12 if len(cell_ids) <= 3 else 0.07
+        pl.subplots_adjust(left=0.07, bottom=adjust_bottom, top=0.93)
+        pl.savefig(os.path.join(save_dir_img, cell_type, 'ISI_hist.png'))
+        pl.show()

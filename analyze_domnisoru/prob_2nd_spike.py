@@ -14,7 +14,7 @@ if __name__ == '__main__':
     save_dir_in_out_field = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/in_out_field'
     save_dir_theta_ramp = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/check/theta_ramp'
     save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
-    cell_type = 'grid_cells'
+    cell_type = 'pyramidal_layer3'
     save_dir_sta = os.path.join('/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/STA',
                                 'not_detrended', 'all', cell_type)
     cell_ids = load_cell_ids(save_dir, cell_type)
@@ -83,4 +83,4 @@ if __name__ == '__main__':
         ax.set_xlim(0, after_AP_sta)
         pl.tight_layout()
         pl.savefig(os.path.join(save_dir_cell, 'prob_2nd_spike.png'))
-        #pl.show()
+        pl.show()

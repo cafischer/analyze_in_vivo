@@ -3,16 +3,36 @@ import numpy as np
 import matplotlib.pyplot as pl
 import os
 from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data, get_celltype
-from analyze_in_vivo.analyze_schmidt_hieber import detrend
+from grid_cell_stimuli import get_AP_max_idxs
 from cell_characteristics import to_idx
-from cell_characteristics.sta_stc import get_sta, plot_sta, get_sta_median, plot_APs
-from grid_cell_stimuli import get_AP_max_idxs, find_all_AP_traces
-from cell_fitting.util import init_nan
+import warnings
 pl.style.use('paper')
 
 
+def cross_correlate(x, y, max_lag=0):
+    assert len(x) == len(y)
+    cross_corr = np.zeros(2 * max_lag + 1)
+    for lag in range(max_lag, 0, -1):
+        cross_corr[max_lag - lag] = np.correlate(x[:-lag], y[lag:], mode='valid')[0]
+    for lag in range(1, max_lag + 1, 1):
+        cross_corr[max_lag + lag] = np.correlate(x[lag:], y[:-lag], mode='valid')[0]
+        cross_corr[max_lag] = np.correlate(x, y, mode='valid')[0]
+
+    assert np.all(cross_corr[:max_lag] == cross_corr[max_lag + 1:][::-1])
+    return cross_corr
+
+
+def auto_correlate(x, max_lag=0):
+    auto_corr_lag = np.zeros(max_lag)
+    for lag in range(1, max_lag, 1):
+        auto_corr_lag[lag-1] = np.correlate(x[:-lag], x[lag:], mode='valid')[0]
+    auto_corr_no_lag = np.array([np.correlate(x, x, mode='valid')[0]])
+    auto_corr = np.concatenate((np.flipud(auto_corr_lag), auto_corr_no_lag, auto_corr_lag))
+    return auto_corr
+
+
 if __name__ == '__main__':
-    save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/STA'
+    save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/spike_time_auto_corr'
     save_dir_in_out_field = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/in_out_field'
     save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
     cell_type = 'grid_cells'  #'pyramidal_layer2'  #
@@ -23,24 +43,21 @@ if __name__ == '__main__':
     param_list = ['Vm_ljpc', 'spiketimes']
 
     # parameters
+    bin_size = 1.0 #0.5  # ms
+    max_lag = 50
     use_AP_max_idxs_domnisoru = True
-    do_detrend = False
     in_field = False
     out_field = False
-    before_AP_sta = 25
-    after_AP_sta = 25
-    DAP_deflections = {}
-    folder_detrend = {True: 'detrended', False: 'not_detrended'}
     folder_field = {(True, False): 'in_field', (False, True): 'out_field', (False, False): 'all'}
-    save_dir_img = os.path.join(save_dir_img, folder_detrend[do_detrend], folder_field[(in_field, out_field)],
-                                cell_type)
+    save_dir_img = os.path.join(save_dir_img, cell_type)
+    max_lag_idx = to_idx(max_lag, bin_size)
+    t_auto_corr = np.concatenate((np.arange(-max_lag_idx, 0, 1), np.arange(0, max_lag_idx + 1, 1))) * bin_size
 
     if not os.path.exists(save_dir_img):
         os.makedirs(save_dir_img)
 
-    #
-    sta_mean_per_cell = []
-    sta_std_per_cell = []
+    # main
+    auto_corr_cells = []
     for i, cell_id in enumerate(cell_ids):
         print cell_id
 
@@ -49,13 +66,6 @@ if __name__ == '__main__':
         v = data['Vm_ljpc']
         t = np.arange(0, len(v)) * data['dt']
         dt = t[1] - t[0]
-        before_AP_idx_sta = to_idx(before_AP_sta, dt)
-        after_AP_idx_sta = to_idx(after_AP_sta, dt)
-
-        # for testing
-        # pl.figure()
-        # pl.plot(t, v)
-        # pl.show()
 
         # get APs
         if use_AP_max_idxs_domnisoru:
@@ -73,32 +83,51 @@ if __name__ == '__main__':
         else:
             AP_max_idxs_selected = AP_max_idxs
 
-        if do_detrend:
-            v = detrend(v, t, cutoff_freq=5)
-        v_APs = find_all_AP_traces(v, before_AP_idx_sta, after_AP_idx_sta, AP_max_idxs_selected, AP_max_idxs)
-        t_AP = np.arange(after_AP_idx_sta + before_AP_idx_sta + 1) * dt
-        if v_APs is None:
-            sta_mean_per_cell.append(init_nan(after_AP_idx_sta+before_AP_idx_sta+1))
-            sta_std_per_cell.append(init_nan(after_AP_idx_sta+before_AP_idx_sta+1))
-            continue
+        # get spike-trains
+        spike_train = np.zeros(len(v))
+        spike_train[AP_max_idxs_selected] = 1   # for norm to firing rate:  / len(AP_max_idxs_selected)
 
-        # STA
-        sta_median, sta_mad = get_sta_median(v_APs)
-        sta_mean, sta_std = get_sta(v_APs)
-        sta_mean_per_cell.append(sta_mean)
-        sta_std_per_cell.append(sta_std)
+        # change to bin size
+        bin_change = bin_size / dt
+        spike_train_new = np.zeros(int(round(len(spike_train) / bin_change)))
+        for i in range(len(spike_train_new)):
+            if sum(spike_train[i*int(bin_change):(i+1)*int(bin_change)] == 1) == 1:
+                spike_train_new[i] = 1
+            elif sum(spike_train[i * int(bin_change):(i + 1) * int(bin_change)] == 1) == 0:
+                spike_train_new[i] = 0
+            else:
+                warnings.warn('More than one spike in bin!')
+        #spike_train_new /= np.sum(spike_train_new)
+
+        # pl.figure()
+        # pl.plot(t[spike_train==1], spike_train[spike_train==1], 'ok')
+        # pl.plot((np.arange(len(spike_train_new)) * bin_size)[spike_train_new==1], spike_train_new[spike_train_new==1], 'ob')
+        # pl.show()
+
+        # spike-time autocorrelation
+        auto_corr = auto_correlate(spike_train_new, max_lag_idx)
+        auto_corr /= np.sum(auto_corr)  # normalize
+        auto_corr[max_lag_idx] = 0  # for better plotting
+        auto_corr_cells.append(auto_corr)
+
+        auto_corr_lags = np.zeros(max_lag_idx)
+        for lag in range(1, max_lag_idx + 1):
+            auto_corr_lags[lag-1] = np.correlate(spike_train_new[:-lag], spike_train_new[lag:], mode='valid')[0]
 
         # plot
         save_dir_cell = os.path.join(save_dir_img, cell_id)
         if not os.path.exists(save_dir_cell):
             os.makedirs(save_dir_cell)
-        np.save(os.path.join(save_dir_cell, 'sta_mean.npy'), sta_mean)
         pl.close('all')
-        plot_sta(t_AP, sta_median, sta_mad, os.path.join(save_dir_cell, 'sta_median.png'))
-        plot_sta(t_AP, sta_mean, sta_std, os.path.join(save_dir_cell, 'sta_mean.png'))
-        plot_APs(v_APs, t_AP, os.path.join(save_dir_cell, 'v_APs.png'))
+        pl.figure()
+        pl.bar(t_auto_corr, auto_corr, bin_size, color='0.5', align='center')
+        pl.xlabel('Time (ms)')
+        pl.ylabel('Spike-time autocorrelation')
+        pl.xlim(-max_lag, max_lag)
+        pl.tight_layout()
+        pl.savefig(os.path.join(save_dir_cell, 'auto_corr_'+str(max_lag)+'.png'))
+        #pl.show()
 
-    pl.close('all')
     if cell_type == 'grid_cells':
         n_rows = 3
         n_columns = 9
@@ -113,13 +142,13 @@ if __name__ == '__main__':
                         axes[i1, i2].set_title(cell_ids[cell_idx] + ' ' + u'\u25B4', fontsize=12)
                     else:
                         axes[i1, i2].set_title(cell_ids[cell_idx], fontsize=12)
-                    axes[i1, i2].plot(t_AP, sta_mean_per_cell[cell_idx], 'k')
-                    axes[i1, i2].fill_between(t_AP, sta_mean_per_cell[cell_idx] - sta_std_per_cell[cell_idx],
-                                              sta_mean_per_cell[cell_idx] + sta_std_per_cell[cell_idx], color='k', alpha=0.5)
+                    axes[i1, i2].bar(t_auto_corr, auto_corr_cells[cell_idx], bin_size, color='0.5',
+                                     align='center')
+                    axes[i1, i2].set_xlim(-max_lag, max_lag)
                     if i1 == (n_rows - 1):
                         axes[i1, i2].set_xlabel('Time (ms)')
                     if i2 == 0:
-                        axes[i1, i2].set_ylabel('Mem. Pot. (mV)')
+                        axes[i1, i2].set_ylabel('Spike-time \nautocorrelation')
                 else:
                     axes[i1, i2].spines['left'].set_visible(False)
                     axes[i1, i2].spines['bottom'].set_visible(False)
@@ -127,12 +156,12 @@ if __name__ == '__main__':
                     axes[i1, i2].set_yticks([])
                 cell_idx += 1
         pl.tight_layout()
-        pl.savefig(os.path.join(save_dir_img, 'sta.png'))
+        pl.savefig(os.path.join(save_dir_img, 'auto_corr_'+str(max_lag)+'.png'))
         pl.show()
 
     else:
         n_rows = 1 if len(cell_ids) <= 3 else 2
-        n_columns = int(round(len(cell_ids) / n_rows))
+        n_columns = int(round(len(cell_ids)/n_rows))
         fig_height = 4.5 if len(cell_ids) <= 3 else 9
         fig, axes = pl.subplots(n_rows, n_columns, sharex='all', sharey='all', figsize=(14, fig_height))
         if n_rows == 1:
@@ -142,13 +171,13 @@ if __name__ == '__main__':
             for i2 in range(n_columns):
                 if cell_idx < len(cell_ids):
                     axes[i1, i2].set_title(cell_ids[cell_idx], fontsize=12)
-                    axes[i1, i2].plot(t_AP, sta_mean_per_cell[cell_idx], 'k')
-                    axes[i1, i2].fill_between(t_AP, sta_mean_per_cell[cell_idx] - sta_std_per_cell[cell_idx],
-                                              sta_mean_per_cell[cell_idx] + sta_std_per_cell[cell_idx], color='k', alpha=0.5)
+                    axes[i1, i2].bar(t_auto_corr, auto_corr_cells[cell_idx], bin_size, color='0.5',
+                                     align='center')
+                    axes[i1, i2].set_xlim(-max_lag, max_lag)
                     if i1 == (n_rows - 1):
                         axes[i1, i2].set_xlabel('Time (ms)')
                     if i2 == 0:
-                        axes[i1, i2].set_ylabel('Membrane Potential (mV)')
+                        axes[i1, i2].set_ylabel('Spike-time autocorrelation')
                 else:
                     axes[i1, i2].spines['left'].set_visible(False)
                     axes[i1, i2].spines['bottom'].set_visible(False)
@@ -158,17 +187,5 @@ if __name__ == '__main__':
         pl.tight_layout()
         adjust_bottom = 0.12 if len(cell_ids) <= 3 else 0.07
         pl.subplots_adjust(left=0.07, bottom=adjust_bottom, top=0.93)
-        pl.savefig(os.path.join(save_dir_img, 'sta.png'))
+        pl.savefig(os.path.join(save_dir_img, 'auto_corr_'+str(max_lag)+'.png'))
         pl.show()
-
-    #     # DAP_deflection on STA
-    #     from cell_characteristics.analyze_APs import get_spike_characteristics
-    #     from cell_fitting.optimization.evaluation import get_spike_characteristics_dict
-    #     import json
-    #     spike_characteristics_dict = get_spike_characteristics_dict()
-    #     spike_characteristics_dict['AP_threshold'] = AP_thresholds[cell_id]
-    #     DAP_deflections[cell_id] = get_spike_characteristics(sta, t_AP, ['DAP_deflection'], sta[0],
-    #                                                check=False, **spike_characteristics_dict)[0]
-    # print DAP_deflections
-    # with open(os.path.join(save_dir_img, 'not_detrended', cell_type, 'DAP_deflections.npy'), 'w') as f:
-    #     json.dump(DAP_deflections, f, indent=4)

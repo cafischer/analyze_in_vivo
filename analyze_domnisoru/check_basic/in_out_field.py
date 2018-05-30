@@ -439,6 +439,6 @@ if __name__ == '__main__':
         pl.ylabel('Membrane potential (mV)', fontsize=16)
         pl.legend(fontsize=16)
         pl.savefig(os.path.join(save_dir_cell, 'v_and_fields.png'))
-        #pl.show()
+        pl.show()
 
         pl.close('all')
