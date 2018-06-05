@@ -34,7 +34,7 @@ def get_spike_train(AP_max_idxs, len_v):
     return spike_train
 
 
-def get_firing_rate_per_bin(spike_train, t, position, bins, dt):
+def get_firing_rate_per_bin(spike_train, t, position, bins, dt, track_len):
     """
     Computes the firing rate in the given bins.
     :param spike_train: Spike train.
@@ -45,7 +45,7 @@ def get_firing_rate_per_bin(spike_train, t, position, bins, dt):
     """
 
     run_start_idxs = np.where(np.diff(position) < -track_len/2.)[0] + 1  # +1 because diff shifts one to front
-    APs_runs = np.split(spike_train, run_start_idxs)
+    spike_train_runs = np.split(spike_train, run_start_idxs)
     pos_runs = np.split(position, run_start_idxs)
     t_runs = np.split(t, run_start_idxs)
     n_bins = len(bins) - 1  # -1 for last edge
@@ -57,13 +57,15 @@ def get_firing_rate_per_bin(spike_train, t, position, bins, dt):
     # pl.show()
 
     firing_rate_per_run = init_nan((len(run_start_idxs) + 1, n_bins))
-    for i_run, (APs_run, pos_run, t_run) in enumerate(zip(APs_runs, pos_runs, t_runs)):
+    for i_run, (APs_run, pos_run, t_run) in enumerate(zip(spike_train_runs, pos_runs, t_runs)):
         pos_binned = np.digitize(pos_run, bins) - 1
         AP_count_per_bin = pd.Series(APs_run).groupby(pos_binned).sum()
-        seconds_per_bin = (pd.Series(t_run).groupby(pos_binned).size() - 1) * dt / 1000.
+        seconds_per_bin = (pd.Series(t_run).groupby(pos_binned).size()) * dt / 1000.
+        #seconds_per_bin = (pd.Series(t_run).groupby(pos_binned).size() - 1) * dt / 1000.  TODO
         pos_in_track = np.unique(pos_binned)[np.unique(pos_binned) <= n_bins-1]  # to ignore data higher than track_len
         firing_rate_per_run[i_run, pos_in_track] = AP_count_per_bin[pos_in_track] / seconds_per_bin[pos_in_track]
 
+    # firing_rate_per_run[np.isnan(firing_rate_per_run)] = 0.0
     firing_rate = np.nanmean(firing_rate_per_run, 0)
 
     # # for test: firing rates per run and mean
@@ -79,6 +81,7 @@ def get_firing_rate_per_bin(spike_train, t, position, bins, dt):
 def smooth_firing_rate(firing_rate, std=1):
     window = scipy.signal.gaussian(3, std)
     firing_rate_smoothed = convolve(firing_rate, window/window.sum(), mode='nearest')
+    #firing_rate_smoothed = convolve(firing_rate, window / window.sum(), mode='constant', cval=0.0)
 
     # # for test: smoothed firing rate
     # pl.figure()
@@ -94,6 +97,7 @@ if __name__ == '__main__':
     save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
     cell_type = 'grid_cells'
     cell_ids = load_cell_ids(save_dir, cell_type)
+    #cell_ids = ['s115_0024']
     param_list = ['Vm_ljpc', 'Y_cm', 'vel_100ms', 'spiketimes']
     AP_thresholds = {'s73_0004': -55, 's90_0006': -45, 's82_0002': -35,
                      's117_0002': -60, 's119_0004': -50, 's104_0007': -55, 's79_0003': -50,
@@ -143,8 +147,12 @@ if __name__ == '__main__':
                                                                             velocity_threshold)
 
         # compute firing rate
-        firing_rate_tmp, firing_rate_per_run = get_firing_rate_per_bin(spike_train, t, position, bins, dt)
+        firing_rate_tmp, firing_rate_per_run = get_firing_rate_per_bin(spike_train, t, position, bins, dt, track_len)
         firing_rate = smooth_firing_rate(firing_rate_tmp)
+        avg_firing_rate = np.nanmean(firing_rate)
+        np.save(os.path.join(save_dir_cell, 'avg_firing_rate.npy'), avg_firing_rate)
+        np.save(os.path.join(save_dir_cell, 'firing_rate.npy'), firing_rate)
+        np.save(os.path.join(save_dir_cell, 'position.npy'), bins[:-1])
 
         # save for later use
         firing_rate_cells.append(firing_rate)
@@ -155,8 +163,8 @@ if __name__ == '__main__':
         # plot
         pl.close('all')
         fig, axes = pl.subplots(2, 1, sharex='all')
-        axes[0].plot(position, t / 1000., '0.5')
-        axes[0].plot(position[spike_train.astype(bool)], (t / 1000.)[spike_train.astype(bool)], 'or', markersize=1.0)
+        axes[0].plot(position, t / 1000., '0.5', linewidth=0.8)
+        axes[0].plot(position[spike_train.astype(bool)], (t / 1000.)[spike_train.astype(bool)], 'or', markersize=0.5)
         axes[0].set_ylabel('Time (s)')
         axes[1].plot(bins[:-1], firing_rate, 'k')
         axes[1].set_ylabel('Firing rate (Hz)')
@@ -172,7 +180,7 @@ if __name__ == '__main__':
         n_rows = 3
         n_columns = 9
         fig = pl.figure(figsize=(14, 8.5))
-        outer = gridspec.GridSpec(n_rows, n_columns, wspace=0.65, hspace=0.43)
+        outer = gridspec.GridSpec(n_rows, n_columns, wspace=0.3, hspace=0.43)
 
         cell_idx = 0
         for i in range(n_rows * n_columns):
@@ -187,11 +195,15 @@ if __name__ == '__main__':
                 else:
                     ax1.set_title(cell_ids[cell_idx], fontsize=12)
 
-                ax1.plot(position_cells[cell_idx], t_cells[cell_idx] / 1000., '0.5')
+                ax1.plot(position_cells[cell_idx], t_cells[cell_idx] / 1000., '0.5', linewidth=0.8)
                 ax1.plot(position_cells[cell_idx][spike_train_cells[cell_idx].astype(bool)],
                          (t_cells[cell_idx] / 1000.)[spike_train_cells[cell_idx].astype(bool)], 'or',
-                         markersize=1.0)
+                         markersize=0.1)
                 ax1.set_xticklabels([])
+                ax1.xaxis.set_tick_params(labelsize=10)
+                ax2.xaxis.set_tick_params(labelsize=10)
+                ax1.yaxis.set_tick_params(labelsize=10)
+                ax2.yaxis.set_tick_params(labelsize=10)
                 ax2.plot(bins[:-1], firing_rate_cells[cell_idx], 'k')
 
                 if i >= (n_rows - 1) * n_columns:
@@ -202,7 +214,7 @@ if __name__ == '__main__':
             fig.add_subplot(ax1)
             fig.add_subplot(ax2)
             cell_idx += 1
-        pl.subplots_adjust(left=0.07, right=0.98, top=0.95)
+        pl.subplots_adjust(left=0.06, right=0.99, top=0.95)
         pl.savefig(os.path.join(save_dir_img, cell_type, 'position_vs_firing_rate.png'))
         pl.show()
 
@@ -212,7 +224,7 @@ if __name__ == '__main__':
         fig_height = 4.5 if len(cell_ids) <= 3 else 9
 
         fig = pl.figure(figsize=(14, fig_height))
-        outer = gridspec.GridSpec(n_rows, n_columns, wspace=0.45, hspace=0.4)
+        outer = gridspec.GridSpec(n_rows, n_columns, wspace=0.3, hspace=0.4)
 
         cell_idx = 0
         for i in range(n_rows * n_columns):
@@ -227,10 +239,10 @@ if __name__ == '__main__':
                 else:
                     ax1.set_title(cell_ids[cell_idx], fontsize=12)
 
-                ax1.plot(position_cells[cell_idx], t_cells[cell_idx] / 1000., '0.5')
+                ax1.plot(position_cells[cell_idx], t_cells[cell_idx] / 1000., '0.5', linewidth=0.8)
                 ax1.plot(position_cells[cell_idx][spike_train_cells[cell_idx].astype(bool)],
                          (t_cells[cell_idx] / 1000.)[spike_train_cells[cell_idx].astype(bool)], 'or',
-                         markersize=1.0)
+                         markersize=0.1)
                 ax1.set_xticklabels([])
                 ax2.plot(bins[:-1], firing_rate_cells[cell_idx], 'k')
 
@@ -245,3 +257,18 @@ if __name__ == '__main__':
         pl.subplots_adjust(left=0.07, right=0.98, top=0.95)
         pl.savefig(os.path.join(save_dir_img, cell_type, 'position_vs_firing_rate.png'))
         pl.show()
+
+
+# # for testing: getting the firing rate
+# if __name__ == '__main__':
+#     spike_train = np.array([1, 1, 0, 0, 1, 1, 1, 0, 1])
+#     t = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8])
+#     position = np.array([0, 20, 20, 30, 60, 10, 20, 30, 50])
+#     dt = 1
+#     track_len = 100
+#     bins = np.arange(0, track_len+10, 10)
+#     firing_rate_tmp, firing_rate_per_run = get_firing_rate_per_bin(spike_train, t, position, bins, dt, track_len)
+#
+#     print spike_train
+#     print bins
+#     print firing_rate_tmp

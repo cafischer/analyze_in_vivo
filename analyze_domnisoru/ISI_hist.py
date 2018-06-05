@@ -25,7 +25,7 @@ if __name__ == '__main__':
                      's117_0002': -60, 's119_0004': -50, 's104_0007': -55,
                      's79_0003': -50, 's76_0002': -50, 's101_0009': -45}
     use_AP_max_idxs_domnisoru = True
-    filter_long_ISIs = True
+    filter_long_ISIs = False
     max_ISI = 200
     if filter_long_ISIs:
         save_dir_img = os.path.join(save_dir_img, 'cut_ISIs_at_'+str(max_ISI))
@@ -107,8 +107,21 @@ if __name__ == '__main__':
                         axes[i1, i2].set_title(cell_ids[cell_idx] + ' ' + u'\u25B4', fontsize=12)
                     else:
                         axes[i1, i2].set_title(cell_ids[cell_idx], fontsize=12)
+
                     axes[i1, i2].bar(bins[:-1], ISI_hist[cell_idx, :] / np.sum(ISI_hist[cell_idx, :]),
                                      bins[1] - bins[0], color='0.5')
+                    cum_ISI_hist_x_with_end = np.insert(cum_ISI_hist_x[cell_idx], len(cum_ISI_hist_x[cell_idx]), max_ISI)
+                    cum_ISI_hist_y_with_end = np.insert(cum_ISI_hist_y[cell_idx], len(cum_ISI_hist_y[cell_idx]), 1.0)
+                    ax_twin = axes[i1, i2].twinx()
+                    ax_twin.plot(cum_ISI_hist_x_with_end, cum_ISI_hist_y_with_end, color='k', drawstyle='steps-post')
+                    ax_twin.set_xlim(0, max_ISI)
+                    ax_twin.set_ylim(0, 1)
+                    if i2 == (n_columns - 1):
+                        ax_twin.set_yticks([0, 1])
+                    else:
+                        ax_twin.set_yticks([])
+                    axes[i1, i2].spines['right'].set_visible(True)
+
                     if i1 == (n_rows - 1):
                         axes[i1, i2].set_xlabel('ISI (ms)')
                     if i2 == 0:

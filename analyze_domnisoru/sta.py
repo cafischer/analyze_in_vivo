@@ -17,6 +17,8 @@ if __name__ == '__main__':
     save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
     cell_type = 'grid_cells'  #'pyramidal_layer2'  #
     cell_ids = load_cell_ids(save_dir, cell_type)
+    cell_ids = ['s82_0002']
+
     AP_thresholds = {'s73_0004': -50, 's90_0006': -45, 's82_0002': -38,
                      's117_0002': -60, 's119_0004': -50, 's104_0007': -55,
                      's79_0003': -50, 's76_0002': -50, 's101_0009': -45}
@@ -53,9 +55,12 @@ if __name__ == '__main__':
         after_AP_idx_sta = to_idx(after_AP_sta, dt)
 
         # for testing
-        # pl.figure()
-        # pl.plot(t, v)
-        # pl.show()
+        pl.figure()
+        pl.title(cell_id)
+        pl.plot(t, v)
+        pl.xlim(1000, 11000)
+        pl.ylim(-90, 20)
+        pl.show()
 
         # get APs
         if use_AP_max_idxs_domnisoru:

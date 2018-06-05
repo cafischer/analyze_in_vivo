@@ -20,9 +20,9 @@ if __name__ == '__main__':
                      's79_0003': -50, 's76_0002': -50, 's101_0009': -45}
     use_AP_max_idxs_domnisoru = True
     filter_long_ISIs = True
-    filter_long_ISIs_max = 200
+    max_ISI = 200
     if filter_long_ISIs:
-        save_dir_img = os.path.join(save_dir_img, 'cut_ISIs_at_'+str(filter_long_ISIs_max))
+        save_dir_img = os.path.join(save_dir_img, 'cut_ISIs_at_' + str(max_ISI))
 
     # over cells
     ISIs_per_cell = [0] * len(cell_ids)
@@ -43,7 +43,7 @@ if __name__ == '__main__':
             AP_max_idxs = get_AP_max_idxs(v, AP_thresholds[cell_id], dt)
         ISIs = get_ISIs(AP_max_idxs, t)
         if filter_long_ISIs:
-            ISIs = ISIs[ISIs <= filter_long_ISIs_max]
+            ISIs = ISIs[ISIs <= max_ISI]
         n_ISIs[i] = len(ISIs)
         ISIs_per_cell[i] = ISIs
 
@@ -56,10 +56,10 @@ if __name__ == '__main__':
         pl.figure()
         pl.title(cell_id, fontsize=16)
         pl.plot(ISIs_per_cell[i][:-1], ISIs_per_cell[i][1:], color='k', marker='o', linestyle='', markersize=6)
-        pl.xlabel('ISI(n)')
-        pl.ylabel('ISI(n+1)')
-        pl.xlim(0, 200)
-        pl.ylim(0, 200)
+        pl.xlabel('ISI[n] (ms)')
+        pl.ylabel('ISI[n+1] (ms)')
+        pl.xlim(0, max_ISI)
+        pl.ylim(0, max_ISI)
         pl.tight_layout()
         pl.savefig(os.path.join(save_dir_cell, 'ISI_return_map.png'))
 
@@ -69,31 +69,32 @@ if __name__ == '__main__':
         ax.set_title(cell_id, fontsize=16)
         ax.scatter(ISIs_per_cell[i][:-2], ISIs_per_cell[i][1:-1], ISIs_per_cell[i][2:],
                    color='k', marker='o') #, markersize=6)
-        ax.set_xlabel('ISI(n)', fontsize=16)
-        ax.set_ylabel('ISI(n+1)', fontsize=16)
-        ax.set_zlabel('ISI(n+2)', fontsize=16)
-        ax.set_xlim3d(0, 200)
-        ax.set_ylim3d(200, 0)
-        ax.set_zlim3d(0, 200)
+        ax.set_xlabel('ISI[n] (ms)', fontsize=16)
+        ax.set_ylabel('ISI[n+1] (ms)', fontsize=16)
+        ax.set_zlabel('ISI[n+2] (ms)', fontsize=16)
+        ax.set_xlim3d(0, max_ISI)
+        ax.set_ylim3d(max_ISI, 0)
+        ax.set_zlim3d(0, max_ISI)
         pl.tight_layout()
         pl.savefig(os.path.join(save_dir_cell, 'ISI_return_map_3d.png'))
         #pl.show()
+        pl.close('all')
 
     # save and plot
-    cm = pl.cm.get_cmap('plasma')
-    colors = cm(np.linspace(0, 1, len(cell_ids)))
-    pl.figure(figsize=(7.4, 4.8))
-    for i, cell_id in enumerate(cell_ids):
-        pl.plot(ISIs_per_cell[i][:-1], ISIs_per_cell[i][1:], label=cell_id, color=colors[i],
-                marker='o', linestyle='', markersize=6, alpha=0.6)
-    pl.xlabel('ISI(n)')
-    pl.ylabel('ISI(n+1)')
-    pl.xlim(0, 200)
-    pl.ylim(0, 200)
-    pl.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
-    pl.subplots_adjust(right=0.7, bottom=0.13, top=0.94)
-    pl.savefig(os.path.join(save_dir_img, cell_type, 'ISI_return_map.png'))
-    #pl.show()
+    # cm = pl.cm.get_cmap('plasma')
+    # colors = cm(np.linspace(0, 1, len(cell_ids)))
+    # pl.figure(figsize=(7.4, 4.8))
+    # for i, cell_id in enumerate(cell_ids):
+    #     pl.plot(ISIs_per_cell[i][:-1], ISIs_per_cell[i][1:], label=cell_id, color=colors[i],
+    #             marker='o', linestyle='', markersize=6, alpha=0.6)
+    # pl.xlabel('ISI(n)')
+    # pl.ylabel('ISI(n+1)')
+    # pl.xlim(0, 200)
+    # pl.ylim(0, 200)
+    # pl.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+    # pl.subplots_adjust(right=0.7, bottom=0.13, top=0.94)
+    # pl.savefig(os.path.join(save_dir_img, cell_type, 'ISI_return_map.png'))
+    # #pl.show()
 
     # plot all return maps
     pl.close('all')
@@ -112,11 +113,14 @@ if __name__ == '__main__':
                     else:
                         axes[i1, i2].set_title(cell_ids[cell_idx], fontsize=12)
                     axes[i1, i2].plot(ISIs_per_cell[cell_idx][:-1], ISIs_per_cell[cell_idx][1:], color='k', marker='o',
-                                      linestyle='', markersize=6)
+                                      linestyle='', markersize=1)
+                    axes[i1, i2].set_xlim(0, max_ISI)
+                    axes[i1, i2].set_ylim(0, max_ISI)
+                    axes[i1, i2].set_aspect('equal', adjustable='box-forced')
                     if i1 == (n_rows - 1):
-                        axes[i1, i2].set_xlabel('ISI (ms)')
+                        axes[i1, i2].set_xlabel('ISI[n] (ms)')
                     if i2 == 0:
-                        axes[i1, i2].set_ylabel('Rel. frequency')
+                        axes[i1, i2].set_ylabel('ISI[n+1] (ms)')
                 else:
                     axes[i1, i2].spines['left'].set_visible(False)
                     axes[i1, i2].spines['bottom'].set_visible(False)
@@ -124,6 +128,7 @@ if __name__ == '__main__':
                     axes[i1, i2].set_yticks([])
                 cell_idx += 1
         pl.tight_layout()
+        pl.subplots_adjust(wspace=0.25)
         pl.savefig(os.path.join(save_dir_img, cell_type, 'return_map.png'))
         pl.show()
 
@@ -140,11 +145,11 @@ if __name__ == '__main__':
                 if cell_idx < len(cell_ids):
                     axes[i1, i2].set_title(cell_ids[cell_idx], fontsize=12)
                     axes[i1, i2].plot(ISIs_per_cell[cell_idx][:-1], ISIs_per_cell[cell_idx][1:], color='k', marker='o',
-                                      linestyle='', markersize=6)
+                                      linestyle='', markersize=1)
                     if i1 == (n_rows - 1):
-                        axes[i1, i2].set_xlabel('ISI (ms)')
+                        axes[i1, i2].set_xlabel('ISI[n] (ms)')
                     if i2 == 0:
-                        axes[i1, i2].set_ylabel('Rel. frequency')
+                        axes[i1, i2].set_ylabel('ISI[n+1] (ms)')
                 else:
                     axes[i1, i2].spines['left'].set_visible(False)
                     axes[i1, i2].spines['bottom'].set_visible(False)
