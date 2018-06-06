@@ -43,8 +43,8 @@ if __name__ == '__main__':
     param_list = ['Vm_ljpc', 'spiketimes']
 
     # parameters
-    bin_size = 1.0 #0.5  # ms
-    max_lag = 50
+    bin_size = 1.0  #0.5  # ms
+    max_lag = 12
     use_AP_max_idxs_domnisoru = True
     in_field = False
     out_field = False

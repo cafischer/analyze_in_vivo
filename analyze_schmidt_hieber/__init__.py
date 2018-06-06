@@ -23,5 +23,6 @@ def detrend(v, t, cutoff_freq=5):
                                                      cutoff_theta_high=2,
                                                      pad_if_to_short=True)
     ramp -= np.mean(v)
-    v_detrend = v - interp1d(t_downsampled, ramp)(t)
+    v_detrend = v - interp1d(t_ramp_theta, ramp, bounds_error=False, fill_value='extrapolate')(t)
+    # if last value of t is not in downsampled t, extrapolation is necessary
     return v_detrend

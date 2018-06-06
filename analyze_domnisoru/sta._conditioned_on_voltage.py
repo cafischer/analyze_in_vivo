@@ -17,7 +17,6 @@ if __name__ == '__main__':
     save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
     cell_type = 'grid_cells'  #'pyramidal_layer2'  #
     cell_ids = load_cell_ids(save_dir, cell_type)
-    #cell_ids = ['s67_0000']
 
     AP_thresholds = {'s73_0004': -50, 's90_0006': -45, 's82_0002': -38,
                      's117_0002': -60, 's119_0004': -50, 's104_0007': -55,
@@ -41,9 +40,11 @@ if __name__ == '__main__':
         os.makedirs(save_dir_img)
 
     #
-    sta_mean_per_cell = []
-    sta_std_per_cell = []
-    for i, cell_id in enumerate(cell_ids):
+    sta_mean_greater_cells = []
+    sta_std_greater_cells = []
+    sta_mean_lower_cells = []
+    sta_std_lower_cells = []
+    for cell_idx, cell_id in enumerate(cell_ids):
         print cell_id
 
         # load
@@ -53,14 +54,6 @@ if __name__ == '__main__':
         dt = t[1] - t[0]
         before_AP_idx_sta = to_idx(before_AP_sta, dt)
         after_AP_idx_sta = to_idx(after_AP_sta, dt)
-
-        # # for testing
-        # pl.figure()
-        # pl.title(cell_id)
-        # pl.plot(t, v)
-        # #pl.xlim(1000, 11000)
-        # pl.ylim(-90, 20)
-        # pl.show()
 
         # get APs
         if use_AP_max_idxs_domnisoru:
@@ -82,26 +75,22 @@ if __name__ == '__main__':
             v = detrend(v, t, cutoff_freq=5)
         v_APs = find_all_AP_traces(v, before_AP_idx_sta, after_AP_idx_sta, AP_max_idxs_selected, AP_max_idxs)
         t_AP = np.arange(after_AP_idx_sta + before_AP_idx_sta + 1) * dt
-        if v_APs is None:
-            sta_mean_per_cell.append(init_nan(after_AP_idx_sta+before_AP_idx_sta+1))
-            sta_std_per_cell.append(init_nan(after_AP_idx_sta+before_AP_idx_sta+1))
-            continue
+
+        # mean voltage before AP
+        v_mean = np.zeros(len(v_APs))
+        for i, v_AP in enumerate(v_APs):
+            v_mean[i] = np.mean(v_AP[:before_AP_idx_sta - to_idx(1, dt)])
+        half = np.percentile(v_mean, 50)
+        v_APs_greater = v_APs[v_mean > half]
+        v_APs_lower = v_APs[v_mean <= half]
 
         # STA
-        sta_median, sta_mad = get_sta_median(v_APs)
-        sta_mean, sta_std = get_sta(v_APs)
-        sta_mean_per_cell.append(sta_mean)
-        sta_std_per_cell.append(sta_std)
-
-        # plot
-        save_dir_cell = os.path.join(save_dir_img, cell_id)
-        if not os.path.exists(save_dir_cell):
-            os.makedirs(save_dir_cell)
-        np.save(os.path.join(save_dir_cell, 'sta_mean.npy'), sta_mean)
-        pl.close('all')
-        plot_sta(t_AP, sta_median, sta_mad, os.path.join(save_dir_cell, 'sta_median.png'))
-        plot_sta(t_AP, sta_mean, sta_std, os.path.join(save_dir_cell, 'sta_mean.png'))
-        plot_APs(v_APs, t_AP, os.path.join(save_dir_cell, 'v_APs.png'))
+        sta_mean_greater, sta_std_greater = get_sta(v_APs_greater)
+        sta_mean_lower, sta_std_lower = get_sta(v_APs_lower)
+        sta_mean_greater_cells.append(sta_mean_greater)
+        sta_std_greater_cells.append(sta_std_greater)
+        sta_mean_lower_cells.append(sta_mean_lower)
+        sta_std_lower_cells.append(sta_std_lower)
 
     pl.close('all')
     if cell_type == 'grid_cells':
@@ -118,9 +107,14 @@ if __name__ == '__main__':
                         axes[i1, i2].set_title(cell_ids[cell_idx] + ' ' + u'\u25B4', fontsize=12)
                     else:
                         axes[i1, i2].set_title(cell_ids[cell_idx], fontsize=12)
-                    axes[i1, i2].plot(t_AP, sta_mean_per_cell[cell_idx], 'k')
-                    axes[i1, i2].fill_between(t_AP, sta_mean_per_cell[cell_idx] - sta_std_per_cell[cell_idx],
-                                              sta_mean_per_cell[cell_idx] + sta_std_per_cell[cell_idx], color='k', alpha=0.5)
+                    axes[i1, i2].plot(t_AP, sta_mean_greater_cells[cell_idx], 'r')
+                    axes[i1, i2].fill_between(t_AP, sta_mean_greater_cells[cell_idx] - sta_std_greater_cells[cell_idx],
+                                              sta_mean_greater_cells[cell_idx] + sta_std_greater_cells[cell_idx],
+                                              color='r', alpha=0.5)
+                    axes[i1, i2].plot(t_AP, sta_mean_lower_cells[cell_idx], 'b')
+                    axes[i1, i2].fill_between(t_AP, sta_mean_lower_cells[cell_idx] - sta_std_lower_cells[cell_idx],
+                                              sta_mean_lower_cells[cell_idx] + sta_std_lower_cells[cell_idx],
+                                              color='b', alpha=0.5)
                     if i1 == (n_rows - 1):
                         axes[i1, i2].set_xlabel('Time (ms)')
                     if i2 == 0:
@@ -132,48 +126,5 @@ if __name__ == '__main__':
                     axes[i1, i2].set_yticks([])
                 cell_idx += 1
         pl.tight_layout()
-        pl.savefig(os.path.join(save_dir_img, 'sta.png'))
+        pl.savefig(os.path.join(save_dir_img, 'sta_conditioned_v.png'))
         pl.show()
-
-    else:
-        n_rows = 1 if len(cell_ids) <= 3 else 2
-        n_columns = int(round(len(cell_ids) / n_rows))
-        fig_height = 4.5 if len(cell_ids) <= 3 else 9
-        fig, axes = pl.subplots(n_rows, n_columns, sharex='all', sharey='all', figsize=(14, fig_height))
-        if n_rows == 1:
-            axes = np.array([axes])
-        cell_idx = 0
-        for i1 in range(n_rows):
-            for i2 in range(n_columns):
-                if cell_idx < len(cell_ids):
-                    axes[i1, i2].set_title(cell_ids[cell_idx], fontsize=12)
-                    axes[i1, i2].plot(t_AP, sta_mean_per_cell[cell_idx], 'k')
-                    axes[i1, i2].fill_between(t_AP, sta_mean_per_cell[cell_idx] - sta_std_per_cell[cell_idx],
-                                              sta_mean_per_cell[cell_idx] + sta_std_per_cell[cell_idx], color='k', alpha=0.5)
-                    if i1 == (n_rows - 1):
-                        axes[i1, i2].set_xlabel('Time (ms)')
-                    if i2 == 0:
-                        axes[i1, i2].set_ylabel('Membrane Potential (mV)')
-                else:
-                    axes[i1, i2].spines['left'].set_visible(False)
-                    axes[i1, i2].spines['bottom'].set_visible(False)
-                    axes[i1, i2].set_xticks([])
-                    axes[i1, i2].set_yticks([])
-                cell_idx += 1
-        pl.tight_layout()
-        adjust_bottom = 0.12 if len(cell_ids) <= 3 else 0.07
-        pl.subplots_adjust(left=0.07, bottom=adjust_bottom, top=0.93)
-        pl.savefig(os.path.join(save_dir_img, 'sta.png'))
-        pl.show()
-
-    #     # DAP_deflection on STA
-    #     from cell_characteristics.analyze_APs import get_spike_characteristics
-    #     from cell_fitting.optimization.evaluation import get_spike_characteristics_dict
-    #     import json
-    #     spike_characteristics_dict = get_spike_characteristics_dict()
-    #     spike_characteristics_dict['AP_threshold'] = AP_thresholds[cell_id]
-    #     DAP_deflections[cell_id] = get_spike_characteristics(sta, t_AP, ['DAP_deflection'], sta[0],
-    #                                                check=False, **spike_characteristics_dict)[0]
-    # print DAP_deflections
-    # with open(os.path.join(save_dir_img, 'not_detrended', cell_type, 'DAP_deflections.npy'), 'w') as f:
-    #     json.dump(DAP_deflections, f, indent=4)

@@ -42,19 +42,17 @@ if __name__ == '__main__':
         firing_rate_cells.append(firing_rate)
         position_cells.append(position)
 
-        # neg-entropy
-        bins = np.arange(0, 100, 1)
-        firing_rate_bins = np.digitize(firing_rate, bins)
-        prob_firing_rate = np.array([firing_rate_bins.tolist().count(i) for i in range(1, len(bins))]) / (len(bins)-1)
-        summands = prob_firing_rate * (np.log(prob_firing_rate) / np.log(2))
+        # entropy
+        position = position[~np.isnan(firing_rate)]
+        firing_rate = firing_rate[~np.isnan(firing_rate)]
+        prob_position = firing_rate / np.sum(firing_rate)
+        summands = prob_position * (np.log(prob_position) / np.log(2))
         summands[np.isnan(summands)] = 0  # by definition: if prob=0, then summand = 0
         entropy_cell = -np.sum(summands)
 
-        prob_firing_rate_uniform = np.ones(len(bins)-1) / (len(bins)-1)
-        summands = prob_firing_rate_uniform * (np.log(prob_firing_rate_uniform) / np.log(2))
-        summands[np.isnan(summands)] = 0  # by definition: if prob=0, then summand = 0
+        prob_position_uniform = np.ones(len(position)) / (len(position))
+        summands = prob_position_uniform * (np.log(prob_position_uniform) / np.log(2))
         entropy_uniform = -np.sum(summands)
-        #neg_entropy[cell_idx] = np.sum(summands)
         inv_entropy[cell_idx] = 1 - entropy_cell / entropy_uniform
 
     pl.close('all')
@@ -86,6 +84,6 @@ if __name__ == '__main__':
                     ax1.set_ylabel('Firing rate (Hz)')
                 fig.add_subplot(ax1)
                 cell_idx += 1
-        pl.subplots_adjust(left=0.03, right=0.98, top=0.96, bottom=0.07)
+        pl.subplots_adjust(left=0.05, right=0.98, top=0.96, bottom=0.07)
         pl.savefig(os.path.join(save_dir_img, 'entropy.png'))
         pl.show()
