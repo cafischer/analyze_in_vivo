@@ -61,7 +61,6 @@ def get_firing_rate_per_bin(spike_train, t, position, bins, dt, track_len):
         pos_binned = np.digitize(pos_run, bins) - 1
         AP_count_per_bin = pd.Series(APs_run).groupby(pos_binned).sum()
         seconds_per_bin = (pd.Series(t_run).groupby(pos_binned).size()) * dt / 1000.
-        #seconds_per_bin = (pd.Series(t_run).groupby(pos_binned).size() - 1) * dt / 1000.  TODO
         pos_in_track = np.unique(pos_binned)[np.unique(pos_binned) <= n_bins-1]  # to ignore data higher than track_len
         firing_rate_per_run[i_run, pos_in_track] = AP_count_per_bin[pos_in_track] / seconds_per_bin[pos_in_track]
 
@@ -76,6 +75,12 @@ def get_firing_rate_per_bin(spike_train, t, position, bins, dt, track_len):
     # pl.show()
 
     return firing_rate, firing_rate_per_run
+
+def get_occupancy_per_bin(position, bins, bin_size):
+    position_binned = np.digitize(position, bins) - 1
+    occupancy_per_bin = np.array([position_binned.tolist().count(i) for i in range(n_bins)], dtype=float)
+    occupancy_per_bin /= (np.sum(occupancy_per_bin) * bin_size)
+    return occupancy_per_bin
 
 
 def smooth_firing_rate(firing_rate, std=1):
@@ -148,11 +153,13 @@ if __name__ == '__main__':
 
         # compute firing rate
         firing_rate_tmp, firing_rate_per_run = get_firing_rate_per_bin(spike_train, t, position, bins, dt, track_len)
+        occupancy_prob = get_occupancy_per_bin(position, bins, bin_size)
         firing_rate = smooth_firing_rate(firing_rate_tmp)
         avg_firing_rate = np.nanmean(firing_rate)
         np.save(os.path.join(save_dir_cell, 'avg_firing_rate.npy'), avg_firing_rate)
         np.save(os.path.join(save_dir_cell, 'firing_rate.npy'), firing_rate)
         np.save(os.path.join(save_dir_cell, 'position.npy'), bins[:-1])
+        np.save(os.path.join(save_dir_cell, 'occupancy_prob.npy'), occupancy_prob)
 
         # save for later use
         firing_rate_cells.append(firing_rate)
@@ -162,9 +169,14 @@ if __name__ == '__main__':
 
         # plot
         pl.close('all')
-        fig, axes = pl.subplots(2, 1, sharex='all')
-        axes[0].plot(position, t / 1000., '0.5', linewidth=0.8)
-        axes[0].plot(position[spike_train.astype(bool)], (t / 1000.)[spike_train.astype(bool)], 'or', markersize=0.5)
+        fig, axes = pl.subplots(2, 1, sharex='all', figsize=(11, 6))
+        # axes[0].plot(position, t / 1000., '0.5', linewidth=0.8)
+        # axes[0].plot(position[spike_train.astype(bool)], (t / 1000.)[spike_train.astype(bool)], 'or', markersize=0.5)
+        t_new = np.arange(len(position)) * dt / 1000.
+        axes[0].plot(position, t_new, '0.5', linewidth=0.8)
+        axes[0].plot(position[spike_train.astype(bool)],
+                 t_new[spike_train.astype(bool)], 'or',
+                 markersize=4.0)
         axes[0].set_ylabel('Time (s)')
         axes[1].plot(bins[:-1], firing_rate, 'k')
         axes[1].set_ylabel('Firing rate (Hz)')
@@ -195,10 +207,14 @@ if __name__ == '__main__':
                 else:
                     ax1.set_title(cell_ids[cell_idx], fontsize=12)
 
-                ax1.plot(position_cells[cell_idx], t_cells[cell_idx] / 1000., '0.5', linewidth=0.8)
+                # TODO ax1.plot(position_cells[cell_idx], t_cells[cell_idx] / 1000., '0.5', linewidth=0.8)
+                #     ax1.plot(position_cells[cell_idx][spike_train_cells[cell_idx].astype(bool)],
+                #                          (t_cells[cell_idx] / 1000.)[spike_train_cells[cell_idx].astype(bool)], 'or',
+                #                          markersize=0.1)
+                t_new = np.arange(len(position_cells[cell_idx]))*dt/1000.
+                ax1.plot(position_cells[cell_idx], t_new, '0.5', linewidth=0.8)
                 ax1.plot(position_cells[cell_idx][spike_train_cells[cell_idx].astype(bool)],
-                         (t_cells[cell_idx] / 1000.)[spike_train_cells[cell_idx].astype(bool)], 'or',
-                         markersize=0.1)
+                         t_new[spike_train_cells[cell_idx].astype(bool)], 'or', markersize=0.1)
                 ax1.set_xticklabels([])
                 ax1.xaxis.set_tick_params(labelsize=10)
                 ax2.xaxis.set_tick_params(labelsize=10)

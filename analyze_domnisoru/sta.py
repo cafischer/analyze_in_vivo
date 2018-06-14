@@ -19,11 +19,6 @@ if __name__ == '__main__':
     cell_ids = load_cell_ids(save_dir, cell_type)
     #cell_ids = ['s67_0000']
 
-    AP_thresholds = {'s73_0004': -50, 's90_0006': -45, 's82_0002': -38,
-                     's117_0002': -60, 's119_0004': -50, 's104_0007': -55,
-                     's79_0003': -50, 's76_0002': -50, 's101_0009': -45}
-    param_list = ['Vm_ljpc', 'spiketimes']
-
     # parameters
     use_AP_max_idxs_domnisoru = True
     do_detrend = False
@@ -31,18 +26,23 @@ if __name__ == '__main__':
     out_field = False
     before_AP_sta = 25
     after_AP_sta = 25
-    DAP_deflections = {}
+    bins_v = np.arange(-90, 40+0.5, 0.5)
+    AP_thresholds = {'s73_0004': -50, 's90_0006': -45, 's82_0002': -38,
+                     's117_0002': -60, 's119_0004': -50, 's104_0007': -55,
+                     's79_0003': -50, 's76_0002': -50, 's101_0009': -45}
+    param_list = ['Vm_ljpc', 'spiketimes']
     folder_detrend = {True: 'detrended', False: 'not_detrended'}
     folder_field = {(True, False): 'in_field', (False, True): 'out_field', (False, False): 'all'}
     save_dir_img = os.path.join(save_dir_img, folder_detrend[do_detrend], folder_field[(in_field, out_field)],
                                 cell_type)
-
     if not os.path.exists(save_dir_img):
         os.makedirs(save_dir_img)
 
     #
-    sta_mean_per_cell = []
-    sta_std_per_cell = []
+    DAP_deflections = {}
+    sta_mean_cells = []
+    sta_std_cells = []
+    v_hist_cells = []
     for i, cell_id in enumerate(cell_ids):
         print cell_id
 
@@ -81,17 +81,23 @@ if __name__ == '__main__':
         if do_detrend:
             v = detrend(v, t, cutoff_freq=5)
         v_APs = find_all_AP_traces(v, before_AP_idx_sta, after_AP_idx_sta, AP_max_idxs_selected, AP_max_idxs)
-        t_AP = np.arange(after_AP_idx_sta + before_AP_idx_sta + 1) * dt
+        t_AP = np.arange(after_AP_idx_sta + before_AP_idx_sta + 1) * dt - before_AP_sta
         if v_APs is None:
-            sta_mean_per_cell.append(init_nan(after_AP_idx_sta+before_AP_idx_sta+1))
-            sta_std_per_cell.append(init_nan(after_AP_idx_sta+before_AP_idx_sta+1))
+            sta_mean_cells.append(init_nan(after_AP_idx_sta + before_AP_idx_sta + 1))
+            sta_std_cells.append(init_nan(after_AP_idx_sta + before_AP_idx_sta + 1))
             continue
 
         # STA
         sta_median, sta_mad = get_sta_median(v_APs)
         sta_mean, sta_std = get_sta(v_APs)
-        sta_mean_per_cell.append(sta_mean)
-        sta_std_per_cell.append(sta_std)
+        sta_mean_cells.append(sta_mean)
+        sta_std_cells.append(sta_std)
+
+        # histogram of voltage
+        v_hist = np.zeros((len(bins_v)-1, np.size(v_APs, 1)))
+        for c in range(np.size(v_APs, 1)):
+            v_hist[:, c] = np.histogram(v_APs[:, c], bins_v)[0]
+        v_hist_cells.append(v_hist)
 
         # plot
         save_dir_cell = os.path.join(save_dir_img, cell_id)
@@ -102,6 +108,13 @@ if __name__ == '__main__':
         plot_sta(t_AP, sta_median, sta_mad, os.path.join(save_dir_cell, 'sta_median.png'))
         plot_sta(t_AP, sta_mean, sta_std, os.path.join(save_dir_cell, 'sta_mean.png'))
         plot_APs(v_APs, t_AP, os.path.join(save_dir_cell, 'v_APs.png'))
+        pl.figure()
+        x, y = np.meshgrid(t_AP, bins_v[:-1])
+        pl.pcolor(x, y, v_hist)
+        pl.ylabel('Mem. pot. distr. (mV)')
+        pl.xlabel('Time (ms)')
+        pl.tight_layout()
+        pl.savefig(os.path.join(save_dir_cell, 'v_hist.png'))
 
     pl.close('all')
     if cell_type == 'grid_cells':
@@ -118,9 +131,9 @@ if __name__ == '__main__':
                         axes[i1, i2].set_title(cell_ids[cell_idx] + ' ' + u'\u25B4', fontsize=12)
                     else:
                         axes[i1, i2].set_title(cell_ids[cell_idx], fontsize=12)
-                    axes[i1, i2].plot(t_AP, sta_mean_per_cell[cell_idx], 'k')
-                    axes[i1, i2].fill_between(t_AP, sta_mean_per_cell[cell_idx] - sta_std_per_cell[cell_idx],
-                                              sta_mean_per_cell[cell_idx] + sta_std_per_cell[cell_idx], color='k', alpha=0.5)
+                    axes[i1, i2].plot(t_AP, sta_mean_cells[cell_idx], 'k')
+                    axes[i1, i2].fill_between(t_AP, sta_mean_cells[cell_idx] - sta_std_cells[cell_idx],
+                                              sta_mean_cells[cell_idx] + sta_std_cells[cell_idx], color='k', alpha=0.5)
                     if i1 == (n_rows - 1):
                         axes[i1, i2].set_xlabel('Time (ms)')
                     if i2 == 0:
@@ -133,8 +146,6 @@ if __name__ == '__main__':
                 cell_idx += 1
         pl.tight_layout()
         pl.savefig(os.path.join(save_dir_img, 'sta.png'))
-        pl.show()
-
     else:
         n_rows = 1 if len(cell_ids) <= 3 else 2
         n_columns = int(round(len(cell_ids) / n_rows))
@@ -147,9 +158,9 @@ if __name__ == '__main__':
             for i2 in range(n_columns):
                 if cell_idx < len(cell_ids):
                     axes[i1, i2].set_title(cell_ids[cell_idx], fontsize=12)
-                    axes[i1, i2].plot(t_AP, sta_mean_per_cell[cell_idx], 'k')
-                    axes[i1, i2].fill_between(t_AP, sta_mean_per_cell[cell_idx] - sta_std_per_cell[cell_idx],
-                                              sta_mean_per_cell[cell_idx] + sta_std_per_cell[cell_idx], color='k', alpha=0.5)
+                    axes[i1, i2].plot(t_AP, sta_mean_cells[cell_idx], 'k')
+                    axes[i1, i2].fill_between(t_AP, sta_mean_cells[cell_idx] - sta_std_cells[cell_idx],
+                                              sta_mean_cells[cell_idx] + sta_std_cells[cell_idx], color='k', alpha=0.5)
                     if i1 == (n_rows - 1):
                         axes[i1, i2].set_xlabel('Time (ms)')
                     if i2 == 0:
@@ -164,7 +175,6 @@ if __name__ == '__main__':
         adjust_bottom = 0.12 if len(cell_ids) <= 3 else 0.07
         pl.subplots_adjust(left=0.07, bottom=adjust_bottom, top=0.93)
         pl.savefig(os.path.join(save_dir_img, 'sta.png'))
-        pl.show()
 
     #     # DAP_deflection on STA
     #     from cell_characteristics.analyze_APs import get_spike_characteristics
@@ -177,3 +187,40 @@ if __name__ == '__main__':
     # print DAP_deflections
     # with open(os.path.join(save_dir_img, 'not_detrended', cell_type, 'DAP_deflections.npy'), 'w') as f:
     #     json.dump(DAP_deflections, f, indent=4)
+
+
+    # v hist
+    pl.close('all')
+    if cell_type == 'grid_cells':
+        n_rows = 3
+        n_columns = 9
+        fig, axes = pl.subplots(n_rows, n_columns, sharex='all', sharey='all', figsize=(14, 8.5))
+        cell_idx = 0
+        for i1 in range(n_rows):
+            for i2 in range(n_columns):
+                if cell_idx < len(cell_ids):
+                    if get_celltype(cell_ids[cell_idx], save_dir) == 'stellate':
+                        axes[i1, i2].set_title(cell_ids[cell_idx] + ' ' + u'\u2605', fontsize=12)
+                    elif get_celltype(cell_ids[cell_idx], save_dir) == 'pyramidal':
+                        axes[i1, i2].set_title(cell_ids[cell_idx] + ' ' + u'\u25B4', fontsize=12)
+                    else:
+                        axes[i1, i2].set_title(cell_ids[cell_idx], fontsize=12)
+
+                    x, y = np.meshgrid(t_AP, bins_v[:-1])
+                    axes[i1, i2].pcolor(x, y, v_hist_cells[cell_idx])
+                    axes[i1, i2].set_xlim(before_AP_sta, before_AP_sta+after_AP_sta)
+                    axes[i1, i2].set_ylim(-90, -30)
+
+                    if i1 == (n_rows - 1):
+                        axes[i1, i2].set_xlabel('Time (ms)')
+                    if i2 == 0:
+                        axes[i1, i2].set_ylabel('Mem. pot. distr. (mV)')
+                else:
+                    axes[i1, i2].spines['left'].set_visible(False)
+                    axes[i1, i2].spines['bottom'].set_visible(False)
+                    axes[i1, i2].set_xticks([])
+                    axes[i1, i2].set_yticks([])
+                cell_idx += 1
+        pl.tight_layout()
+        pl.savefig(os.path.join(save_dir_img, 'v_hist.png'))
+        pl.show()

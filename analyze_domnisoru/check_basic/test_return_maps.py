@@ -17,28 +17,28 @@ len_spike_train = to_idx(tstop, dt)
 # # a) being rather randomly
 # spike_train1 = np.random.random(len_spike_train) < 0.005
 #
-# b) coming in blocks
-no_spikes = True
-old_idx = 0
-spike_train2 = np.zeros(len_spike_train)
-while old_idx < len_spike_train:
-    block_len = int(np.round(np.random.normal(to_idx(100, dt), to_idx(20, dt))))
-    if block_len <= 0:
-        block_len = 100
-    if old_idx + block_len >= len_spike_train:
-        break
-    if no_spikes:
-        spike_train2[old_idx:old_idx+block_len] = np.random.random(block_len) < 0.005
-        no_spikes = False
-    else:
-        spike_train2[old_idx:old_idx + block_len] = np.random.random(block_len) < 0.2
-        no_spikes = True
-    old_idx = old_idx + block_len
+# # b) coming in blocks
+# no_spikes = True
+# old_idx = 0
+# spike_train2 = np.zeros(len_spike_train)
+# while old_idx < len_spike_train:
+#     block_len = int(np.round(np.random.normal(to_idx(500, dt), to_idx(20, dt))))
+#     if block_len <= 0:
+#         block_len = 100
+#     if old_idx + block_len >= len_spike_train:
+#         break
+#     if no_spikes:
+#         spike_train2[old_idx:old_idx+block_len] = np.random.random(block_len) < 0.0001
+#         no_spikes = False
+#     else:
+#         spike_train2[old_idx:old_idx + block_len] = np.random.random(block_len) < 0.1
+#         no_spikes = True
+#     old_idx = old_idx + block_len
 
-# unregular oscillations
-freq_smooth = np.linspace(2, 15, len_spike_train)
+# c) unregular oscillations
+freq_smooth = np.linspace(10, 50, len_spike_train)
 t = np.arange(0, tstop, dt)
-prob = (np.sin(2*np.pi*freq_smooth*t/1000.) + 0.8) / 700.
+prob = (np.sin(2*np.pi*freq_smooth*t/1000.) - 0.9999) * 10000
 spike_train3 = np.random.random(len_spike_train) < prob
 
 # # unregular oscillations less strong edges
@@ -53,6 +53,10 @@ spike_train3 = np.random.random(len_spike_train) < prob
 # t = np.arange(0, tstop, dt)
 # prob = (np.sin(2*np.pi*freq_smooth*t/1000.) - 0.3) / 200.
 # spike_train3 = np.random.random(len_spike_train) < prob
+
+# d) increasing spike prob.
+spike_prob = np.linspace(0.00001, 0.001, len_spike_train)
+spike_train2 = np.random.random(len_spike_train) < spike_prob
 
 # pl.figure()
 # pl.plot(np.arange(0, tstop, dt), spike_train1)

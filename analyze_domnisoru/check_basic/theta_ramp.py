@@ -12,13 +12,14 @@ pl.style.use('paper')
 if __name__ == '__main__':
     save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/check/theta_ramp'
     save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
-    cell_type = 'pyramidal_layer2'
+    cell_type = 'stellate_layer2'
     cell_ids = load_cell_ids(save_dir, cell_type)
     param_list = ['Vm_ljpc', 'Vm_wo_spikes_ljpc', 'fVm', 'dcVm_ljpc']
 
     # parameter
     AP_thresholds = {'s73_0004': -55, 's90_0006': -45, 's82_0002': -35,
-                     's117_0002': -60, 's119_0004': -50, 's104_0007': -55, 's79_0003': -50, 's76_0002': -50, 's101_0009': -45}
+                     's117_0002': -60, 's119_0004': -50, 's104_0007': -55,
+                     's79_0003': -50, 's76_0002': -50, 's101_0009': -45}
     t_before = 3
     t_after = 6
 

@@ -133,4 +133,33 @@ if __name__ == '__main__':
             cell_idx += 1
         pl.subplots_adjust(left=0.05, right=0.99, top=0.95, bottom=0.06)
         pl.savefig(os.path.join(save_dir_img, cell_type, 'n_APs_per_run.png'))
-        pl.show()
+        #pl.show()
+
+    pl.figure()
+    for cell_idx in range(len(cell_ids)):
+        if get_celltype(cell_ids[cell_idx], save_dir) == 'stellate':
+            pl.plot(n_APs_per_run_mean[cell_idx], n_APs_per_run_std[cell_idx], 'k', marker='*')
+        elif get_celltype(cell_ids[cell_idx], save_dir) == 'pyramidal':
+            pl.plot(n_APs_per_run_mean[cell_idx], n_APs_per_run_std[cell_idx], 'k', marker='^')
+        else:
+            pl.plot(n_APs_per_run_mean[cell_idx], n_APs_per_run_std[cell_idx], 'k', marker='o')
+    pl.xlabel('Mean # APs over runs')
+    pl.ylabel('Std # APs over runs')
+    pl.tight_layout()
+    pl.savefig(os.path.join(save_dir_img, cell_type, 'mean_vs_std.png'))
+    #pl.show()
+
+    pl.figure()
+    #pl.plot(n_APs_per_run_mean, n_APs_per_run_cv, 'ok')
+    for cell_idx in range(len(cell_ids)):
+        if get_celltype(cell_ids[cell_idx], save_dir) == 'stellate':
+            pl.plot(n_APs_per_run_mean[cell_idx], n_APs_per_run_cv[cell_idx], 'k', marker='*')
+        elif get_celltype(cell_ids[cell_idx], save_dir) == 'pyramidal':
+            pl.plot(n_APs_per_run_mean[cell_idx], n_APs_per_run_cv[cell_idx], 'k', marker='^')
+        else:
+            pl.plot(n_APs_per_run_mean[cell_idx], n_APs_per_run_cv[cell_idx], 'k', marker='o')
+    pl.xlabel('Mean # APs over runs')
+    pl.ylabel('CV # APs over runs')
+    pl.tight_layout()
+    pl.savefig(os.path.join(save_dir_img, cell_type, 'mean_vs_cv.png'))
+    pl.show()

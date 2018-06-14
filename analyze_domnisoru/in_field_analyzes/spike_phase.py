@@ -2,47 +2,80 @@ from __future__ import division
 import numpy as np
 import matplotlib.pyplot as pl
 import os
-from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data
+from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data, get_celltype
 from grid_cell_stimuli.spike_phase import get_spike_phases, get_spike_phases_by_min, plot_phase_hist, plot_phase_hist_on_axes
 from scipy.stats import circmean, circstd
 from grid_cell_stimuli import get_AP_max_idxs
 from grid_cell_stimuli.ISI_hist import get_ISIs
 from analyze_in_vivo.analyze_domnisoru.check_basic.in_out_field import get_start_end_group_of_ones
 from circular_statistics import circ_cmtest, circ_median
+from analyze_in_vivo.analyze_domnisoru.n_spikes_in_burst import get_n_spikes_in_burst
 
 
 def plot_phase_hist_all_cells(AP_max_phases_cells, title):
-    n_rows = 1 if len(cell_ids) <= 3 else 2
-    fig_height = 4.5 if len(cell_ids) <= 3 else 9
-    fig, axes = pl.subplots(n_rows, int(round(len(cell_ids) / n_rows)), sharex='all', sharey='all',
-                            figsize=(14, fig_height))
-    fig.suptitle(title, fontsize=16)
-    if n_rows == 1:
-        axes = np.array([axes])
-    if len(cell_ids) == 1:
-        axes = np.array([axes])
-    cell_idx = 0
-    for i1 in range(n_rows):
-        for i2 in range(int(round(len(cell_ids) / n_rows))):
-            if cell_idx < len(cell_ids):
-                plot_phase_hist_on_axes(axes[i1, i2], AP_max_phases_cells[cell_idx],
-                                        mean_phase=circmean(AP_max_phases_cells[cell_idx], 360, 0),
-                                        std_phase=circstd(AP_max_phases_cells[cell_idx], 360, 0))
-                if i1 == (n_rows - 1):
-                    axes[i1, i2].set_xlabel('Phase')
-                if i2 == 0:
-                    axes[i1, i2].set_ylabel('Frequency')
-                axes[i1, i2].set_title(cell_ids[cell_idx], fontsize=14)
-            else:
-                axes[i1, i2].spines['left'].set_visible(False)
-                axes[i1, i2].spines['bottom'].set_visible(False)
-                axes[i1, i2].set_xticks([])
-                axes[i1, i2].set_yticks([])
-            cell_idx += 1
-    pl.tight_layout()
-    adjust_bottom = 0.12 if len(cell_ids) <= 3 else 0.08
-    pl.subplots_adjust(left=0.06, bottom=adjust_bottom, top=0.9)
-    pl.savefig(os.path.join(save_dir_img, cell_type, 'spike_phase_'+title.replace('-', '_')+'.png'))
+    if cell_type == 'grid_cells':
+        n_rows = 3
+        n_columns = 9
+        fig, axes = pl.subplots(n_rows, n_columns, sharex='all', sharey='all', figsize=(14, 8.5))
+        cell_idx = 0
+        for i1 in range(n_rows):
+            for i2 in range(n_columns):
+                if cell_idx < len(cell_ids):
+                    if get_celltype(cell_ids[cell_idx], save_dir) == 'stellate':
+                        axes[i1, i2].set_title(cell_ids[cell_idx] + ' ' + u'\u2605', fontsize=12)
+                    elif get_celltype(cell_ids[cell_idx], save_dir) == 'pyramidal':
+                        axes[i1, i2].set_title(cell_ids[cell_idx] + ' ' + u'\u25B4', fontsize=12)
+                    else:
+                        axes[i1, i2].set_title(cell_ids[cell_idx], fontsize=12)
+
+                    plot_phase_hist_on_axes(axes[i1, i2], AP_max_phases_cells[cell_idx],
+                                            mean_phase=circmean(AP_max_phases_cells[cell_idx], 360, 0),
+                                            std_phase=circstd(AP_max_phases_cells[cell_idx], 360, 0))
+                    if i1 == (n_rows - 1):
+                        axes[i1, i2].set_xlabel('Phase')
+                    if i2 == 0:
+                        axes[i1, i2].set_ylabel('Frequency')
+                    axes[i1, i2].set_title(cell_ids[cell_idx], fontsize=14)
+                else:
+                    axes[i1, i2].spines['left'].set_visible(False)
+                    axes[i1, i2].spines['bottom'].set_visible(False)
+                    axes[i1, i2].set_xticks([])
+                    axes[i1, i2].set_yticks([])
+                cell_idx += 1
+        pl.tight_layout()
+        pl.savefig(os.path.join(save_dir_img, 'n_spikes_in_burst.png'))
+    else:
+        n_rows = 1 if len(cell_ids) <= 3 else 2
+        fig_height = 4.5 if len(cell_ids) <= 3 else 9
+        fig, axes = pl.subplots(n_rows, int(round(len(cell_ids) / n_rows)), sharex='all', sharey='all',
+                                figsize=(14, fig_height))
+        fig.suptitle(title, fontsize=16)
+        if n_rows == 1:
+            axes = np.array([axes])
+        if len(cell_ids) == 1:
+            axes = np.array([axes])
+        cell_idx = 0
+        for i1 in range(n_rows):
+            for i2 in range(int(round(len(cell_ids) / n_rows))):
+                if cell_idx < len(cell_ids):
+                    plot_phase_hist_on_axes(axes[i1, i2], AP_max_phases_cells[cell_idx],
+                                            mean_phase=circmean(AP_max_phases_cells[cell_idx], 360, 0),
+                                            std_phase=circstd(AP_max_phases_cells[cell_idx], 360, 0))
+                    if i1 == (n_rows - 1):
+                        axes[i1, i2].set_xlabel('Phase')
+                    if i2 == 0:
+                        axes[i1, i2].set_ylabel('Frequency')
+                    axes[i1, i2].set_title(cell_ids[cell_idx], fontsize=14)
+                else:
+                    axes[i1, i2].spines['left'].set_visible(False)
+                    axes[i1, i2].spines['bottom'].set_visible(False)
+                    axes[i1, i2].set_xticks([])
+                    axes[i1, i2].set_yticks([])
+                cell_idx += 1
+        pl.tight_layout()
+        adjust_bottom = 0.12 if len(cell_ids) <= 3 else 0.08
+        pl.subplots_adjust(left=0.06, bottom=adjust_bottom, top=0.9)
+        pl.savefig(os.path.join(save_dir_img, cell_type, 'spike_phase_'+title.replace('-', '_')+'.png'))
 
 
 def horizontal_square_bracket(ax, star, x_l, x_r, y_d, y_u, y_text):
@@ -152,9 +185,9 @@ if __name__ == '__main__':
     save_dir_in_out_field = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/in_out_field'
     save_dir_theta_ramp = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/check/theta_ramp'
     save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
-    cell_type = 'stellate_layer2'
-    cell_ids = load_cell_ids(save_dir, cell_type)
-    param_list = ['Vm_ljpc', 'Y_cm', 'vel_100ms', 'spiketimes']
+    cell_type = 'grid_cells'
+    cell_ids = load_cell_ids(save_dir, cell_type)[:4]
+    param_list = ['Vm_ljpc', 'Y_cm', 'vel_100ms', 'spiketimes', 'fVm', 'dcVm_ljpc']
     AP_thresholds = {'s73_0004': -55, 's90_0006': -45, 's82_0002': -35,
                      's117_0002': -60, 's119_0004': -50, 's104_0007': -55, 's79_0003': -50, 's76_0002': -50, 's101_0009': -45}
     velocity_threshold = 1  # cm/sec
@@ -187,8 +220,10 @@ if __name__ == '__main__':
         out_field_len_orig = np.load(os.path.join(save_dir_in_out_field, cell_type, cell_id, 'out_field_len_orig.npy'))
 
         # get theta and ramp
-        theta = np.load(os.path.join(save_dir_theta_ramp, cell_type, cell_id, 'theta.npy'))
-        ramp = np.load(os.path.join(save_dir_theta_ramp, cell_type, cell_id, 'ramp.npy'))
+        theta = data['fVm']
+        ramp = data['dcVm_ljpc']
+        # theta = np.load(os.path.join(save_dir_theta_ramp, cell_type, cell_id, 'theta.npy'))
+        # ramp = np.load(os.path.join(save_dir_theta_ramp, cell_type, cell_id, 'ramp.npy'))
 
         # get phases
         start_in, end_in = get_start_end_group_of_ones(in_field_len_orig.astype(int))
@@ -204,6 +239,7 @@ if __name__ == '__main__':
         ISIs = get_ISIs(AP_max_idxs, t)
         short_ISI_indicator = np.concatenate((ISIs <= ISI_burst, np.array([False])))
         starts_burst, ends_burst = get_start_end_group_of_ones(short_ISI_indicator.astype(int))
+        n_spikes_in_bursts = get_n_spikes_in_burst(short_ISI_indicator)
         AP_max_idxs_burst = AP_max_idxs[starts_burst]
         AP_max_idxs_single = np.array(filter(lambda x: x not in AP_max_idxs[ends_burst+1],
                                              AP_max_idxs[~short_ISI_indicator]))

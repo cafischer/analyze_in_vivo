@@ -8,6 +8,7 @@ from grid_cell_stimuli.ISI_hist import get_ISIs, get_ISI_hist, get_cumulative_IS
 from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data, get_celltype
 from scipy.stats import ks_2samp
 from itertools import combinations
+from analyze_in_vivo.analyze_domnisoru.check_basic.in_out_field import get_start_end_group_of_ones
 pl.style.use('paper')
 
 
@@ -25,13 +26,14 @@ if __name__ == '__main__':
                      's117_0002': -60, 's119_0004': -50, 's104_0007': -55,
                      's79_0003': -50, 's76_0002': -50, 's101_0009': -45}
     use_AP_max_idxs_domnisoru = True
-    filter_long_ISIs = False
-    max_ISI = 200
+    filter_long_ISIs = True
+    max_ISI = 50
     if filter_long_ISIs:
         save_dir_img = os.path.join(save_dir_img, 'cut_ISIs_at_'+str(max_ISI))
 
     # parameter
-    bins = np.arange(0, max_ISI+2, 2.0)
+    bin_width = 2.0
+    bins = np.arange(0, max_ISI+bin_width, bin_width)
 
     # over cells
     ISIs_per_cell = [0] * len(cell_ids)
@@ -39,8 +41,9 @@ if __name__ == '__main__':
     ISI_hist = np.zeros((len(cell_ids), len(bins)-1))
     cum_ISI_hist_y = [0] * len(cell_ids)
     cum_ISI_hist_x = [0] * len(cell_ids)
+    fraction_ISIs_filtered = np.zeros(len(cell_ids))
 
-    for i, cell_id in enumerate(cell_ids):
+    for cell_idx, cell_id in enumerate(cell_ids):
         print cell_id
         # load
         data = load_data(cell_id, param_list, save_dir)
@@ -55,13 +58,14 @@ if __name__ == '__main__':
             AP_max_idxs = get_AP_max_idxs(v, AP_thresholds[cell_id], dt)
         ISIs = get_ISIs(AP_max_idxs, t)
         if filter_long_ISIs:
+            fraction_ISIs_filtered[cell_idx] = np.sum(ISIs <= max_ISI) / float(len(ISIs))
             ISIs = ISIs[ISIs <= max_ISI]
-        n_ISIs[i] = len(ISIs)
-        ISIs_per_cell[i] = ISIs
+        n_ISIs[cell_idx] = len(ISIs)
+        ISIs_per_cell[cell_idx] = ISIs
 
         # ISI histograms
-        ISI_hist[i, :] = get_ISI_hist(ISIs, bins)
-        cum_ISI_hist_y[i], cum_ISI_hist_x[i] = get_cumulative_ISI_hist(ISIs)
+        ISI_hist[cell_idx, :] = get_ISI_hist(ISIs, bins)
+        cum_ISI_hist_y[cell_idx], cum_ISI_hist_x[cell_idx] = get_cumulative_ISI_hist(ISIs)
 
         # save and plot
         save_dir_cell = os.path.join(save_dir_img, cell_type, cell_id)
@@ -92,7 +96,6 @@ if __name__ == '__main__':
     #                                      os.path.join(save_dir_img, cell_type, 'comparison_cum_ISI.png'))
 
     # plot all ISI hists
-    pl.close('all')
     if cell_type == 'grid_cells':
         n_rows = 3
         n_columns = 9
@@ -108,7 +111,12 @@ if __name__ == '__main__':
                     else:
                         axes[i1, i2].set_title(cell_ids[cell_idx], fontsize=12)
 
-                    axes[i1, i2].bar(bins[:-1], ISI_hist[cell_idx, :] / np.sum(ISI_hist[cell_idx, :]),
+                    if filter_long_ISIs:
+                        axes[i1, i2].annotate('%i%%<200 ms' % int(round(fraction_ISIs_filtered[cell_idx] * 100)),
+                                              xy=(0.07, 0.98), xycoords='axes fraction', fontsize=8, ha='left', va='top',
+                                              bbox=dict(boxstyle='round', fc='w', edgecolor='0.8', alpha=0.8))
+
+                    axes[i1, i2].bar(bins[:-1], ISI_hist[cell_idx, :] / (np.sum(ISI_hist[cell_idx, :]) * bin_width),
                                      bins[1] - bins[0], color='0.5')
                     cum_ISI_hist_x_with_end = np.insert(cum_ISI_hist_x[cell_idx], len(cum_ISI_hist_x[cell_idx]), max_ISI)
                     cum_ISI_hist_y_with_end = np.insert(cum_ISI_hist_y[cell_idx], len(cum_ISI_hist_y[cell_idx]), 1.0)
@@ -133,7 +141,7 @@ if __name__ == '__main__':
                     axes[i1, i2].set_yticks([])
                 cell_idx += 1
         pl.tight_layout()
-        pl.savefig(os.path.join(save_dir_img, cell_type, 'ISI_hist.png'))
+        pl.savefig(os.path.join(save_dir_img, cell_type, 'ISI_hist'+str(bin_width)+'.png'))
         pl.show()
 
     else:
@@ -148,7 +156,7 @@ if __name__ == '__main__':
             for i2 in range(n_columns):
                 if cell_idx < len(cell_ids):
                     axes[i1, i2].set_title(cell_ids[cell_idx], fontsize=12)
-                    axes[i1, i2].bar(bins[:-1], ISI_hist[cell_idx, :] / np.sum(ISI_hist[cell_idx, :]),
+                    axes[i1, i2].bar(bins[:-1], ISI_hist[cell_idx, :] / (np.sum(ISI_hist[cell_idx, :])*bin_width),
                                      bins[1] - bins[0], color='0.5')
                     if i1 == (n_rows - 1):
                         axes[i1, i2].set_xlabel('ISI (ms)')
@@ -163,5 +171,5 @@ if __name__ == '__main__':
         pl.tight_layout()
         adjust_bottom = 0.12 if len(cell_ids) <= 3 else 0.07
         pl.subplots_adjust(left=0.07, bottom=adjust_bottom, top=0.93)
-        pl.savefig(os.path.join(save_dir_img, cell_type, 'ISI_hist.png'))
+        pl.savefig(os.path.join(save_dir_img, cell_type, 'ISI_hist'+str(bin_width)+'.png'))
         pl.show()

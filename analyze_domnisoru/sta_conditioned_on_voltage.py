@@ -79,7 +79,7 @@ if __name__ == '__main__':
         # mean voltage before AP
         v_mean = np.zeros(len(v_APs))
         for i, v_AP in enumerate(v_APs):
-            v_mean[i] = np.mean(v_AP[:before_AP_idx_sta - to_idx(1, dt)])
+            v_mean[i] = np.std(v_AP[:before_AP_idx_sta - to_idx(1, dt)])  # TODO
         half = np.percentile(v_mean, 50)
         v_APs_greater = v_APs[v_mean > half]
         v_APs_lower = v_APs[v_mean <= half]

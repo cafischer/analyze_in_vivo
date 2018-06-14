@@ -2,7 +2,7 @@ from __future__ import division
 import numpy as np
 import os
 from analyze_in_vivo.load.load_schmidt_hieber import load_full_runs
-from analyze_in_vivo.investigate_grid_cell_stimuli import detrend
+from analyze_in_vivo.analyze_schmidt_hieber import detrend
 from cell_characteristics.analyze_APs import get_AP_onset_idxs, get_AP_max_idx
 from cell_characteristics import to_idx
 from cell_characteristics.sta_stc import get_sta, plot_sta, get_stc, choose_eigvecs, \

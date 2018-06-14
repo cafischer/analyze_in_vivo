@@ -11,6 +11,7 @@ import scipy.signal
 from scipy.ndimage.filters import convolve
 from cell_fitting.util import init_nan
 from grid_cell_stimuli import get_AP_max_idxs
+from analyze_in_vivo.analyze_domnisoru.position_vs_firing_rate import get_spike_train, smooth_firing_rate
 
 
 def threshold_by_velocity(arrays_to_shorten, velocity, threshold=1):
@@ -28,13 +29,6 @@ def threshold_by_velocity(arrays_to_shorten, velocity, threshold=1):
         arrays_to_shorten[i] = arrays_to_shorten[i][~to_low]
     velocity = velocity[~to_low]
     return arrays_to_shorten, velocity
-
-
-def get_spike_train(v, AP_threshold, dt, interval=2, v_diff_onset_max=5):
-    AP_max_idxs = get_AP_max_idxs(v, AP_threshold, dt, interval=interval, v_diff_onset_max=v_diff_onset_max)
-    spike_train = np.zeros(len(v))
-    spike_train[AP_max_idxs] = 1
-    return spike_train, AP_max_idxs
 
 
 def shuffle_spike_train(spike_train, random_generator):
@@ -155,19 +149,6 @@ def get_v_and_t_per_run(v, t, position):
     return v_runs, t_runs
 
 
-def smooth_firing_rate(firing_rate, std=1):
-    window = scipy.signal.gaussian(3, std)
-    firing_rate_smoothed = convolve(firing_rate, window/window.sum(), mode='nearest')
-
-    # # for testing:
-    # pl.figure()
-    # pl.plot(firing_rate, label='normal')
-    # pl.plot(firing_rate_smoothed, label='smoothed')
-    # pl.legend()
-    # pl.show()
-    return firing_rate_smoothed
-
-
 def get_in_out_field_idxs_domnisoru(cell_name, save_dir, bins):
     run_start_idxs = np.where(np.diff(position) < -track_len / 2.)[0] + 1  # +1 because diff shifts one to front
     n_runs = len(run_start_idxs) + 1  # +1 for first start at 0
@@ -203,13 +184,14 @@ def get_in_out_field_idxs_domnisoru(cell_name, save_dir, bins):
 if __name__ == '__main__':
     save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/in_out_field'
     save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
-    cell_type = 'pyramidal_layer2'
+    cell_type = 'grid_cells'
     cell_ids = load_cell_ids(save_dir, cell_type)
     param_list = ['Vm_ljpc', 'Y_cm', 'vel_100ms', 'spiketimes']
     AP_thresholds = {'s73_0004': -55, 's90_0006': -45, 's82_0002': -35,
                      's117_0002': -60, 's119_0004': -50, 's104_0007': -55, 's79_0003': -50, 's76_0002': -50, 's101_0009': -45}
 
     # parameters
+    use_AP_max_idxs_domnisoru = True
     seed = 1
     n_shuffles = 1000  # TODO 1000
     bin_size = 5  # cm
@@ -234,11 +216,16 @@ if __name__ == '__main__':
         velocity = copy.copy(data['vel_100ms'])
         dt = t[1] - t[0]
 
-        # velocity threshold the data
-        [v, t, position], velocity = threshold_by_velocity([v, t, position], velocity, velocity_threshold)
-
         # compute spike train
-        spike_train, AP_max_idxs = get_spike_train(v, AP_thresholds[cell_id], dt)
+        if use_AP_max_idxs_domnisoru:
+            AP_max_idxs = data['spiketimes']
+        else:
+            AP_max_idxs = get_AP_max_idxs(v, AP_thresholds[cell_id], dt)
+        spike_train = get_spike_train(AP_max_idxs, len(v))
+
+        # velocity threshold the data
+        [v, t, position, spike_train], velocity = threshold_by_velocity([v, t, position, spike_train], velocity,
+                                                                        velocity_threshold)
 
         # bin according to position and compute firing rate
         bins = np.arange(0, track_len + bin_size, bin_size)
@@ -289,32 +276,33 @@ if __name__ == '__main__':
         with open(os.path.join(save_dir_cell, 'params.json'), 'w') as f:
             json.dump(params, f)
 
-        in_field_domnisoru, out_field_domnisoru = get_in_out_field_idxs_domnisoru(cell_id, save_dir, bins)
-        pl.figure()
-        pl.title('In field')
-        con = np.vstack((in_field_domnisoru, np.array([in_field * 2])))
-        pl.imshow(con)
-        pl.ylabel('# Runs')
-        pl.xlabel('Position (cm)')
-        pl.gca().set_yticks([0, 5, 10, len(con)])
-        pl.gca().set_yticklabels([0, 5, 10, 'mine'])
-        pl.tight_layout()
-        pl.savefig(os.path.join(save_dir_cell, 'comparison_domnisoru_in_field.png'))
+        # in_field_domnisoru, out_field_domnisoru = get_in_out_field_idxs_domnisoru(cell_id, save_dir, bins)
+        # pl.figure()
+        # pl.title('In field')
+        # con = np.vstack((in_field_domnisoru, np.array([in_field * 2])))
+        # pl.imshow(con)
+        # pl.ylabel('# Runs')
+        # pl.xlabel('Position (cm)')
+        # pl.gca().set_yticks([0, 5, 10, len(con)])
+        # pl.gca().set_yticklabels([0, 5, 10, 'mine'])
+        # pl.tight_layout()
+        # pl.savefig(os.path.join(save_dir_cell, 'comparison_domnisoru_in_field.png'))
+        #
+        # pl.figure()
+        # pl.title('Out field')
+        # con = np.vstack((out_field_domnisoru, np.array([out_field * 2])))
+        # pl.imshow(con)
+        # pl.ylabel('# Runs')
+        # pl.xlabel('Position (cm)')
+        # pl.gca().set_yticks([0, 5, 10, len(con)])
+        # pl.gca().set_yticklabels([0, 5, 10, 'mine'])
+        # pl.tight_layout()
+        # pl.savefig(os.path.join(save_dir_cell, 'comparison_domnisoru_outfield.png'))
 
-        pl.figure()
-        pl.title('Out field')
-        con = np.vstack((out_field_domnisoru, np.array([out_field * 2])))
-        pl.imshow(con)
-        pl.ylabel('# Runs')
-        pl.xlabel('Position (cm)')
-        pl.gca().set_yticks([0, 5, 10, len(con)])
-        pl.gca().set_yticklabels([0, 5, 10, 'mine'])
-        pl.tight_layout()
-        pl.savefig(os.path.join(save_dir_cell, 'comparison_domnisoru_outfield.png'))
-
+        spike_train_bool = np.array(spike_train, dtype=bool)
         fig, axes = pl.subplots(2, 1, sharex='all')
         axes[0].plot(data['Y_cm'], np.arange(len(data['Y_cm'])) * data['dt'] / 1000., '0.5')
-        axes[0].plot(position[AP_max_idxs], (t / 1000.)[AP_max_idxs], 'or', markersize=1.0)
+        axes[0].plot(position[spike_train_bool], (t / 1000.)[spike_train_bool], 'or', markersize=1.0)
         axes[0].set_ylabel('Time (s)')
         axes[1].plot(bins[:-1], firing_rate_real, 'k')
         axes[1].set_ylabel('Firing rate (Hz)')
@@ -439,6 +427,6 @@ if __name__ == '__main__':
         pl.ylabel('Membrane potential (mV)', fontsize=16)
         pl.legend(fontsize=16)
         pl.savefig(os.path.join(save_dir_cell, 'v_and_fields.png'))
-        pl.show()
+        #pl.show()
 
         pl.close('all')
