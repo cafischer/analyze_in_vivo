@@ -106,13 +106,9 @@ if __name__ == '__main__':
 
         # spike-time autocorrelation
         auto_corr = auto_correlate(spike_train_new, max_lag_idx)
-        auto_corr /= np.sum(auto_corr)  # normalize
+        auto_corr /= (np.sum(auto_corr) * bin_size)  # normalize
         auto_corr[max_lag_idx] = 0  # for better plotting
         auto_corr_cells.append(auto_corr)
-
-        auto_corr_lags = np.zeros(max_lag_idx)
-        for lag in range(1, max_lag_idx + 1):
-            auto_corr_lags[lag-1] = np.correlate(spike_train_new[:-lag], spike_train_new[lag:], mode='valid')[0]
 
         # plot
         save_dir_cell = os.path.join(save_dir_img, cell_id)

@@ -8,6 +8,8 @@ from cell_characteristics import to_idx
 from cell_characteristics.sta_stc import get_sta, plot_sta, get_sta_median, plot_APs
 from grid_cell_stimuli import get_AP_max_idxs, find_all_AP_traces
 from cell_fitting.util import init_nan
+from cell_characteristics.analyze_APs import get_spike_characteristics
+from cell_fitting.optimization.evaluation import get_spike_characteristics_dict
 pl.style.use('paper')
 
 
@@ -25,6 +27,7 @@ if __name__ == '__main__':
 
     # parameters
     use_AP_max_idxs_domnisoru = True
+    use_mean_or_std = 'std'
     do_detrend = False
     in_field = False
     out_field = False
@@ -39,11 +42,17 @@ if __name__ == '__main__':
     if not os.path.exists(save_dir_img):
         os.makedirs(save_dir_img)
 
-    #
+    # main
     sta_mean_greater_cells = []
     sta_std_greater_cells = []
     sta_mean_lower_cells = []
     sta_std_lower_cells = []
+    DAP_deflection_greater_per_cell = np.zeros(len(cell_ids))
+    DAP_width_greater_per_cell = np.zeros(len(cell_ids))
+    DAP_time_greater_per_cell = np.zeros(len(cell_ids))
+    DAP_deflection_lower_per_cell = np.zeros(len(cell_ids))
+    DAP_width_lower_per_cell = np.zeros(len(cell_ids))
+    DAP_time_lower_per_cell = np.zeros(len(cell_ids))
     for cell_idx, cell_id in enumerate(cell_ids):
         print cell_id
 
@@ -77,12 +86,15 @@ if __name__ == '__main__':
         t_AP = np.arange(after_AP_idx_sta + before_AP_idx_sta + 1) * dt
 
         # mean voltage before AP
-        v_mean = np.zeros(len(v_APs))
+        v_condition = np.zeros(len(v_APs))
         for i, v_AP in enumerate(v_APs):
-            v_mean[i] = np.std(v_AP[:before_AP_idx_sta - to_idx(1, dt)])  # TODO
-        half = np.percentile(v_mean, 50)
-        v_APs_greater = v_APs[v_mean > half]
-        v_APs_lower = v_APs[v_mean <= half]
+            if use_mean_or_std == 'mean':
+                v_condition[i] = np.mean(v_AP[:before_AP_idx_sta - to_idx(1, dt)])
+            elif use_mean_or_std == 'std':
+                v_condition[i] = np.std(v_AP[:before_AP_idx_sta - to_idx(1, dt)])
+        half = np.percentile(v_condition, 50)
+        v_APs_greater = v_APs[v_condition > half]
+        v_APs_lower = v_APs[v_condition <= half]
 
         # STA
         sta_mean_greater, sta_std_greater = get_sta(v_APs_greater)
@@ -92,6 +104,35 @@ if __name__ == '__main__':
         sta_mean_lower_cells.append(sta_mean_lower)
         sta_std_lower_cells.append(sta_std_lower)
 
+        # plot_APs(v_APs_lower, t_AP, None)
+        # plot_APs(v_APs_greater, t_AP, None)
+        # pl.show()
+
+        # get DAP characteristics
+        spike_characteristics_dict = get_spike_characteristics_dict()
+        spike_characteristics_dict['AP_max_idx'] = before_AP_idx_sta
+        spike_characteristics_dict['AP_onset'] = before_AP_idx_sta - to_idx(1, dt)
+        spike_characteristics_dict['order_fAHP_min'] = 0.2
+        spike_characteristics_dict['fAHP_interval'] = 3.0
+        spike_characteristics_dict['DAP_interval'] = 5.0
+        DAP_time_greater_per_cell[cell_idx], DAP_deflection_greater_per_cell[cell_idx], \
+        DAP_width_greater_per_cell[cell_idx] = get_spike_characteristics(sta_mean_greater, t_AP,
+                                                                        ['fAHP2DAP_time', 'DAP_deflection', 'DAP_width'],
+                                                                        sta_mean_greater[0],
+                                                                        check=False, **spike_characteristics_dict)
+        DAP_time_lower_per_cell[cell_idx], DAP_deflection_lower_per_cell[cell_idx], \
+        DAP_width_lower_per_cell[cell_idx] = get_spike_characteristics(sta_mean_lower, t_AP,
+                                                                        ['fAHP2DAP_time', 'DAP_deflection', 'DAP_width'],
+                                                                        sta_mean_lower[0],
+                                                                        check=False, **spike_characteristics_dict)
+    # plots
+
+    if use_mean_or_std == 'mean':
+        labels = ['$\mu$ > 50th percentile', '$\mu$ <= 50th percentile']
+    elif use_mean_or_std == 'std':
+        labels = ['$\sigma$ > 50th percentile', '$\sigma$ <= 50th percentile']
+
+    #
     pl.close('all')
     if cell_type == 'grid_cells':
         n_rows = 3
@@ -107,11 +148,13 @@ if __name__ == '__main__':
                         axes[i1, i2].set_title(cell_ids[cell_idx] + ' ' + u'\u25B4', fontsize=12)
                     else:
                         axes[i1, i2].set_title(cell_ids[cell_idx], fontsize=12)
-                    axes[i1, i2].plot(t_AP, sta_mean_greater_cells[cell_idx], 'r')
-                    axes[i1, i2].fill_between(t_AP, sta_mean_greater_cells[cell_idx] - sta_std_greater_cells[cell_idx],
-                                              sta_mean_greater_cells[cell_idx] + sta_std_greater_cells[cell_idx],
+                    offset = 10
+                    axes[i1, i2].plot(t_AP, sta_mean_greater_cells[cell_idx] + offset, 'r', label=labels[0])
+                    axes[i1, i2].fill_between(t_AP,
+                                              sta_mean_greater_cells[cell_idx] - sta_std_greater_cells[cell_idx] + offset,
+                                              sta_mean_greater_cells[cell_idx] + sta_std_greater_cells[cell_idx] + offset,
                                               color='r', alpha=0.5)
-                    axes[i1, i2].plot(t_AP, sta_mean_lower_cells[cell_idx], 'b')
+                    axes[i1, i2].plot(t_AP, sta_mean_lower_cells[cell_idx], 'b', label=labels[1])
                     axes[i1, i2].fill_between(t_AP, sta_mean_lower_cells[cell_idx] - sta_std_lower_cells[cell_idx],
                                               sta_mean_lower_cells[cell_idx] + sta_std_lower_cells[cell_idx],
                                               color='b', alpha=0.5)
@@ -119,6 +162,8 @@ if __name__ == '__main__':
                         axes[i1, i2].set_xlabel('Time (ms)')
                     if i2 == 0:
                         axes[i1, i2].set_ylabel('Mem. Pot. (mV)')
+                    if i1 == 0 and i2 == (n_columns - 1):
+                        axes[i1, i2].legend(fontsize=10)
                 else:
                     axes[i1, i2].spines['left'].set_visible(False)
                     axes[i1, i2].spines['bottom'].set_visible(False)
@@ -126,5 +171,63 @@ if __name__ == '__main__':
                     axes[i1, i2].set_yticks([])
                 cell_idx += 1
         pl.tight_layout()
-        pl.savefig(os.path.join(save_dir_img, 'sta_conditioned_v.png'))
+        if use_mean_or_std == 'mean':
+            pl.savefig(os.path.join(save_dir_img, 'sta_conditioned_on_mean_v.png'))
+        elif use_mean_or_std == 'std':
+            pl.savefig(os.path.join(save_dir_img, 'sta_conditioned_on_std_v.png'))
+
+        #
+        pl.figure()
+        lim_max = max(np.nanmax(DAP_deflection_lower_per_cell), np.nanmax(DAP_deflection_greater_per_cell)) + 0.1
+        pl.plot(np.arange(0, lim_max + 0.1, 0.1), np.arange(0, lim_max + 0.1, 0.1), color='0.5', linestyle='--')
+        pl.plot(DAP_deflection_lower_per_cell, DAP_deflection_greater_per_cell, 'ok')
+        for cell_idx in range(len(cell_ids)):
+            pl.annotate(cell_ids[cell_idx], xy=(DAP_deflection_lower_per_cell[cell_idx] + 0.05,
+                                                DAP_deflection_greater_per_cell[cell_idx] + 0.05))
+        pl.title('DAP deflection (mV)')
+        pl.xlim(0, lim_max)
+        pl.ylim(0, lim_max)
+        pl.xlabel(labels[1])
+        pl.ylabel(labels[0])
+        pl.tight_layout()
+        if use_mean_or_std == 'mean':
+            pl.savefig(os.path.join(save_dir_img, 'DAP_deflection_conditioned_on_mean_v.png'))
+        elif use_mean_or_std == 'std':
+            pl.savefig(os.path.join(save_dir_img, 'DAP_deflection_conditioned_on_std_v.png'))
+
+        pl.figure()
+        lim_min = min(np.nanmin(DAP_time_lower_per_cell), np.nanmin(DAP_time_greater_per_cell)) + 0.1
+        lim_max = max(np.nanmax(DAP_time_lower_per_cell), np.nanmax(DAP_time_greater_per_cell)) + 0.1
+        pl.plot(np.arange(lim_min - 0.1, lim_max + 0.1, 0.1), np.arange(lim_min - 0.1, lim_max + 0.1, 0.1),
+                color='0.5', linestyle='--')
+        pl.plot(DAP_time_lower_per_cell, DAP_time_greater_per_cell, 'ok')
+        for cell_idx in range(len(cell_ids)):
+            pl.annotate(cell_ids[cell_idx], xy=(DAP_time_lower_per_cell[cell_idx] + 0.05,
+                                                DAP_time_greater_per_cell[cell_idx] + 0.05))
+        pl.title('Time fAHP - DAP')
+        pl.xlabel(labels[1])
+        pl.ylabel(labels[0])
+        pl.tight_layout()
+        if use_mean_or_std == 'mean':
+            pl.savefig(os.path.join(save_dir_img, 'DAP_time_conditioned_on_mean_v.png'))
+        elif use_mean_or_std == 'std':
+            pl.savefig(os.path.join(save_dir_img, 'DAP_time_conditioned_on_std_v.png'))
+
+        pl.figure()
+        lim_min = min(np.nanmin(DAP_width_lower_per_cell), np.nanmin(DAP_width_greater_per_cell)) + 0.1
+        lim_max = max(np.nanmax(DAP_width_lower_per_cell), np.nanmax(DAP_width_greater_per_cell)) + 0.1
+        pl.plot(np.arange(lim_min - 0.1, lim_max + 0.1, 0.1), np.arange(lim_min - 0.1, lim_max + 0.1, 0.1),
+                color='0.5', linestyle='--')
+        pl.plot(DAP_width_lower_per_cell, DAP_width_greater_per_cell, 'ok')
+        for cell_idx in range(len(cell_ids)):
+            pl.annotate(cell_ids[cell_idx], xy=(DAP_width_lower_per_cell[cell_idx] + 0.05,
+                                                DAP_width_greater_per_cell[cell_idx] + 0.05))
+        pl.title('DAP width')
+        pl.xlabel(labels[1])
+        pl.ylabel(labels[0])
+        pl.tight_layout()
+        if use_mean_or_std == 'mean':
+            pl.savefig(os.path.join(save_dir_img, 'DAP_width_conditioned_on_mean_v.png'))
+        elif use_mean_or_std == 'std':
+            pl.savefig(os.path.join(save_dir_img, 'DAP_width_conditioned_on_std_v.png'))
         pl.show()

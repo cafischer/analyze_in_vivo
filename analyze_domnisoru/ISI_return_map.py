@@ -22,7 +22,7 @@ if __name__ == '__main__':
     use_AP_max_idxs_domnisoru = True
     filter_long_ISIs = True
     max_ISI = 200
-    short_ISI = 8  # ms
+    ISI_burst = 8  # ms
     steps = np.arange(0, max_ISI + 1.0, 1.0)
     if filter_long_ISIs:
         save_dir_img = os.path.join(save_dir_img, 'cut_ISIs_at_' + str(max_ISI))
@@ -64,7 +64,7 @@ if __name__ == '__main__':
             mean[i] = np.mean(next_ISI[idx])
 
             # probability next ISI < x ms
-            prob_next_ISI_short[cell_idx, i] = np.sum(next_ISI[idx] < short_ISI) / float(np.sum(idx))
+            prob_next_ISI_short[cell_idx, i] = np.sum(next_ISI[idx] < ISI_burst) / float(np.sum(idx))
 
         # save and plot
         save_dir_cell = os.path.join(save_dir_img, cell_type, cell_id)
@@ -91,7 +91,7 @@ if __name__ == '__main__':
         pl.title(cell_id, fontsize=16)
         pl.plot(steps, prob_next_ISI_short[cell_idx, :], 'k')
         pl.xlabel('ISI[n] (ms)')
-        pl.ylabel('Prob. ISI[n+1] < %i ms' % short_ISI)
+        pl.ylabel('Prob. ISI[n+1] < %i ms' % ISI_burst)
         pl.tight_layout()
         #pl.show()
 
@@ -146,7 +146,6 @@ if __name__ == '__main__':
                         axes[i1, i2].set_title(cell_ids[cell_idx], fontsize=12)
                     axes[i1, i2].plot(ISIs_per_cell[cell_idx][:-1], ISIs_per_cell[cell_idx][1:], color='0.5',
                                       marker='o', linestyle='', markersize=1, alpha=0.5)
-                    axes[i1, i2].plot(steps, median_cells[cell_idx, :], 'k', label='median')
                     axes[i1, i2].set_xlim(0, max_ISI)
                     axes[i1, i2].set_ylim(0, max_ISI)
                     axes[i1, i2].set_aspect('equal', adjustable='box-forced')
@@ -163,6 +162,37 @@ if __name__ == '__main__':
         pl.tight_layout()
         pl.subplots_adjust(wspace=0.25)
         pl.savefig(os.path.join(save_dir_img, cell_type, 'return_map.png'))
+
+        fig, axes = pl.subplots(n_rows, n_columns, sharex='all', sharey='all', figsize=(14, 8.5))
+        cell_idx = 0
+        for i1 in range(n_rows):
+            for i2 in range(n_columns):
+                if cell_idx < len(cell_ids):
+                    if get_celltype(cell_ids[cell_idx], save_dir) == 'stellate':
+                        axes[i1, i2].set_title(cell_ids[cell_idx] + ' ' + u'\u2605', fontsize=12)
+                    elif get_celltype(cell_ids[cell_idx], save_dir) == 'pyramidal':
+                        axes[i1, i2].set_title(cell_ids[cell_idx] + ' ' + u'\u25B4', fontsize=12)
+                    else:
+                        axes[i1, i2].set_title(cell_ids[cell_idx], fontsize=12)
+                    axes[i1, i2].plot(ISIs_per_cell[cell_idx][:-1], ISIs_per_cell[cell_idx][1:], color='0.5',
+                                      marker='o', linestyle='', markersize=1, alpha=0.5)
+                    axes[i1, i2].plot(steps, median_cells[cell_idx, :], 'k', label='median')
+                    axes[i1, i2].set_xlim(0, max_ISI)
+                    axes[i1, i2].set_ylim(0, max_ISI)
+                    axes[i1, i2].set_aspect('equal', adjustable='box-forced')
+                    if i1 == (n_rows - 1):
+                        axes[i1, i2].set_xlabel('ISI[n] (ms)')
+                    if i2 == 0:
+                        axes[i1, i2].set_ylabel('ISI[n+1] (ms)')
+                else:
+                    axes[i1, i2].spines['left'].set_visible(False)
+                    axes[i1, i2].spines['bottom'].set_visible(False)
+                    axes[i1, i2].set_xticks([])
+                    axes[i1, i2].set_yticks([])
+                cell_idx += 1
+        pl.tight_layout()
+        pl.subplots_adjust(wspace=0.25)
+        pl.savefig(os.path.join(save_dir_img, cell_type, 'return_map_with_median.png'))
         #pl.show()
 
         # plot prob. next ISI < x ms
@@ -186,7 +216,7 @@ if __name__ == '__main__':
                     if i1 == (n_rows - 1):
                         axes[i1, i2].set_xlabel('ISI[n] (ms)')
                     if i2 == 0:
-                        axes[i1, i2].set_ylabel('Prob. ISI[n+1] < %i ms' % short_ISI)
+                        axes[i1, i2].set_ylabel('Prob. ISI[n+1] < %i ms' % ISI_burst)
                 else:
                     axes[i1, i2].spines['left'].set_visible(False)
                     axes[i1, i2].spines['bottom'].set_visible(False)

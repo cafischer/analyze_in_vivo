@@ -8,10 +8,20 @@ from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data, get_ce
 from analyze_in_vivo.analyze_domnisoru.check_basic.in_out_field import get_start_end_group_of_ones
 from scipy.ndimage.filters import convolve
 from scipy.optimize import curve_fit, brentq
+from sklearn.metrics import mean_squared_error
 pl.style.use('paper')
 
 
 def fun_fit(x, a, b, c, tau):
+    res = c * x * (np.exp(-x / tau))
+    if isinstance(res, (float, int)):
+        res = res if res > 0 else 0
+    else:
+        res[x <= 0] = 0
+    return res
+
+
+def fun_fit_with_a_and_b(x, a, b, c, tau):
     res = c * (x - b) ** a * (np.exp(-(x - b) / tau))
     if isinstance(res, (float, int)):
         res = res if res > 0 else 0
@@ -39,9 +49,6 @@ def fun_fit_with_a(x, a, b, c, tau):
 
 
 if __name__ == '__main__':
-    # Note: no all APs are captured as the spikes are so small and noise is high and depth of hyperpolarization
-    # between successive spikes varies
-
     save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/ISI_hist'
     save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
     cell_type = 'grid_cells'
@@ -58,10 +65,10 @@ if __name__ == '__main__':
     use_AP_max_idxs_domnisoru = True
     filter_long_ISIs = True
     max_ISI = 100
-    use_fit_fun = 'fun_fit'
+    use_fit_fun = 'fun_fit_with_a_and_b'
     save_dir_img = os.path.join(save_dir_img, cell_type, use_fit_fun)
     n_smooth = 5
-    bin_widths = np.arange(0.5, 2.0+0.1, 0.1)  # TODO
+    bin_widths = np.arange(0.5, 2.0+0.1, 0.1)
     if not os.path.exists(save_dir_img):
         os.makedirs(save_dir_img)
 
@@ -77,6 +84,7 @@ if __name__ == '__main__':
     root1_fit = np.zeros((len(cell_ids), len(bin_widths)))
     root2_fit = np.zeros((len(cell_ids), len(bin_widths)))
     p_opt_fit = np.zeros((len(cell_ids), len(bin_widths)), dtype=object)
+    rmse = np.zeros((len(cell_ids), len(bin_widths)))
     for cell_idx, cell_id in enumerate(cell_ids):
         for bin_idx, bin_width in enumerate(bin_widths):
             print cell_id
@@ -99,6 +107,7 @@ if __name__ == '__main__':
 
             # ISI histograms
             ISI_hist = get_ISI_hist(ISIs, bins)
+            ISI_hist = ISI_hist / (np.sum(ISI_hist) * bin_width)  # normalize
 
             # estimate width at half peak of ISI hist
             bin_idx_peak = np.argmax(ISI_hist)
@@ -126,24 +135,59 @@ if __name__ == '__main__':
                 fit_fun = fun_fit_with_a
             elif use_fit_fun == 'fun_fit_with_b':
                 fit_fun = fun_fit_with_b
+            elif use_fit_fun == 'fun_fit_with_a_and_b':
+                fit_fun = fun_fit_with_a_and_b
             else:
                 raise ValueError
 
             try:
-                p_opt_fit[cell_idx, bin_idx] = curve_fit(fit_fun, bins_fit[cell_idx, bin_idx][:-1],
+                a0 = 1.0
+                b0 = bins_fit[cell_idx, bin_idx][np.where(ISI_hist_fit[cell_idx, bin_idx] > 0)[0][0]] + bin_width/2.0
+
+                idx_max = np.argmax(ISI_hist_fit[cell_idx, bin_idx])
+                if use_fit_fun == 'fun_fit':
+                    tau0 = bins_fit[cell_idx, bin_idx][idx_max] + bin_width / 2.0
+                    c0 = ISI_hist_fit[cell_idx, bin_idx][idx_max] / (tau0 * np.exp(-1))
+                elif use_fit_fun == 'fun_fit_with_a':
+                    tau0 = bins_fit[cell_idx, bin_idx][idx_max] + bin_width / 2.0
+                    c0 = ISI_hist_fit[cell_idx, bin_idx][idx_max] / (a0 * tau0 * np.exp(-a0))
+                elif use_fit_fun == 'fun_fit_with_b':
+                    tau0 = bins_fit[cell_idx, bin_idx][idx_max] + bin_width / 2.0 - b0
+                    if tau0 == 0:
+                        tau0 = 0.1
+                        b0 = b0 - tau0
+                    c0 = ISI_hist_fit[cell_idx, bin_idx][idx_max] / (tau0 * np.exp(-1))
+                elif use_fit_fun == 'fun_fit_with_a_and_b':
+                    tau0 = bins_fit[cell_idx, bin_idx][idx_max] + bin_width / 2.0 - b0
+                    if tau0 == 0:
+                        tau0 = 0.1
+                        b0 = b0 - tau0
+                    c0 = ISI_hist_fit[cell_idx, bin_idx][idx_max] / (a0 * tau0 * np.exp(-a0))
+
+                # pl.figure()
+                # pl.bar(bins_fit[cell_idx, bin_idx][:-1], ISI_hist_fit[cell_idx, bin_idx],
+                #        bins_fit[cell_idx, bin_idx][1] - bins_fit[cell_idx, bin_idx][0], color='0.5', align='edge')
+                # x = np.arange(0, 100, 0.01)
+                # pl.plot(x, fit_fun(x, a0, b0, c0, tau0), '-', color='r', linewidth=1.5)
+                # pl.show()
+
+                p_opt_fit[cell_idx, bin_idx] = curve_fit(fit_fun, bins_fit[cell_idx, bin_idx][:-1] + bin_width/2.0,
                                                          ISI_hist_fit[cell_idx, bin_idx],
-                                                         bounds=([0, 0, 0, 1e-5], [np.inf, np.inf, np.inf, np.inf]))[0]
+                                                         bounds=([1e-5, 0, 0, 1e-5], [100, 200, np.inf, np.inf]),
+                                                         p0=(a0, b0, c0, tau0))[0]
             except RuntimeError:
                 p_opt_fit[cell_idx, bin_idx] = np.array([np.nan, np.nan, np.nan, np.nan])
 
             # compute ISI at peak and half width for fit
             if use_fit_fun == 'fun_fit':
-                ISI_at_peak_fit[cell_idx, bin_idx] = p_opt_fit[cell_idx, bin_idx][0] * p_opt_fit[cell_idx, bin_idx][3] \
-                                                     + p_opt_fit[cell_idx, bin_idx][1]
+                ISI_at_peak_fit[cell_idx, bin_idx] = p_opt_fit[cell_idx, bin_idx][3]
             elif use_fit_fun == 'fun_fit_with_a':
                 ISI_at_peak_fit[cell_idx, bin_idx] = p_opt_fit[cell_idx, bin_idx][0] * p_opt_fit[cell_idx, bin_idx][3]
             elif use_fit_fun == 'fun_fit_with_b':
                 ISI_at_peak_fit[cell_idx, bin_idx] = p_opt_fit[cell_idx, bin_idx][3] + p_opt_fit[cell_idx, bin_idx][1]
+            if use_fit_fun == 'fun_fit_with_a_and_b':
+                ISI_at_peak_fit[cell_idx, bin_idx] = p_opt_fit[cell_idx, bin_idx][0] * p_opt_fit[cell_idx, bin_idx][3] \
+                                                     + p_opt_fit[cell_idx, bin_idx][1]
 
             half_height_fit = fit_fun(ISI_at_peak_fit[cell_idx, bin_idx], *p_opt_fit[cell_idx, bin_idx]) / 2.0
 
@@ -152,23 +196,33 @@ if __name__ == '__main__':
 
             root1_fit[cell_idx, bin_idx] = brentq(fun_roots, 0, ISI_at_peak_fit[cell_idx, bin_idx])
             add_range = 0
-            while fun_roots(max_ISI + add_range) >= 0:
+            while fun_roots(max_ISI + add_range) >= 0 and add_range <= 1000:
                 add_range += 10
+            if add_range == 1000:
+                root2_fit[cell_idx, bin_idx] = np.nan
             root2_fit[cell_idx, bin_idx] = brentq(fun_roots, ISI_at_peak_fit[cell_idx, bin_idx], max_ISI+add_range)
 
             half_width_fit[cell_idx, bin_idx] = root2_fit[cell_idx, bin_idx] - root1_fit[cell_idx, bin_idx]
 
-            # pl.figure()
-            # pl.bar(bins_fit[cell_idx, bin_idx][:-1], ISI_hist_fit[cell_idx, bin_idx],
-            #        bins_fit[cell_idx, bin_idx][1] - bins_fit[cell_idx, bin_idx][0], color='0.5')
-            # x = np.arange(0, 100, 0.01)
-            # pl.plot(x, fit_fun(x, *p_opt_fit[cell_idx, bin_idx]), '-', color='k', linewidth=1.5)
-            # pl.plot(ISI_at_peak_fit[cell_idx, bin_idx],
-            #         fit_fun(np.array([ISI_at_peak_fit[cell_idx, bin_idx]]), *p_opt_fit[cell_idx, bin_idx]), 'or')
-            # pl.plot([root1_fit[cell_idx, bin_idx], root2_fit[cell_idx, bin_idx]],
-            #         [fit_fun(root1_fit[cell_idx, bin_idx], *p_opt_fit[cell_idx, bin_idx]),
-            #          fit_fun(root2_fit[cell_idx, bin_idx], *p_opt_fit[cell_idx, bin_idx])], 'r', linewidth=2)
-            # pl.show()
+            # root mean squared error
+            if np.any(np.isnan(p_opt_fit[cell_idx, bin_idx])):
+                rmse[cell_idx, bin_idx] = np.nan
+            else:
+                rmse[cell_idx, bin_idx] = np.sqrt(mean_squared_error(ISI_hist_fit[cell_idx, bin_idx],
+                                                  fit_fun(bins_fit[cell_idx, bin_idx][:-1] + bin_width/2.0,
+                                                          *p_opt_fit[cell_idx, bin_idx])))
+
+            pl.figure()
+            pl.bar(bins_fit[cell_idx, bin_idx][:-1], ISI_hist_fit[cell_idx, bin_idx],
+                   bins_fit[cell_idx, bin_idx][1] - bins_fit[cell_idx, bin_idx][0], color='0.5', align='edge')
+            x = np.arange(0, 100, 0.01)
+            pl.plot(x, fit_fun(x, *p_opt_fit[cell_idx, bin_idx]), '-', color='k', linewidth=1.5)
+            pl.plot(ISI_at_peak_fit[cell_idx, bin_idx],
+                    fit_fun(ISI_at_peak_fit[cell_idx, bin_idx], *p_opt_fit[cell_idx, bin_idx]), 'or')
+            pl.plot([root1_fit[cell_idx, bin_idx], root2_fit[cell_idx, bin_idx]],
+                    [fit_fun(root1_fit[cell_idx, bin_idx], *p_opt_fit[cell_idx, bin_idx]),
+                     fit_fun(root2_fit[cell_idx, bin_idx], *p_opt_fit[cell_idx, bin_idx])], 'r', linewidth=2)
+            pl.show()
 
         # smooth 
         half_width_smoothed[cell_idx, :] = convolve(half_width[cell_idx, :], np.ones(n_smooth) / float(n_smooth),
@@ -298,16 +352,17 @@ if __name__ == '__main__':
     # comparison half-width
     cm = pl.cm.get_cmap('plasma')
     colors = cm(np.linspace(0, 1, len(cell_ids)))
-    pl.figure()
-    for cell_idx in range(len(cell_ids)):
-        pl.plot(half_width_smoothed[cell_idx, :], half_width_fit[cell_idx, :], 'o-', color=colors[cell_idx],
-                label=cell_ids[cell_idx], markersize=4)
-    pl.xlim(bin_widths[0] - 0.05, bin_widths[-1] + 0.8)
-    pl.xlabel('Width at half peak from histogram (ms)')
-    pl.ylabel('Width at half peak from fit (ms)')
+    fig, axes = pl.subplots(2, 3, sharex=True, sharey=True, squeeze=False, figsize=(11, 6))
+    axes = axes.flatten()
+    for bin_idx, bin_width in enumerate(bin_widths[1:12:2]):
+        for cell_idx in range(len(cell_ids)):
+            axes[bin_idx].set_title('Bin width: %.2f' % bin_width)
+            axes[bin_idx].plot(half_width_smoothed[cell_idx, bin_idx], half_width_fit[cell_idx, bin_idx], 'o-',
+                    color=colors[cell_idx], markersize=4)
+            axes[bin_idx].set_xlabel('Width from hist. (ms)')
+            axes[bin_idx].set_ylabel('Width from fit (ms)')
     pl.tight_layout()
     pl.savefig(os.path.join(save_dir_img, 'comparison_half_width.png'))
-
 
     # other plots for fit
     for bin_idx, bin_width in enumerate(bin_widths):
@@ -330,13 +385,13 @@ if __name__ == '__main__':
                         else:
                             axes[i1, i2].set_title(cell_ids[cell_idx], fontsize=12)
 
-                    axes[i1, i2].bar(1, (half_width_fit[cell_idx, bin_idx]), width=0.8, color='0.5')
-                    axes[i1, i2].set_xlim(0, 2)
-                    axes[i1, i2].set_xticks([])
+                        axes[i1, i2].bar(1, (half_width_fit[cell_idx, bin_idx]), width=0.8, color='0.5', align='edge')
+                        axes[i1, i2].set_xlim(0, 2)
+                        axes[i1, i2].set_xticks([])
 
-                    if i2 == 0:
-                        axes[i1, i2].set_ylabel('Half width (ms)')
-                    cell_idx += 1
+                        if i2 == 0:
+                            axes[i1, i2].set_ylabel('Half width (ms)')
+                        cell_idx += 1
             pl.tight_layout()
             pl.savefig(os.path.join(save_dir_img_bin, 'half_width_fit.png'))
 
@@ -352,15 +407,37 @@ if __name__ == '__main__':
                         else:
                             axes[i1, i2].set_title(cell_ids[cell_idx], fontsize=12)
 
-                    axes[i1, i2].bar(1, (ISI_at_peak_fit[cell_idx, bin_idx]), width=0.8, color='0.5')
-                    axes[i1, i2].set_xlim(0, 2)
-                    axes[i1, i2].set_xticks([])
+                        axes[i1, i2].bar(1, (ISI_at_peak_fit[cell_idx, bin_idx]), width=0.8, color='0.5', align='edge')
+                        axes[i1, i2].set_xlim(0, 2)
+                        axes[i1, i2].set_xticks([])
 
-                    if i2 == 0:
-                        axes[i1, i2].set_ylabel('ISI at peak (ms)')
-                    cell_idx += 1
+                        if i2 == 0:
+                            axes[i1, i2].set_ylabel('ISI at peak (ms)')
+                        cell_idx += 1
             pl.tight_layout()
             pl.savefig(os.path.join(save_dir_img_bin, 'ISI_at_peak_fit.png'))
+
+            fig, axes = pl.subplots(n_rows, n_columns, sharex='all', sharey='all', figsize=(14, 8.5))
+            cell_idx = 0
+            for i1 in range(n_rows):
+                for i2 in range(n_columns):
+                    if cell_idx < len(cell_ids):
+                        if get_celltype(cell_ids[cell_idx], save_dir) == 'stellate':
+                            axes[i1, i2].set_title(cell_ids[cell_idx] + ' ' + u'\u2605', fontsize=12)
+                        elif get_celltype(cell_ids[cell_idx], save_dir) == 'pyramidal':
+                            axes[i1, i2].set_title(cell_ids[cell_idx] + ' ' + u'\u25B4', fontsize=12)
+                        else:
+                            axes[i1, i2].set_title(cell_ids[cell_idx], fontsize=12)
+
+                        axes[i1, i2].bar(1, (rmse[cell_idx, bin_idx]), width=0.8, color='0.5', align='edge')
+                        axes[i1, i2].set_xlim(0, 2)
+                        axes[i1, i2].set_xticks([])
+
+                        if i2 == 0:
+                            axes[i1, i2].set_ylabel('RMSE')
+                        cell_idx += 1
+            pl.tight_layout()
+            pl.savefig(os.path.join(save_dir_img_bin, 'rmse.png'))
 
 
             fig, axes = pl.subplots(n_rows, n_columns, sharex='all', figsize=(14, 8.5))
@@ -375,25 +452,27 @@ if __name__ == '__main__':
                         else:
                             axes[i1, i2].set_title(cell_ids[cell_idx], fontsize=12)
 
-                    axes[i1, i2].bar(bins_fit[cell_idx, bin_idx][:-1], ISI_hist_fit[cell_idx, bin_idx],
-                                     bins_fit[cell_idx, bin_idx][1] - bins_fit[cell_idx, bin_idx][0], color='0.5')
-                    x = np.arange(0, 100, 0.01)
-                    axes[i1, i2].plot(x, fun_fit(x, *p_opt_fit[cell_idx, bin_idx]), '-', color='k', linewidth=1.5)
-                    axes[i1, i2].plot(ISI_at_peak_fit[cell_idx, bin_idx],
-                                      fun_fit(np.array([ISI_at_peak_fit[cell_idx, bin_idx]]), *p_opt_fit[cell_idx, bin_idx]), 'or')
-                    axes[i1, i2].plot([root1_fit[cell_idx, bin_idx], root2_fit[cell_idx, bin_idx]],
-                                      [fun_fit(root1_fit[cell_idx, bin_idx], *p_opt_fit[cell_idx, bin_idx]),
-                                       fun_fit(root2_fit[cell_idx, bin_idx], *p_opt_fit[cell_idx, bin_idx])],
-                                      'r', linewidth=2)
-
-                    if i1 == (n_rows - 1):
-                        axes[i1, i2].set_xlabel('ISI (ms)')
-                    if i2 == 0:
-                        axes[i1, i2].set_ylabel('# ISIs')
-                    cell_idx += 1
+                        axes[i1, i2].bar(bins_fit[cell_idx, bin_idx][:-1], ISI_hist_fit[cell_idx, bin_idx],
+                                         bins_fit[cell_idx, bin_idx][1] - bins_fit[cell_idx, bin_idx][0], color='0.5',
+                                         align='edge')
+                        x = np.arange(0, 100, 0.01)
+                        axes[i1, i2].plot(x, fit_fun(x, *p_opt_fit[cell_idx, bin_idx]), '-', color='k', linewidth=1.0)
+                        axes[i1, i2].plot(ISI_at_peak_fit[cell_idx, bin_idx],
+                                          fit_fun(np.array([ISI_at_peak_fit[cell_idx, bin_idx]]),
+                                                  *p_opt_fit[cell_idx, bin_idx]), 'or', markersize=4)
+                        axes[i1, i2].plot([root1_fit[cell_idx, bin_idx], root2_fit[cell_idx, bin_idx]],
+                                          [fit_fun(root1_fit[cell_idx, bin_idx], *p_opt_fit[cell_idx, bin_idx]),
+                                           fit_fun(root2_fit[cell_idx, bin_idx], *p_opt_fit[cell_idx, bin_idx])],
+                                          'r', linewidth=2)
+                        axes[i1, i2].set_xlim(0, max_ISI)
+                        if i1 == (n_rows - 1):
+                            axes[i1, i2].set_xlabel('ISI (ms)')
+                        if i2 == 0:
+                            axes[i1, i2].set_ylabel('# ISIs')
+                        cell_idx += 1
             pl.tight_layout()
             pl.savefig(os.path.join(save_dir_img_bin, 'ISI_hist_fit.png'))
-            pl.show()
+            #pl.show()
 
     # pl.figure()
     # pl.plot(range(len(cell_ids)), [p_opt_cells[c][0] for c in range(len(cell_ids))])

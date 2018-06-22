@@ -16,7 +16,6 @@ pl.style.use('paper')
 if __name__ == '__main__':
     # Note: no all APs are captured as the spikes are so small and noise is high and depth of hyperpolarization
     # between successive spikes varies
-
     save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/ISI_hist'
     save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
     cell_type = 'grid_cells'
@@ -26,8 +25,9 @@ if __name__ == '__main__':
                      's117_0002': -60, 's119_0004': -50, 's104_0007': -55,
                      's79_0003': -50, 's76_0002': -50, 's101_0009': -45}
     use_AP_max_idxs_domnisoru = True
-    filter_long_ISIs = True
-    max_ISI = 50
+    filter_long_ISIs = False
+    max_ISI = 200
+    burst_ISI = 8  # ms
     if filter_long_ISIs:
         save_dir_img = os.path.join(save_dir_img, 'cut_ISIs_at_'+str(max_ISI))
 
@@ -42,6 +42,9 @@ if __name__ == '__main__':
     cum_ISI_hist_y = [0] * len(cell_ids)
     cum_ISI_hist_x = [0] * len(cell_ids)
     fraction_ISIs_filtered = np.zeros(len(cell_ids))
+    len_recording = np.zeros(len(cell_ids))
+    firing_rate = np.zeros(len(cell_ids))
+    fraction_burst = np.zeros(len(cell_ids))
 
     for cell_idx, cell_id in enumerate(cell_ids):
         print cell_id
@@ -59,9 +62,12 @@ if __name__ == '__main__':
         ISIs = get_ISIs(AP_max_idxs, t)
         if filter_long_ISIs:
             fraction_ISIs_filtered[cell_idx] = np.sum(ISIs <= max_ISI) / float(len(ISIs))
+            len_recording[cell_idx] = t[-1]
+            firing_rate[cell_idx] = len(AP_max_idxs) / (len_recording[cell_idx] / 1000.0)
             ISIs = ISIs[ISIs <= max_ISI]
         n_ISIs[cell_idx] = len(ISIs)
         ISIs_per_cell[cell_idx] = ISIs
+        fraction_burst[cell_idx] = np.sum(ISIs < burst_ISI) / float(len(ISIs))
 
         # ISI histograms
         ISI_hist[cell_idx, :] = get_ISI_hist(ISIs, bins)
@@ -94,6 +100,9 @@ if __name__ == '__main__':
     #
     # plot_cumulative_comparison_all_cells(cum_ISI_hist_x, cum_ISI_hist_y, cell_ids, p_val_dict,
     #                                      os.path.join(save_dir_img, cell_type, 'comparison_cum_ISI.png'))
+
+    # save
+    np.save(os.path.join(save_dir_img, cell_type, 'fraction_burst.npy'), fraction_burst)
 
     # plot all ISI hists
     if cell_type == 'grid_cells':
@@ -142,7 +151,7 @@ if __name__ == '__main__':
                 cell_idx += 1
         pl.tight_layout()
         pl.savefig(os.path.join(save_dir_img, cell_type, 'ISI_hist'+str(bin_width)+'.png'))
-        pl.show()
+        #pl.show()
 
     else:
         n_rows = 1 if len(cell_ids) <= 3 else 2
@@ -172,4 +181,19 @@ if __name__ == '__main__':
         adjust_bottom = 0.12 if len(cell_ids) <= 3 else 0.07
         pl.subplots_adjust(left=0.07, bottom=adjust_bottom, top=0.93)
         pl.savefig(os.path.join(save_dir_img, cell_type, 'ISI_hist'+str(bin_width)+'.png'))
-        pl.show()
+        #pl.show()
+
+    pl.figure()
+    pl.plot(len_recording / 1000.0, fraction_ISIs_filtered, 'ok')
+    pl.xlabel('Dur. recording (s)')
+    pl.ylabel('Fraction ISI < 200 ms')
+    pl.tight_layout()
+    pl.savefig(os.path.join(save_dir_img, cell_type, 'dur_rec_vs_fraction_ISI.png'))
+
+    pl.figure()
+    pl.plot(firing_rate / 1000.0, fraction_ISIs_filtered, 'ok')
+    pl.xlabel('Firing rate (Hz)')
+    pl.ylabel('Fraction ISI < 200 ms')
+    pl.tight_layout()
+    pl.savefig(os.path.join(save_dir_img, cell_type, 'firing_rate_vs_fraction_ISI.png'))
+    #pl.show()

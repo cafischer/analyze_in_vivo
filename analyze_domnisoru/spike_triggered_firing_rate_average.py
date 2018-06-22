@@ -12,7 +12,7 @@ pl.style.use('paper')
 
 
 if __name__ == '__main__':
-    save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/STA'
+    save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/STA/not_detrended/all'
     save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
     cell_type = 'grid_cells'
     cell_ids = load_cell_ids(save_dir, cell_type)
@@ -22,7 +22,7 @@ if __name__ == '__main__':
                      's79_0003': -50, 's76_0002': -50, 's101_0009': -45}
     use_AP_max_idxs_domnisoru = True
     ISI_burst = 8  # ms
-    window_size = 1000  # ms
+    window_size = 2000  # ms  # TODO 2000
     before_AP = 200  # ms
     after_AP = 200  # ms
 
@@ -31,6 +31,9 @@ if __name__ == '__main__':
     std_firing_rate_burst_cells = [0] * len(cell_ids)
     avg_firing_rate_single_cells = [0] * len(cell_ids)
     std_firing_rate_single_cells = [0] * len(cell_ids)
+    fraction_burst_cells = [0] * len(cell_ids)
+    event_rate_cells = [0] * len(cell_ids)
+    firing_rate_cells = [0] * len(cell_ids)
     for cell_idx, cell_id in enumerate(cell_ids):
         print cell_id
         # load
@@ -69,6 +72,9 @@ if __name__ == '__main__':
             event_rate[i] = n_events / (window_size/1000.0)
             if n_events != 0:
                 fraction_burst[i] = len(AP_max_idxs_burst[idx_burst]) / n_events
+        fraction_burst_cells.append(fraction_burst)
+        event_rate_cells.append(event_rate)
+        firing_rate_cells.append(firing_rate)
 
         # get firing rate for all APs
         firing_rate_APs_burst = find_all_AP_traces(firing_rate, before_AP_idx, after_AP_idx, AP_max_idxs_burst)
@@ -76,10 +82,10 @@ if __name__ == '__main__':
         t_AP = np.arange(after_AP_idx + before_AP_idx + 1) * dt - before_AP
 
         # average
-        avg_firing_rate_burst_cells.append(np.mean(firing_rate_APs_burst, 0))
-        std_firing_rate_burst_cells.append(np.std(firing_rate_APs_burst, 0))
-        avg_firing_rate_single_cells.append(np.mean(firing_rate_APs_single, 0))
-        std_firing_rate_single_cells.append(np.std(firing_rate_APs_single, 0))
+        avg_firing_rate_burst_cells[cell_idx] = np.mean(firing_rate_APs_burst, 0)
+        std_firing_rate_burst_cells[cell_idx] = np.std(firing_rate_APs_burst, 0)
+        avg_firing_rate_single_cells[cell_idx] = np.mean(firing_rate_APs_single, 0)
+        std_firing_rate_single_cells[cell_idx] = np.std(firing_rate_APs_single, 0)
 
         # save and plot
         save_dir_cell = os.path.join(save_dir_img, cell_type, cell_id)
@@ -101,33 +107,47 @@ if __name__ == '__main__':
         # pl.ylabel('Firing rate (Hz)')
         # pl.tight_layout()
         # pl.show()
-        #
+        # #
         # pl.figure()
-        # pl.plot(t_AP, avg_firing_rate, 'k')
-        # pl.fill_between(t_AP, avg_firing_rate - std_firing_rate, avg_firing_rate + std_firing_rate, color='k',
+        # pl.title('Burst')
+        # pl.plot(t_AP, avg_firing_rate_burst_cells[cell_idx], 'k')
+        # pl.fill_between(t_AP, avg_firing_rate_burst_cells[cell_idx] - std_firing_rate_burst_cells[cell_idx],
+        #                 avg_firing_rate_burst_cells[cell_idx] + std_firing_rate_burst_cells[cell_idx], color='k',
+        #                 alpha=0.5)
+        # pl.xlabel('Time (ms)')
+        # pl.ylabel('Firing rate (Hz)')
+        # pl.tight_layout()
+        # #pl.show()
+        # pl.figure()
+        # pl.title('Single')
+        # pl.plot(t_AP, avg_firing_rate_single_cells[cell_idx], 'k')
+        # pl.fill_between(t_AP, avg_firing_rate_single_cells[cell_idx] - std_firing_rate_single_cells[cell_idx],
+        #                 avg_firing_rate_single_cells[cell_idx] + std_firing_rate_single_cells[cell_idx], color='k',
         #                 alpha=0.5)
         # pl.xlabel('Time (ms)')
         # pl.ylabel('Firing rate (Hz)')
         # pl.tight_layout()
         # pl.show()
-        bin_width_event = 2
-        steps = np.arange(0, 50, 1)
-        mean_frac = np.zeros(len(steps))
-        std_frac= np.zeros(len(steps))
-        for i, er in enumerate(steps):
-            idx = np.logical_and(er - bin_width_event/2.0 <= event_rate,  event_rate <= er + bin_width_event/2.0)
-            mean_frac[i] = np.nanmean(fraction_burst[idx])
-            std_frac[i] = np.nanstd(fraction_burst[idx])
-        pl.figure()
-        pl.title(cell_id, fontsize=16)
-        pl.plot(event_rate, fraction_burst, 'o', color='0.5', markersize=4)
-        pl.plot(steps, mean_frac, 'r')
-        pl.fill_between(steps, mean_frac - std_frac, mean_frac + std_frac, color='r', alpha=0.5)
-        pl.xlabel('Event rate (Hz)')
-        pl.ylabel('Fraction burst events')
-        pl.tight_layout()
-        pl.savefig(os.path.join(save_dir_cell, 'event_rate_vs_fraction_burst.png'))
-        pl.show()
+        #
+        # bin_width_event = 2
+        # steps = np.arange(0, np.max(event_rate), 1)
+        # mean_frac = np.zeros(len(steps))
+        # std_frac= np.zeros(len(steps))
+        # for i, er in enumerate(steps):
+        #     idx = np.logical_and(er - bin_width_event/2.0 <= event_rate,  event_rate <= er + bin_width_event/2.0)
+        #     mean_frac[i] = np.nanmean(fraction_burst[idx])
+        #     std_frac[i] = np.nanstd(fraction_burst[idx])
+        # pl.figure()
+        # pl.title(cell_id, fontsize=16)
+        # pl.plot(event_rate, fraction_burst, 'o', color='0.5', markersize=4)
+        # pl.errorbar(steps, mean_frac, yerr=std_frac, capsize=2, color='k')
+        # #pl.plot(steps, mean_frac, 'r')
+        # #pl.fill_between(steps, mean_frac - std_frac, mean_frac + std_frac, color='r', alpha=0.5)
+        # pl.xlabel('Event rate (Hz)')
+        # pl.ylabel('Fraction burst events')
+        # pl.tight_layout()
+        # pl.savefig(os.path.join(save_dir_cell, 'event_rate_vs_fraction_burst.png'))
+        # pl.show()
 
     # save and plot
     pl.close('all')
@@ -195,4 +215,89 @@ if __name__ == '__main__':
         pl.tight_layout()
         pl.subplots_adjust(wspace=0.25)
         pl.savefig(os.path.join(save_dir_img, cell_type, 'sta_firing_rate_single.png'))
+
+        #
+        fig, axes = pl.subplots(n_rows, n_columns, sharex='all', sharey='all', figsize=(14, 8.5))
+        cell_idx = 0
+        for i1 in range(n_rows):
+            for i2 in range(n_columns):
+                if cell_idx < len(cell_ids):
+                    if get_celltype(cell_ids[cell_idx], save_dir) == 'stellate':
+                        axes[i1, i2].set_title(cell_ids[cell_idx] + ' ' + u'\u2605', fontsize=12)
+                    elif get_celltype(cell_ids[cell_idx], save_dir) == 'pyramidal':
+                        axes[i1, i2].set_title(cell_ids[cell_idx] + ' ' + u'\u25B4', fontsize=12)
+                    else:
+                        axes[i1, i2].set_title(cell_ids[cell_idx], fontsize=12)
+
+                    axes[i1, i2].plot(event_rate_cells[cell_idx], fraction_burst_cells[cell_idx], 'o', color='0.5',
+                                      markersize=3)
+
+                    bin_width_event = 2
+                    steps = np.arange(0, np.max(event_rate_cells[cell_idx]), 1)
+                    mean_frac = np.zeros(len(steps))
+                    std_frac = np.zeros(len(steps))
+                    for i, er in enumerate(steps):
+                        idx = np.logical_and(er - bin_width_event / 2.0 <= event_rate_cells[cell_idx],
+                                             event_rate_cells[cell_idx] <= er + bin_width_event / 2.0)
+                        mean_frac[i] = np.nanmean(fraction_burst_cells[cell_idx][idx])
+                        std_frac[i] = np.nanstd(fraction_burst_cells[cell_idx][idx])
+                    # axes[i1, i2].plot(steps, mean_frac, 'r')
+                    # axes[i1, i2].fill_between(steps, mean_frac - std_frac, mean_frac + std_frac, color='r', alpha=0.5)
+                    axes[i1, i2].errorbar(steps, mean_frac, yerr=std_frac, capsize=2, color='k')
+
+                    if i1 == (n_rows - 1):
+                        axes[i1, i2].set_xlabel('Event rate (Hz)')
+                    if i2 == 0:
+                        axes[i1, i2].set_ylabel('Fraction burst events')
+                else:
+                    axes[i1, i2].spines['left'].set_visible(False)
+                    axes[i1, i2].spines['bottom'].set_visible(False)
+                    axes[i1, i2].set_xticks([])
+                    axes[i1, i2].set_yticks([])
+                cell_idx += 1
+        pl.tight_layout()
+        pl.subplots_adjust(wspace=0.25)
+        pl.savefig(os.path.join(save_dir_img, cell_type, 'event_rate_vs_fraction_burst.png'))
+
+        fig, axes = pl.subplots(n_rows, n_columns, sharex='all', sharey='all', figsize=(14, 8.5))
+        cell_idx = 0
+        for i1 in range(n_rows):
+            for i2 in range(n_columns):
+                if cell_idx < len(cell_ids):
+                    if get_celltype(cell_ids[cell_idx], save_dir) == 'stellate':
+                        axes[i1, i2].set_title(cell_ids[cell_idx] + ' ' + u'\u2605', fontsize=12)
+                    elif get_celltype(cell_ids[cell_idx], save_dir) == 'pyramidal':
+                        axes[i1, i2].set_title(cell_ids[cell_idx] + ' ' + u'\u25B4', fontsize=12)
+                    else:
+                        axes[i1, i2].set_title(cell_ids[cell_idx], fontsize=12)
+
+                    axes[i1, i2].plot(firing_rate_cells[cell_idx], fraction_burst_cells[cell_idx], 'o', color='0.5',
+                                      markersize=3)
+
+                    bin_width_event = 2
+                    steps = np.arange(0, np.max(firing_rate_cells[cell_idx]), 1)
+                    mean_frac = np.zeros(len(steps))
+                    std_frac = np.zeros(len(steps))
+                    for i, er in enumerate(steps):
+                        idx = np.logical_and(er - bin_width_event / 2.0 <= firing_rate_cells[cell_idx],
+                                             firing_rate_cells[cell_idx] <= er + bin_width_event / 2.0)
+                        mean_frac[i] = np.nanmean(fraction_burst_cells[cell_idx][idx])
+                        std_frac[i] = np.nanstd(fraction_burst_cells[cell_idx][idx])
+                    # axes[i1, i2].plot(steps, mean_frac, 'r')
+                    # axes[i1, i2].fill_between(steps, mean_frac - std_frac, mean_frac + std_frac, color='r', alpha=0.5)
+                    axes[i1, i2].errorbar(steps, mean_frac, yerr=std_frac, capsize=2, color='k')
+
+                    if i1 == (n_rows - 1):
+                        axes[i1, i2].set_xlabel('Firing rate (Hz)')
+                    if i2 == 0:
+                        axes[i1, i2].set_ylabel('Fraction burst events')
+                else:
+                    axes[i1, i2].spines['left'].set_visible(False)
+                    axes[i1, i2].spines['bottom'].set_visible(False)
+                    axes[i1, i2].set_xticks([])
+                    axes[i1, i2].set_yticks([])
+                cell_idx += 1
+        pl.tight_layout()
+        pl.subplots_adjust(wspace=0.25)
+        pl.savefig(os.path.join(save_dir_img, cell_type, 'firing_rate_vs_fraction_burst.png'))
         pl.show()

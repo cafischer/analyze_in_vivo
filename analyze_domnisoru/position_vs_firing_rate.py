@@ -2,10 +2,8 @@ from __future__ import division
 import numpy as np
 import matplotlib.pyplot as pl
 import os
-import pandas as pd
-from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data, get_celltype
+from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data, get_celltype, get_track_len
 import scipy.signal
-from scipy.ndimage.filters import convolve
 from cell_fitting.util import init_nan
 from grid_cell_stimuli import get_AP_max_idxs
 import matplotlib.gridspec as gridspec
@@ -34,59 +32,59 @@ def get_spike_train(AP_max_idxs, len_v):
     return spike_train
 
 
-def get_firing_rate_per_bin(spike_train, t, position, bins, dt, track_len):
+def get_spatial_firing_rate_per_run(spike_train, position, bins, dt, track_len):
     """
-    Computes the firing rate in the given bins.
+    Computes the spatial firing rate per run for the given bins.
     :param spike_train: Spike train.
     :param t: Time.
     :param position: Position of the animal on the track.
     :param bins: Bins for the position of the animal.
-    :return: firing_rate: mean firing rate. firing_rate_per_run: Firing rate for each run through the track.
+    :return: firing_rate_per_run: Spatial firing rate for each run through the track.
     """
-
-    run_start_idxs = np.where(np.diff(position) < -track_len/2.)[0] + 1  # +1 because diff shifts one to front
-    spike_train_runs = np.split(spike_train, run_start_idxs)
-    pos_runs = np.split(position, run_start_idxs)
-    t_runs = np.split(t, run_start_idxs)
+    run_split_idxs = np.where(np.diff(position) < -track_len / 2.)[0] + 1  # +1 because diff shifts one to front
+    spike_train_runs = np.split(spike_train, run_split_idxs)
+    position_runs = np.split(position, run_split_idxs)
     n_bins = len(bins) - 1  # -1 for last edge
 
-    # # for test: splitting
-    # pl.figure()
-    # for i_run in range(len(t_runs)):
-    #     pl.plot(t_runs[i_run], pos_runs[i_run])
-    # pl.show()
+    firing_rate_per_run = init_nan((len(run_split_idxs) + 1, n_bins))
+    for i_run, (spike_train_run, position_run) in enumerate(zip(spike_train_runs, position_runs)):
+        firing_rate_per_run[i_run, :] = get_spatial_firing_rate(spike_train_run, position_run, bins, dt)
+    return firing_rate_per_run
 
-    firing_rate_per_run = init_nan((len(run_start_idxs) + 1, n_bins))
-    for i_run, (APs_run, pos_run, t_run) in enumerate(zip(spike_train_runs, pos_runs, t_runs)):
-        pos_binned = np.digitize(pos_run, bins) - 1
-        AP_count_per_bin = pd.Series(APs_run).groupby(pos_binned).sum()
-        seconds_per_bin = (pd.Series(t_run).groupby(pos_binned).size()) * dt / 1000.
-        pos_in_track = np.unique(pos_binned)[np.unique(pos_binned) <= n_bins-1]  # to ignore data higher than track_len
-        firing_rate_per_run[i_run, pos_in_track] = AP_count_per_bin[pos_in_track] / seconds_per_bin[pos_in_track]
 
-    # firing_rate_per_run[np.isnan(firing_rate_per_run)] = 0.0
-    firing_rate = np.nanmean(firing_rate_per_run, 0)
+def get_spatial_firing_rate(spike_train, position, bins, dt):
+    """
+    Computes the spatial firing rate for the given bins.
+    :param spike_train: Spike train.
+    :param position: Position of the animal on the track.
+    :param bins: Bins for the position of the animal.
+    :return: firing_rate: Spatial firing rate.
+    """
+    AP_count_per_bin = np.histogram(position[spike_train.astype(bool)], bins=bins)[0]
+    seconds_per_bin = np.histogram(position, bins=bins)[0] * dt / 1000.0
+    firing_rate = init_nan(len(bins)-1)
+    firing_rate[seconds_per_bin == 0] = np.nan
+    firing_rate[seconds_per_bin != 0] = AP_count_per_bin[seconds_per_bin != 0] / seconds_per_bin[seconds_per_bin != 0]
+    firing_rate[np.isnan(firing_rate)] = 0  # TODO: this is what Domnisoru does
+    return firing_rate
 
-    # # for test: firing rates per run and mean
-    # pl.figure()
-    # for i_run in range(len(t_runs)):
-    #     pl.plot(firing_rate_per_run[i_run, :])
-    # pl.plot(firing_rate, 'k', linewidth=2.0)
-    # pl.show()
 
-    return firing_rate, firing_rate_per_run
-
-def get_occupancy_per_bin(position, bins, bin_size):
-    position_binned = np.digitize(position, bins) - 1
-    occupancy_per_bin = np.array([position_binned.tolist().count(i) for i in range(n_bins)], dtype=float)
-    occupancy_per_bin /= (np.sum(occupancy_per_bin) * bin_size)
+def get_spatial_occupancy(position, bins, bin_size):
+    occupancy_per_bin = np.histogram(position, bins=bins)[0]
+    occupancy_per_bin = occupancy_per_bin / float(np.sum(occupancy_per_bin) * bin_size)
     return occupancy_per_bin
 
 
 def smooth_firing_rate(firing_rate, std=1):
     window = scipy.signal.gaussian(3, std)
-    firing_rate_smoothed = convolve(firing_rate, window/window.sum(), mode='nearest')
-    #firing_rate_smoothed = convolve(firing_rate, window / window.sum(), mode='constant', cval=0.0)
+    window /= np.sum(window)
+
+    not_nan = ~np.isnan(firing_rate)
+    assert np.all(np.arange(np.where(not_nan)[0][0], np.where(not_nan)[0][-1]+1, 1)
+                  == np.where(not_nan)[0])  # firing rate should only be nan at the edges (= ascending without holes in between)
+
+    firing_rate_smoothed = init_nan(len(firing_rate))
+    firing_rate_smoothed[not_nan] = np.convolve(firing_rate[not_nan], window, mode='same')  # TODO with 0-padding, bad for shuffling
 
     # # for test: smoothed firing rate
     # pl.figure()
@@ -102,7 +100,6 @@ if __name__ == '__main__':
     save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
     cell_type = 'grid_cells'
     cell_ids = load_cell_ids(save_dir, cell_type)
-    #cell_ids = ['s115_0024']
     param_list = ['Vm_ljpc', 'Y_cm', 'vel_100ms', 'spiketimes']
     AP_thresholds = {'s73_0004': -55, 's90_0006': -45, 's82_0002': -35,
                      's117_0002': -60, 's119_0004': -50, 's104_0007': -55, 's79_0003': -50,
@@ -112,18 +109,16 @@ if __name__ == '__main__':
     use_AP_max_idxs_domnisoru = True
     use_velocity_threshold = True
     bin_size = 5  # cm
-    track_len = 400  # cm
     velocity_threshold = 1  # cm/sec
 
     if use_velocity_threshold:
         save_dir_img = os.path.join(save_dir_img, 'vel_thresh_'+str(velocity_threshold))
-    bins = np.arange(0, track_len + bin_size, bin_size)
-    n_bins = len(bins) - 1  # -1 for last edge
 
     firing_rate_cells = []
     position_cells = []
     spike_train_cells = []
     t_cells = []
+    bins_cells = []
 
     for cell_id in cell_ids:
         print cell_id
@@ -138,6 +133,10 @@ if __name__ == '__main__':
         position = data['Y_cm']
         velocity = data['vel_100ms']
         dt = t[1] - t[0]
+        track_len = get_track_len(cell_id)
+        bins = np.arange(0, track_len + bin_size, bin_size)
+        n_bins = len(bins) - 1  # -1 for last edge
+        bins_cells.append(bins)
 
         # compute spike train
         if use_AP_max_idxs_domnisoru:
@@ -152,11 +151,11 @@ if __name__ == '__main__':
                                                                             velocity_threshold)
 
         # compute firing rate
-        firing_rate_tmp, firing_rate_per_run = get_firing_rate_per_bin(spike_train, t, position, bins, dt, track_len)
-        occupancy_prob = get_occupancy_per_bin(position, bins, bin_size)
-        firing_rate = smooth_firing_rate(firing_rate_tmp)
-        avg_firing_rate = np.nanmean(firing_rate)
-        np.save(os.path.join(save_dir_cell, 'avg_firing_rate.npy'), avg_firing_rate)
+        firing_rate = smooth_firing_rate(get_spatial_firing_rate(spike_train, position, bins, dt))
+        occupancy_prob = get_spatial_occupancy(position, bins, bin_size)
+
+        # save
+        np.save(os.path.join(save_dir_cell, 'avg_firing_rate.npy'), np.nanmean(firing_rate))
         np.save(os.path.join(save_dir_cell, 'firing_rate.npy'), firing_rate)
         np.save(os.path.join(save_dir_cell, 'position.npy'), bins[:-1])
         np.save(os.path.join(save_dir_cell, 'occupancy_prob.npy'), occupancy_prob)
@@ -220,7 +219,7 @@ if __name__ == '__main__':
                 ax2.xaxis.set_tick_params(labelsize=10)
                 ax1.yaxis.set_tick_params(labelsize=10)
                 ax2.yaxis.set_tick_params(labelsize=10)
-                ax2.plot(bins[:-1], firing_rate_cells[cell_idx], 'k')
+                ax2.plot(bins_cells[cell_idx][:-1], firing_rate_cells[cell_idx], 'k')
 
                 if i >= (n_rows - 1) * n_columns:
                     ax2.set_xlabel('Position \n(cm)')
@@ -260,7 +259,7 @@ if __name__ == '__main__':
                          (t_cells[cell_idx] / 1000.)[spike_train_cells[cell_idx].astype(bool)], 'or',
                          markersize=0.1)
                 ax1.set_xticklabels([])
-                ax2.plot(bins[:-1], firing_rate_cells[cell_idx], 'k')
+                ax2.plot(bins_cells[cell_idx][:-1], firing_rate_cells[cell_idx], 'k')
 
                 if i >= (n_rows - 1) * n_columns:
                     ax2.set_xlabel('Position \n(cm)')
@@ -283,7 +282,7 @@ if __name__ == '__main__':
 #     dt = 1
 #     track_len = 100
 #     bins = np.arange(0, track_len+10, 10)
-#     firing_rate_tmp, firing_rate_per_run = get_firing_rate_per_bin(spike_train, t, position, bins, dt, track_len)
+#     firing_rate_tmp, firing_rate_per_run = get_spatial_firing_rate(spike_train, position, bins, dt)
 #
 #     print spike_train
 #     print bins

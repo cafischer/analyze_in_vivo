@@ -186,7 +186,7 @@ if __name__ == '__main__':
     save_dir_theta_ramp = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/check/theta_ramp'
     save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
     cell_type = 'grid_cells'
-    cell_ids = load_cell_ids(save_dir, cell_type)[:4]
+    cell_ids = load_cell_ids(save_dir, cell_type)[12:]
     param_list = ['Vm_ljpc', 'Y_cm', 'vel_100ms', 'spiketimes', 'fVm', 'dcVm_ljpc']
     AP_thresholds = {'s73_0004': -55, 's90_0006': -45, 's82_0002': -35,
                      's117_0002': -60, 's119_0004': -50, 's104_0007': -55, 's79_0003': -50, 's76_0002': -50, 's101_0009': -45}

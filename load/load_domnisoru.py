@@ -2,13 +2,14 @@ from scipy.io import loadmat
 import os
 import matplotlib.pyplot as pl
 import numpy as np
+import json
 pl.style.use('paper')
 
 
-def load_data(cell_name, param_list, save_dir):
+def load_data(cell_id, param_list, save_dir):
     data_set = {}
     for param in param_list:
-        file_name = cell_name+'_'+param+'.mat'
+        file_name = cell_id + '_' + param + '.mat'
         file = loadmat(os.path.join(save_dir, file_name))
         data = file[param]
         if 'Y' in param:
@@ -70,6 +71,12 @@ def load_cell_ids(save_dir, cell_type='grid_cells'):
     return cells
 
 
+def get_celltype_dict(save_dir):
+    with open(os.path.join(save_dir, 'cell_types.json'), 'r') as f:
+        cell_type_dict = json.load(f)
+    return cell_type_dict
+
+
 def get_celltype(cell_id, save_dir):
     file = loadmat(os.path.join(save_dir, 'cl_ah.mat'))['cl_ah']
     pyramidal_cells_tmp = file['pyramidal_grid']
@@ -85,18 +92,30 @@ def get_celltype(cell_id, save_dir):
         return 'not known'
 
 
+def get_track_len(cell_id):
+    if cell_id == 's82_0002' or cell_id == 's84_0002':
+        return 600  # cm
+    else:
+        return 400  # cm
+
+
 if __name__ == '__main__':
     save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
-    grid_cell_names = load_cell_ids(save_dir, 'stellate_layer2')
+    cell_ids = load_cell_ids(save_dir, 'grid_cells')
 
-    grid_cell_name = grid_cell_names[3]
-    print grid_cell_name
-    param_list = ['Vm_ljpc', 'Y_cm']
-    data = load_data(grid_cell_name, param_list, save_dir)
+    # grid_cell_name = grid_cell_names[3]
+    # print grid_cell_name
+    # param_list = ['Vm_ljpc', 'Y_cm']
+    # data = load_data(grid_cell_name, param_list, save_dir)
+    #
+    # fig, axes = pl.subplots(1, 1, sharex='all')
+    # axes.plot(np.arange(len(data['Vm_ljpc'])) * data['dt'] / 1000., data['Vm_ljpc'], 'k')
+    # axes.set_ylabel('Membrane Potential')
+    # axes.set_xlabel('Time (s)')
+    # pl.tight_layout()
+    # pl.show()
 
-    fig, axes = pl.subplots(1, 1, sharex='all')
-    axes.plot(np.arange(len(data['Vm_ljpc'])) * data['dt'] / 1000., data['Vm_ljpc'], 'k')
-    axes.set_ylabel('Membrane Potential')
-    axes.set_xlabel('Time (s)')
-    pl.tight_layout()
-    pl.show()
+    # import json
+    # cell_type_dict = {cell_id: get_celltype(cell_id, save_dir) for cell_id in cell_ids}
+    # with open(os.path.join(save_dir, 'cell_types.json'), 'w') as f:
+    #     json.dump(cell_type_dict, f, indent=4)

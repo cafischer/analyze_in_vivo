@@ -36,8 +36,8 @@ if __name__ == '__main__':
     save_dir_img = os.path.join(save_dir_img, folder_detrend[do_detrend], folder_field[(in_field, out_field)],
                                 cell_type)
 
-    #
-    for i, cell_id in enumerate(cell_ids):
+    # main
+    for cell_idx, cell_id in enumerate(cell_ids):
         print cell_id
 
         # load
@@ -78,10 +78,10 @@ if __name__ == '__main__':
             spike_characteristics_dict['AP_threshold'] = AP_thresholds[cell_id]
             spike_characteristics_dict['order_fAHP_min'] = 0.2
             spike_characteristics_dict['fAHP_interval'] = 3.0
-            spike_characteristics_dict['DAP_interval'] = 4.0
+            spike_characteristics_dict['DAP_interval'] = 5.0
             DAP_deflections[i] = get_spike_characteristics(v_AP, t_AP, ['DAP_deflection'], v_AP[0],
-                                                           std_idx_times=(0, 1), check=False,
-                                                           **spike_characteristics_dict)[0]
+                                                                  std_idx_times=(0, 1), check=False,
+                                                                  **spike_characteristics_dict)[0]
         DAP_deflections[np.isnan(DAP_deflections)] = 0
         DAP_deflections[DAP_deflections < 0] = 0
         half = np.percentile(DAP_deflections, 50)
@@ -114,10 +114,10 @@ if __name__ == '__main__':
         v_APs_plots_lower = v_APs_lower[np.random.randint(0, len(v_APs_lower), 20)]  # reduce to lower number
 
         pl.figure()
-        for i, v_AP in enumerate(v_APs_plots_lower):
-            pl.plot(t_AP, v_AP, 'b', alpha=0.5, label='Low DAP deflection' if i == 0 else '')
-        for i, v_AP in enumerate(v_APs_plots_greater):
-            pl.plot(t_AP, v_AP, 'r', alpha=0.5, label='High DAP deflection' if i == 0 else '')
+        for cell_idx, v_AP in enumerate(v_APs_plots_lower):
+            pl.plot(t_AP, v_AP, 'b', alpha=0.5, label='Low DAP deflection' if cell_idx == 0 else '')
+        for cell_idx, v_AP in enumerate(v_APs_plots_greater):
+            pl.plot(t_AP, v_AP, 'r', alpha=0.5, label='High DAP deflection' if cell_idx == 0 else '')
         pl.ylabel('Membrane potential (mV)')
         pl.xlabel('Time (ms)')
         pl.legend()

@@ -2,7 +2,7 @@ from __future__ import division
 import numpy as np
 import matplotlib.pyplot as pl
 import os
-from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data, get_celltype
+from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data, get_celltype, get_track_len
 from grid_cell_stimuli import get_AP_max_idxs
 import matplotlib.gridspec as gridspec
 pl.style.use('paper')
@@ -18,7 +18,7 @@ if __name__ == '__main__':
     AP_thresholds = {'s73_0004': -50, 's90_0006': -45, 's82_0002': -38,
                      's117_0002': -60, 's119_0004': -50, 's104_0007': -55,
                      's79_0003': -50, 's76_0002': -50, 's101_0009': -45}
-    param_list = ['Vm_ljpc', 'spiketimes']
+    param_list = ['Vm_ljpc', 'spiketimes', 'Y_cm']
 
     # parameters
     use_AP_max_idxs_domnisoru = True
@@ -27,9 +27,10 @@ if __name__ == '__main__':
         os.makedirs(save_dir_img)
 
     len_recording = np.zeros(len(cell_ids))
-    number_spikes = np.zeros(len(cell_ids), dtype=int)
+    n_APs = np.zeros(len(cell_ids), dtype=int)
+    n_runs = np.zeros(len(cell_ids), dtype=int)
     avg_firing_rate = np.zeros(len(cell_ids))
-    for i, cell_id in enumerate(cell_ids):
+    for cell_idx, cell_id in enumerate(cell_ids):
         print cell_id
 
         # load
@@ -37,6 +38,7 @@ if __name__ == '__main__':
         v = data['Vm_ljpc']
         t = np.arange(0, len(v)) * data['dt']
         dt = t[1] - t[0]
+        position = data['Y_cm']
 
         # get APs
         if use_AP_max_idxs_domnisoru:
@@ -45,10 +47,13 @@ if __name__ == '__main__':
             AP_max_idxs = get_AP_max_idxs(v, AP_thresholds[cell_id], dt)
 
         # length of recording, total number of spikes, average firing rate
-        len_recording[i] = t[-1] / 1000.0 / 60.0  # min
-        number_spikes[i] = len(AP_max_idxs)
-        avg_firing_rate[i] = np.load(os.path.join(save_dir_firing_rate, cell_type, cell_id, 'avg_firing_rate.npy'))
+        len_recording[cell_idx] = t[-1] / 1000.0 / 60.0  # min
+        n_APs[cell_idx] = len(AP_max_idxs)
+        n_runs[cell_idx] = np.sum(np.diff(position) < -get_track_len(cell_id) / 2.) + 1  # start at 0 + # resets
+        avg_firing_rate[cell_idx] = np.load(os.path.join(save_dir_firing_rate, cell_type, cell_id, 'avg_firing_rate.npy'))
 
+    np.save(os.path.join(save_dir_img, 'n_APs.npy'), n_APs)
+    np.save(os.path.join(save_dir_img, 'n_runs.npy'), n_runs)
 
     pl.close('all')
     if cell_type == 'grid_cells':
@@ -58,8 +63,8 @@ if __name__ == '__main__':
         outer = gridspec.GridSpec(n_rows, n_columns, wspace=0.65, hspace=0.43)
 
         cell_idx = 0
-        for i in range(n_rows * n_columns):
-            inner = gridspec.GridSpecFromSubplotSpec(1, 3, subplot_spec=outer[i], wspace=4.0)
+        for cell_idx in range(n_rows * n_columns):
+            inner = gridspec.GridSpecFromSubplotSpec(1, 3, subplot_spec=outer[cell_idx], wspace=4.0)
             ax1 = pl.Subplot(fig, inner[0])
             ax2 = pl.Subplot(fig, inner[1])
             ax3 = pl.Subplot(fig, inner[2])
@@ -72,7 +77,7 @@ if __name__ == '__main__':
                     ax2.set_title(cell_ids[cell_idx], fontsize=12)
 
                 ax1.bar(0, len_recording[cell_idx], 0.9, color='0.5')
-                ax2.bar(0, number_spikes[cell_idx], 0.9, color='0.5')
+                ax2.bar(0, n_APs[cell_idx], 0.9, color='0.5')
                 ax3.bar(0, avg_firing_rate[cell_idx], 0.9, color='0.5')
                 #ax3.bar(0.5, number_spikes[cell_idx] / (len_recording[cell_idx] * 60.0), 0.9, color='r')
 
@@ -80,7 +85,7 @@ if __name__ == '__main__':
                 ax2.set_xlim(-1, 1)
                 ax3.set_xlim(-1, 1)
                 ymax1 = np.round(np.max(len_recording), -1)
-                ymax2 = np.round(np.max(number_spikes), -1)
+                ymax2 = np.round(np.max(n_APs), -1)
                 ymax3 = np.round(np.max(avg_firing_rate), 0)
                 ax1.set_ylim(0, ymax1)
                 ax2.set_ylim(0, ymax2)
@@ -94,11 +99,11 @@ if __name__ == '__main__':
                 ax2.set_yticklabels([])
                 ax3.set_yticks([0, np.round(ymax3 / 2.0, 0), ymax3])
                 ax3.set_yticklabels([])
-                if i >= (n_rows - 1) * n_columns:
+                if cell_idx >= (n_rows - 1) * n_columns:
                     ax1.set_xlabel('Dur. \nrec. \n(min)', fontsize=10)
                     ax2.set_xlabel('#APs', fontsize=10)
                     ax3.set_xlabel('Avg. \nf. rate \n(Hz)', fontsize=10)
-                if i % n_columns == 0:
+                if cell_idx % n_columns == 0:
                     ax1.set_yticks([0, np.round(ymax1/2.0, 0), ymax1])
                     ax1.set_yticklabels(['0', '', '%i' % int(ymax1)], fontsize=8)
                     ax2.set_yticks([0, np.round(ymax2/2.0, 0), ymax2])

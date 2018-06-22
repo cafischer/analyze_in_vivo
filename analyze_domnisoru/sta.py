@@ -2,12 +2,13 @@ from __future__ import division
 import numpy as np
 import matplotlib.pyplot as pl
 import os
-from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data, get_celltype
+from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data, get_celltype, get_celltype_dict
 from analyze_in_vivo.analyze_schmidt_hieber import detrend
 from cell_characteristics import to_idx
 from cell_characteristics.sta_stc import get_sta, plot_sta, get_sta_median, plot_APs
 from grid_cell_stimuli import get_AP_max_idxs, find_all_AP_traces
 from cell_fitting.util import init_nan
+from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_for_all_grid_cells, plot_for_cell_group
 pl.style.use('paper')
 
 
@@ -15,9 +16,8 @@ if __name__ == '__main__':
     save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/STA'
     save_dir_in_out_field = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/in_out_field'
     save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
-    cell_type = 'grid_cells'  #'pyramidal_layer2'  #
+    cell_type = 'stellate_layer2'
     cell_ids = load_cell_ids(save_dir, cell_type)
-    #cell_ids = ['s67_0000']
 
     # parameters
     use_AP_max_idxs_domnisoru = True
@@ -38,7 +38,7 @@ if __name__ == '__main__':
     if not os.path.exists(save_dir_img):
         os.makedirs(save_dir_img)
 
-    #
+    # main
     DAP_deflections = {}
     sta_mean_cells = []
     sta_std_cells = []
@@ -93,88 +93,62 @@ if __name__ == '__main__':
         sta_mean_cells.append(sta_mean)
         sta_std_cells.append(sta_std)
 
-        # histogram of voltage
-        v_hist = np.zeros((len(bins_v)-1, np.size(v_APs, 1)))
-        for c in range(np.size(v_APs, 1)):
-            v_hist[:, c] = np.histogram(v_APs[:, c], bins_v)[0]
-        v_hist_cells.append(v_hist)
+        # # histogram of voltage
+        # v_hist = np.zeros((len(bins_v)-1, np.size(v_APs, 1)))
+        # for c in range(np.size(v_APs, 1)):
+        #     v_hist[:, c] = np.histogram(v_APs[:, c], bins_v)[0]
+        # v_hist_cells.append(v_hist)
 
-        # plot
-        save_dir_cell = os.path.join(save_dir_img, cell_id)
-        if not os.path.exists(save_dir_cell):
-            os.makedirs(save_dir_cell)
-        np.save(os.path.join(save_dir_cell, 'sta_mean.npy'), sta_mean)
-        pl.close('all')
-        plot_sta(t_AP, sta_median, sta_mad, os.path.join(save_dir_cell, 'sta_median.png'))
-        plot_sta(t_AP, sta_mean, sta_std, os.path.join(save_dir_cell, 'sta_mean.png'))
-        plot_APs(v_APs, t_AP, os.path.join(save_dir_cell, 'v_APs.png'))
-        pl.figure()
-        x, y = np.meshgrid(t_AP, bins_v[:-1])
-        pl.pcolor(x, y, v_hist)
-        pl.ylabel('Mem. pot. distr. (mV)')
-        pl.xlabel('Time (ms)')
-        pl.tight_layout()
-        pl.savefig(os.path.join(save_dir_cell, 'v_hist.png'))
+        # # plot
+        # save_dir_cell = os.path.join(save_dir_img, cell_id)
+        # if not os.path.exists(save_dir_cell):
+        #     os.makedirs(save_dir_cell)
+        # np.save(os.path.join(save_dir_cell, 'sta_mean.npy'), sta_mean)
+        # pl.close('all')
+        # plot_sta(t_AP, sta_median, sta_mad, os.path.join(save_dir_cell, 'sta_median.png'))
+        # plot_sta(t_AP, sta_mean, sta_std, os.path.join(save_dir_cell, 'sta_mean.png'))
+        # plot_APs(v_APs, t_AP, os.path.join(save_dir_cell, 'v_APs.png'))
+        # pl.figure()
+        # x, y = np.meshgrid(t_AP, bins_v[:-1])
+        # pl.pcolor(x, y, v_hist)
+        # pl.ylabel('Mem. pot. distr. (mV)')
+        # pl.xlabel('Time (ms)')
+        # pl.tight_layout()
+        # pl.savefig(os.path.join(save_dir_cell, 'v_hist.png'))
 
     pl.close('all')
+    def plot_sta(ax, cell_idx, t_AP, sta_mean_cells, sta_std_cells):
+        ax.plot(t_AP, sta_mean_cells[cell_idx], 'k')
+        ax.fill_between(t_AP, sta_mean_cells[cell_idx] - sta_std_cells[cell_idx],
+                                  sta_mean_cells[cell_idx] + sta_std_cells[cell_idx], color='k', alpha=0.5)
+
+    plot_kwargs = dict(t_AP=t_AP, sta_mean_cells=sta_mean_cells, sta_std_cells=sta_std_cells)
+
     if cell_type == 'grid_cells':
-        n_rows = 3
-        n_columns = 9
-        fig, axes = pl.subplots(n_rows, n_columns, sharex='all', sharey='all', figsize=(14, 8.5))
-        cell_idx = 0
-        for i1 in range(n_rows):
-            for i2 in range(n_columns):
-                if cell_idx < len(cell_ids):
-                    if get_celltype(cell_ids[cell_idx], save_dir) == 'stellate':
-                        axes[i1, i2].set_title(cell_ids[cell_idx] + ' ' + u'\u2605', fontsize=12)
-                    elif get_celltype(cell_ids[cell_idx], save_dir) == 'pyramidal':
-                        axes[i1, i2].set_title(cell_ids[cell_idx] + ' ' + u'\u25B4', fontsize=12)
-                    else:
-                        axes[i1, i2].set_title(cell_ids[cell_idx], fontsize=12)
-                    axes[i1, i2].plot(t_AP, sta_mean_cells[cell_idx], 'k')
-                    axes[i1, i2].fill_between(t_AP, sta_mean_cells[cell_idx] - sta_std_cells[cell_idx],
-                                              sta_mean_cells[cell_idx] + sta_std_cells[cell_idx], color='k', alpha=0.5)
-                    if i1 == (n_rows - 1):
-                        axes[i1, i2].set_xlabel('Time (ms)')
-                    if i2 == 0:
-                        axes[i1, i2].set_ylabel('Mem. Pot. (mV)')
-                else:
-                    axes[i1, i2].spines['left'].set_visible(False)
-                    axes[i1, i2].spines['bottom'].set_visible(False)
-                    axes[i1, i2].set_xticks([])
-                    axes[i1, i2].set_yticks([])
-                cell_idx += 1
-        pl.tight_layout()
-        pl.savefig(os.path.join(save_dir_img, 'sta.png'))
+        plot_for_all_grid_cells(cell_ids, get_celltype_dict(save_dir), plot_sta, plot_kwargs,
+                                xlabel='Time (ms)', ylabel='Mem. pot. (mV)',
+                                save_dir_img=os.path.join(save_dir_img, 'sta.png'))
     else:
-        n_rows = 1 if len(cell_ids) <= 3 else 2
-        n_columns = int(round(len(cell_ids) / n_rows))
-        fig_height = 4.5 if len(cell_ids) <= 3 else 9
-        fig, axes = pl.subplots(n_rows, n_columns, sharex='all', sharey='all', figsize=(14, fig_height))
-        if n_rows == 1:
-            axes = np.array([axes])
-        cell_idx = 0
-        for i1 in range(n_rows):
-            for i2 in range(n_columns):
-                if cell_idx < len(cell_ids):
-                    axes[i1, i2].set_title(cell_ids[cell_idx], fontsize=12)
-                    axes[i1, i2].plot(t_AP, sta_mean_cells[cell_idx], 'k')
-                    axes[i1, i2].fill_between(t_AP, sta_mean_cells[cell_idx] - sta_std_cells[cell_idx],
-                                              sta_mean_cells[cell_idx] + sta_std_cells[cell_idx], color='k', alpha=0.5)
-                    if i1 == (n_rows - 1):
-                        axes[i1, i2].set_xlabel('Time (ms)')
-                    if i2 == 0:
-                        axes[i1, i2].set_ylabel('Membrane Potential (mV)')
-                else:
-                    axes[i1, i2].spines['left'].set_visible(False)
-                    axes[i1, i2].spines['bottom'].set_visible(False)
-                    axes[i1, i2].set_xticks([])
-                    axes[i1, i2].set_yticks([])
-                cell_idx += 1
-        pl.tight_layout()
-        adjust_bottom = 0.12 if len(cell_ids) <= 3 else 0.07
-        pl.subplots_adjust(left=0.07, bottom=adjust_bottom, top=0.93)
-        pl.savefig(os.path.join(save_dir_img, 'sta.png'))
+        plot_for_cell_group(cell_ids, get_celltype_dict(save_dir), plot_sta, plot_kwargs,
+                                xlabel='Time (ms)', ylabel='Mem. pot. (mV)', figsize=None,
+                                save_dir_img=os.path.join(save_dir_img, 'sta.png'))
+
+
+    # # voltage histogram over time
+    # def plot_v_hist(ax, cell_idx, t_AP, bins_v, v_hist_cells, before_AP_sta, after_AP_sta):
+    #     x, y = np.meshgrid(t_AP, bins_v[:-1])
+    #     ax.pcolor(x, y, v_hist_cells[cell_idx])
+    #     ax.set_xlim(t_AP[0], t_AP[-1])
+    #     ax.set_ylim(-90, -30)
+    #
+    # plot_kwargs = dict(t_AP=t_AP, bins_v=bins_v, v_hist_cells=v_hist_cells, before_AP_sta=before_AP_sta,
+    #                    after_AP_sta=after_AP_sta)
+    # if cell_type == 'grid_cells':
+    #   plot_for_all_grid_cells(cell_ids, get_celltype_dict(save_dir), plot_v_hist, plot_kwargs,
+    #                           xlabel='Time (ms)', ylabel='Mem. pot. distr. (mV)',
+    #                           save_dir_img=os.path.join(save_dir_img, 'v_hist.png'))
+
+    pl.show()
 
     #     # DAP_deflection on STA
     #     from cell_characteristics.analyze_APs import get_spike_characteristics
@@ -187,40 +161,3 @@ if __name__ == '__main__':
     # print DAP_deflections
     # with open(os.path.join(save_dir_img, 'not_detrended', cell_type, 'DAP_deflections.npy'), 'w') as f:
     #     json.dump(DAP_deflections, f, indent=4)
-
-
-    # v hist
-    pl.close('all')
-    if cell_type == 'grid_cells':
-        n_rows = 3
-        n_columns = 9
-        fig, axes = pl.subplots(n_rows, n_columns, sharex='all', sharey='all', figsize=(14, 8.5))
-        cell_idx = 0
-        for i1 in range(n_rows):
-            for i2 in range(n_columns):
-                if cell_idx < len(cell_ids):
-                    if get_celltype(cell_ids[cell_idx], save_dir) == 'stellate':
-                        axes[i1, i2].set_title(cell_ids[cell_idx] + ' ' + u'\u2605', fontsize=12)
-                    elif get_celltype(cell_ids[cell_idx], save_dir) == 'pyramidal':
-                        axes[i1, i2].set_title(cell_ids[cell_idx] + ' ' + u'\u25B4', fontsize=12)
-                    else:
-                        axes[i1, i2].set_title(cell_ids[cell_idx], fontsize=12)
-
-                    x, y = np.meshgrid(t_AP, bins_v[:-1])
-                    axes[i1, i2].pcolor(x, y, v_hist_cells[cell_idx])
-                    axes[i1, i2].set_xlim(before_AP_sta, before_AP_sta+after_AP_sta)
-                    axes[i1, i2].set_ylim(-90, -30)
-
-                    if i1 == (n_rows - 1):
-                        axes[i1, i2].set_xlabel('Time (ms)')
-                    if i2 == 0:
-                        axes[i1, i2].set_ylabel('Mem. pot. distr. (mV)')
-                else:
-                    axes[i1, i2].spines['left'].set_visible(False)
-                    axes[i1, i2].spines['bottom'].set_visible(False)
-                    axes[i1, i2].set_xticks([])
-                    axes[i1, i2].set_yticks([])
-                cell_idx += 1
-        pl.tight_layout()
-        pl.savefig(os.path.join(save_dir_img, 'v_hist.png'))
-        pl.show()

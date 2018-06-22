@@ -85,8 +85,8 @@ def plot_n_spikes_in_burst_all_cells(count_spikes):
             pl.savefig(os.path.join(save_dir_img, 'count_spikes_log_scale.png'))
 
 
-def get_n_spikes_in_burst(burst_ISI_bool):
-    groups = np.split(burst_ISI_bool, np.where(np.abs(np.diff(burst_ISI_bool)) == 1)[0] + 1)
+def get_n_spikes_in_burst(burst_ISI_indicator):
+    groups = np.split(burst_ISI_indicator, np.where(np.abs(np.diff(burst_ISI_indicator)) == 1)[0] + 1)
     burst_groups = []
     for g in groups:
         if True in g:
@@ -95,7 +95,7 @@ def get_n_spikes_in_burst(burst_ISI_bool):
 
 
 if __name__ == '__main__':
-    save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/n_spikes_in_burst'
+    save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/bursting'
     save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
     cell_type = 'grid_cells'
     cell_ids = load_cell_ids(save_dir, cell_type)

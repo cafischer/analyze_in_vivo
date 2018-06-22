@@ -14,6 +14,8 @@ pl.style.use('paper')
 
 if __name__ == '__main__':
     save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/DAP_deflection_vs_AP_amp'
+    save_dir_burst = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/ISI_hist'
+    save_dir_spat_info = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/entropy'
     save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
     cell_type = 'grid_cells'  #'pyramidal_layer2'  #
     cell_ids = load_cell_ids(save_dir, cell_type)
@@ -24,6 +26,7 @@ if __name__ == '__main__':
     param_list = ['Vm_ljpc', 'spiketimes']
 
     # parameters
+    burst_ISI = 8  # ms
     use_AP_max_idxs_domnisoru = True
     before_AP_sta = 25
     after_AP_sta = 25
@@ -34,12 +37,14 @@ if __name__ == '__main__':
     if not os.path.exists(save_dir_img):
         os.makedirs(save_dir_img)
 
+    fraction_burst = np.load(os.path.join(save_dir_burst, cell_type, 'fraction_burst.npy'))
+    spatial_info = np.load(os.path.join(save_dir_spat_info, cell_type, 'spatial_info.npy'))
+
     #
     DAP_deflection_per_cell = np.zeros(len(cell_ids))
     DAP_width_per_cell = np.zeros(len(cell_ids))
     AP_width_per_cell = np.zeros(len(cell_ids))
-    AP_amp_per_cell = np.zeros(len(cell_ids))
-    v_rest_per_cell = np.zeros(len(cell_ids))
+    frac_ISI_per_cell = np.zeros(len(cell_ids))
 
     for i, cell_id in enumerate(cell_ids):
         print cell_id
@@ -68,38 +73,49 @@ if __name__ == '__main__':
         spike_characteristics_dict = get_spike_characteristics_dict()
         spike_characteristics_dict['AP_max_idx'] = before_AP_idx_sta
         spike_characteristics_dict['AP_onset'] = before_AP_idx_sta - to_idx(1, dt)
-        spike_characteristics_dict['order_fAHP_min'] = 0.2
-        spike_characteristics_dict['fAHP_interval'] = 3.0
-        spike_characteristics_dict['DAP_interval'] = 5.0
         AP_width, DAP_deflection, DAP_width = get_spike_characteristics(sta_mean, t_AP,
-                                                              ['AP_width', 'DAP_deflection', 'DAP_width'], sta_mean[0],
-                                                             check=False, **spike_characteristics_dict)
+                                                                        ['AP_width', 'DAP_deflection', 'DAP_width'],
+                                                                        sta_mean[0],
+                                                                        check=False, **spike_characteristics_dict)
         AP_width_per_cell[i] = AP_width
         DAP_deflection_per_cell[i] = DAP_deflection if DAP_deflection is not None else 0
         DAP_width_per_cell[i] = DAP_width
-        AP_amp_per_cell[i] = np.max(sta_mean) - sta_mean[before_AP_idx_sta - to_idx(1, dt)]
-        v_rest_per_cell[i] = sta_mean[before_AP_idx_sta - to_idx(1, dt)]
+
+    good_cell_indicator = AP_width_per_cell <= 0.75
+    DAP_deflection_per_cell = DAP_deflection_per_cell[good_cell_indicator]
+    fraction_burst = fraction_burst[good_cell_indicator]
+    spatial_info = spatial_info[good_cell_indicator]
+    cell_ids = np.array(cell_ids)[good_cell_indicator]
 
     pl.figure()
-    pl.plot(AP_amp_per_cell, DAP_deflection_per_cell, 'ok')
-    pl.ylabel('DAP deflection (mV)')
-    pl.xlabel('AP amplitude (mV)')
+    pl.plot(np.zeros(len(cell_ids))[DAP_deflection_per_cell == 0],
+            fraction_burst[DAP_deflection_per_cell == 0], 'o', color='0.5')
+    pl.plot(np.ones(len(cell_ids))[DAP_deflection_per_cell > 0],
+            fraction_burst[DAP_deflection_per_cell > 0], 'o', color='0.5')
+    for cell_idx in range(len(cell_ids)):
+        pl.annotate(cell_ids[cell_idx], xy=((DAP_deflection_per_cell[cell_idx] > 0).astype(int), fraction_burst[cell_idx]))
+    pl.plot(0, np.mean(fraction_burst[DAP_deflection_per_cell == 0]), 'ok')
+    pl.plot(1, np.mean(fraction_burst[DAP_deflection_per_cell > 0]), 'ok')
+    pl.xlim(-1, 2)
+    pl.xtick(0, 1)
+    pl.ylabel('Fraction ISI < 8 ms')
+    pl.xlabel('DAP deflection (mV)')
     pl.tight_layout()
-    pl.savefig(os.path.join(save_dir_img, 'DAP_deflection_vs_AP_amp.png'))
+    pl.savefig(os.path.join(save_dir_img, 'DAP_deflection_vs_frac_burst.png'))
 
-    print 'Low AP width: '
-    print np.array(cell_ids)[AP_width_per_cell < 0.7]
     pl.figure()
-    pl.plot(AP_width_per_cell, DAP_deflection_per_cell, 'ok')
-    pl.ylabel('DAP deflection (mV)')
-    pl.xlabel('AP width (ms)')
+    pl.plot(np.zeros(len(cell_ids))[DAP_deflection_per_cell == 0],
+            spatial_info[DAP_deflection_per_cell == 0], 'o', color='0.5')
+    pl.plot(np.ones(len(cell_ids))[DAP_deflection_per_cell > 0],
+            spatial_info[DAP_deflection_per_cell > 0], 'o', color='0.5')
+    for cell_idx in range(len(cell_ids)):
+        pl.annotate(cell_ids[cell_idx], xy=((DAP_deflection_per_cell[cell_idx] > 0).astype(int), spatial_info[cell_idx]))
+    pl.plot(0, np.mean(spatial_info[DAP_deflection_per_cell == 0]), 'ok')
+    pl.plot(1, np.mean(spatial_info[DAP_deflection_per_cell > 0]), 'ok')
+    pl.ylabel('Spatial information')
+    pl.xlabel('DAP deflection (mV)')
+    pl.xlim(-1, 2)
+    pl.xtick(0, 1)
     pl.tight_layout()
-    pl.savefig(os.path.join(save_dir_img, 'DAP_deflection_vs_AP_width.png'))
-
-    pl.figure()
-    pl.plot(v_rest_per_cell, DAP_deflection_per_cell, 'ok')
-    pl.ylabel('DAP deflection (mV)')
-    pl.xlabel('Resting potential (ms)')
-    pl.tight_layout()
-    pl.savefig(os.path.join(save_dir_img, 'DAP_deflection_vs_V_rest.png'))
+    pl.savefig(os.path.join(save_dir_img, 'DAP_deflection_vs_spatial_info.png'))
     pl.show()
