@@ -117,6 +117,7 @@ if __name__ == '__main__':
         # pl.savefig(os.path.join(save_dir_cell, 'v_hist.png'))
 
     pl.close('all')
+
     def plot_sta(ax, cell_idx, t_AP, sta_mean_cells, sta_std_cells):
         ax.plot(t_AP, sta_mean_cells[cell_idx], 'k')
         ax.fill_between(t_AP, sta_mean_cells[cell_idx] - sta_std_cells[cell_idx],

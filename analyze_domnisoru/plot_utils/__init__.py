@@ -59,7 +59,7 @@ def get_cell_id_with_marker(cell_id, cell_type_dict):
 
 def get_divisors(x):
     divisors = []
-    for divisor in range(2, x):
+    for divisor in range(2, x+1):
         if x % divisor == 0:
             divisors.append((divisor, x / divisor))
     return divisors
@@ -72,4 +72,4 @@ def find_most_equal_divisors(x):
 
 
 if __name__ == '__main__':
-    print find_most_equal_divisors(27)
+    print find_most_equal_divisors(2)
