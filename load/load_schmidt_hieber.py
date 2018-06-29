@@ -77,6 +77,12 @@ def load_VI(data_dir, cell_id):
     return v, timearray(v[0], dt), i_inj
 
 
+def get_cell_type_dict():
+    cell_ids = ["20101031_10o31c", "20110513_11513", "20110910_11910b",
+                "20111207_11d07c", "20111213_11d13b", "20120213_12213"]
+    return {cell_id: 'not known' for cell_id in cell_ids}
+
+
 if __name__ == "__main__":
     import matplotlib.pyplot as pl
 

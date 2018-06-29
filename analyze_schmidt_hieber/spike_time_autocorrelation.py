@@ -2,52 +2,30 @@ from __future__ import division
 import numpy as np
 import matplotlib.pyplot as pl
 import os
-from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data, get_celltype_dict
+from analyze_in_vivo.load.load_schmidt_hieber import load_full_runs, get_cell_type_dict
 from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_for_all_grid_cells
 from grid_cell_stimuli import get_AP_max_idxs
 from cell_characteristics import to_idx
-from analyze_in_vivo.analyze_domnisoru.position_vs_firing_rate import get_spike_train
 import warnings
+from analyze_in_vivo.analyze_domnisoru.spike_time_autocorrelation import auto_correlate
+from analyze_in_vivo.analyze_domnisoru.position_vs_firing_rate import get_spike_train
 pl.style.use('paper')
 
 
-def cross_correlate(x, y, max_lag=0):
-    assert len(x) == len(y)
-    cross_corr = np.zeros(2 * max_lag + 1)
-    for lag in range(max_lag, 0, -1):
-        cross_corr[max_lag - lag] = np.correlate(x[:-lag], y[lag:], mode='valid')[0]
-    for lag in range(1, max_lag + 1, 1):
-        cross_corr[max_lag + lag] = np.correlate(x[lag:], y[:-lag], mode='valid')[0]
-        cross_corr[max_lag] = np.correlate(x, y, mode='valid')[0]
-
-    assert np.all(cross_corr[:max_lag] == cross_corr[max_lag + 1:][::-1])
-    return cross_corr
-
-
-def auto_correlate(x, max_lag=0):
-    auto_corr_lag = np.zeros(max_lag)
-    for lag in range(1, max_lag, 1):
-        auto_corr_lag[lag-1] = np.correlate(x[:-lag], x[lag:], mode='valid')[0]
-    auto_corr_no_lag = np.array([np.correlate(x, x, mode='valid')[0]])
-    auto_corr = np.concatenate((np.flipud(auto_corr_lag), auto_corr_no_lag, auto_corr_lag))
-    return auto_corr
-
-
 if __name__ == '__main__':
-    save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/spike_time_auto_corr'
-    save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
-    cell_type = 'grid_cells'  #'pyramidal_layer2'  #
-    cell_ids = load_cell_ids(save_dir, cell_type)
-    cell_type_dict = get_celltype_dict(save_dir)
+    save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/schmidthieber/whole_trace/spike_time_auto_corr'
+    save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/schmidt-hieber'
+    cell_ids = ["20101031_10o31c", "20110513_11513", "20110910_11910b",
+                "20111207_11d07c", "20111213_11d13b", "20120213_12213"]
+    cell_type_dict = get_cell_type_dict()
     AP_thresholds = {'s73_0004': -50, 's90_0006': -45, 's82_0002': -38, 's117_0002': -60, 's119_0004': -50,
                      's104_0007': -55, 's79_0003': -50, 's76_0002': -50, 's101_0009': -45}
     param_list = ['Vm_ljpc', 'spiketimes']
 
     # parameters
     bin_size = 1.0  # ms
-    max_lag = 12
+    max_lag = 50
     use_AP_max_idxs_domnisoru = True
-    save_dir_img = os.path.join(save_dir_img, cell_type)
     max_lag_idx = to_idx(max_lag, bin_size)
     t_auto_corr = np.concatenate((np.arange(-max_lag_idx, 0, 1), np.arange(0, max_lag_idx + 1, 1))) * bin_size
 
@@ -61,19 +39,15 @@ if __name__ == '__main__':
         print cell_id
 
         # load
-        data = load_data(cell_id, param_list, save_dir)
-        v = data['Vm_ljpc']
-        t = np.arange(0, len(v)) * data['dt']
+        v, t, x_pos, y_pos, pos_t, speed, speed_t = load_full_runs(save_dir, cell_id)
         dt = t[1] - t[0]
+        AP_threshold = np.min(v) + 2. / 3 * np.abs(np.min(v) - np.max(v)) - 5
 
         # get APs
-        if use_AP_max_idxs_domnisoru:
-            AP_max_idxs = data['spiketimes']
-        else:
-            AP_max_idxs = get_AP_max_idxs(v, AP_thresholds[cell_id], dt)
+        AP_max_idxs = get_AP_max_idxs(v, AP_threshold, dt)
 
         # get spike-trains
-        spike_train = get_spike_train(AP_max_idxs, len(v))  # for norm to firing rate: spike_train / len(AP_max_idxs)
+        spike_train = get_spike_train(AP_max_idxs, len(v))
 
         # change to bin size
         bin_change = bin_size / dt
@@ -115,13 +89,11 @@ if __name__ == '__main__':
         # pl.show()
 
     np.save(os.path.join(save_dir_img, 'peak_auto_corr_'+str(max_lag)+'.npy'), peak_auto_corr)
-
-    if cell_type == 'grid_cells':
-        def plot_auto_corr(ax, cell_idx, t_auto_corr, auto_corr_cells, bin_size, max_lag):
-            ax.bar(t_auto_corr, auto_corr_cells[cell_idx], bin_size, color='0.5', align='center')
-            ax.set_xlim(-max_lag, max_lag)
-        plot_kwargs = dict(t_auto_corr=t_auto_corr, auto_corr_cells=auto_corr_cells, bin_size=bin_size, max_lag=max_lag)
-        plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_auto_corr, plot_kwargs,
-                                xlabel='Time (ms)', ylabel='Spike-time \nautocorrelation', sharey='none',
-                                save_dir_img=os.path.join(save_dir_img, 'auto_corr_'+str(max_lag)+'.png'))
-        pl.show()
+    def plot_auto_corr(ax, cell_idx, t_auto_corr, auto_corr_cells, bin_size, max_lag):
+        ax.bar(t_auto_corr, auto_corr_cells[cell_idx], bin_size, color='0.5', align='center')
+        ax.set_xlim(-max_lag, max_lag)
+    plot_kwargs = dict(t_auto_corr=t_auto_corr, auto_corr_cells=auto_corr_cells, bin_size=bin_size, max_lag=max_lag)
+    plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_auto_corr, plot_kwargs,
+                            xlabel='Time (ms)', ylabel='Spike-time \nautocorrelation', sharey='none',
+                            save_dir_img=os.path.join(save_dir_img, 'auto_corr_'+str(max_lag)+'.png'))
+    pl.show()

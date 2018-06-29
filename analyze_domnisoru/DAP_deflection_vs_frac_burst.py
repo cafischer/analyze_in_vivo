@@ -15,7 +15,9 @@ pl.style.use('paper')
 if __name__ == '__main__':
     save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/DAP_deflection_vs_AP_amp'
     save_dir_burst = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/ISI_hist'
-    save_dir_spat_info = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/entropy'
+    save_dir_spat_info = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/spatial_info'
+    save_dir_ISI_hist = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/ISI_hist'
+    save_dir_auto_corr = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/spike_time_auto_corr'
     save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
     cell_type = 'grid_cells'  #'pyramidal_layer2'  #
     cell_ids = load_cell_ids(save_dir, cell_type)
@@ -39,10 +41,13 @@ if __name__ == '__main__':
 
     fraction_burst = np.load(os.path.join(save_dir_burst, cell_type, 'fraction_burst.npy'))
     spatial_info = np.load(os.path.join(save_dir_spat_info, cell_type, 'spatial_info.npy'))
+    peak_ISI_hist = np.load(os.path.join(save_dir_ISI_hist, cell_type, 'peak_ISI_hist.npy'))
+    peak_auto_corr = np.load(os.path.join(save_dir_auto_corr, cell_type, 'peak_auto_corr_50.npy'))
 
     #
     DAP_deflection_per_cell = np.zeros(len(cell_ids))
     DAP_width_per_cell = np.zeros(len(cell_ids))
+    DAP_time_per_cell = np.zeros(len(cell_ids))
     AP_width_per_cell = np.zeros(len(cell_ids))
     frac_ISI_per_cell = np.zeros(len(cell_ids))
 
@@ -73,18 +78,20 @@ if __name__ == '__main__':
         spike_characteristics_dict = get_spike_characteristics_dict()
         spike_characteristics_dict['AP_max_idx'] = before_AP_idx_sta
         spike_characteristics_dict['AP_onset'] = before_AP_idx_sta - to_idx(1, dt)
-        AP_width, DAP_deflection, DAP_width = get_spike_characteristics(sta_mean, t_AP,
-                                                                        ['AP_width', 'DAP_deflection', 'DAP_width'],
+        AP_width_per_cell[i],  DAP_deflection_per_cell[i], \
+        DAP_width_per_cell[i], DAP_time_per_cell[i] = get_spike_characteristics(sta_mean, t_AP,
+                                                                        ['AP_width', 'DAP_deflection',
+                                                                         'DAP_width', 'DAP_time'],
                                                                         sta_mean[0],
                                                                         check=False, **spike_characteristics_dict)
-        AP_width_per_cell[i] = AP_width
-        DAP_deflection_per_cell[i] = DAP_deflection if DAP_deflection is not None else 0
-        DAP_width_per_cell[i] = DAP_width
 
     good_cell_indicator = AP_width_per_cell <= 0.75
     DAP_deflection_per_cell = DAP_deflection_per_cell[good_cell_indicator]
+    DAP_time_per_cell = DAP_time_per_cell[good_cell_indicator]
     fraction_burst = fraction_burst[good_cell_indicator]
     spatial_info = spatial_info[good_cell_indicator]
+    peak_ISI_hist = peak_ISI_hist[good_cell_indicator]
+    peak_auto_corr = peak_auto_corr[good_cell_indicator]
     cell_ids = np.array(cell_ids)[good_cell_indicator]
 
     pl.figure()
@@ -97,7 +104,7 @@ if __name__ == '__main__':
     pl.plot(0, np.mean(fraction_burst[DAP_deflection_per_cell == 0]), 'ok')
     pl.plot(1, np.mean(fraction_burst[DAP_deflection_per_cell > 0]), 'ok')
     pl.xlim(-1, 2)
-    pl.xtick(0, 1)
+    pl.xticks([0, 1])
     pl.ylabel('Fraction ISI < 8 ms')
     pl.xlabel('DAP deflection (mV)')
     pl.tight_layout()
@@ -115,7 +122,20 @@ if __name__ == '__main__':
     pl.ylabel('Spatial information')
     pl.xlabel('DAP deflection (mV)')
     pl.xlim(-1, 2)
-    pl.xtick(0, 1)
+    pl.xticks([0, 1])
     pl.tight_layout()
     pl.savefig(os.path.join(save_dir_img, 'DAP_deflection_vs_spatial_info.png'))
+
+    peak_ISI_hist = np.array([(p[0] + p[1]) / 2. for p in peak_ISI_hist])  # set middle of bin as peak
+    pl.figure()
+    pl.plot(DAP_time_per_cell, peak_ISI_hist, 'o', color='0.5')
+    pl.plot(DAP_time_per_cell, peak_auto_corr, 'o', color='r')
+    for cell_idx in range(len(cell_ids)):
+        pl.annotate(cell_ids[cell_idx], xy=(DAP_time_per_cell[cell_idx], peak_ISI_hist[cell_idx]))
+    pl.xlim(0, 10)
+    pl.ylim(0, 10)
+    pl.ylabel('Peak of ISI hist. (ms)')
+    pl.xlabel('DAP time (ms)')
+    pl.tight_layout()
+    pl.savefig(os.path.join(save_dir_img, 'DAP_time_vs_ISI_peak.png'))
     pl.show()

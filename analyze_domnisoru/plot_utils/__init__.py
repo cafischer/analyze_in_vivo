@@ -16,16 +16,21 @@ def plot_with_markers(ax, x, y, cell_ids, cell_type_dict):
             ax.plot(x[cell_idx], y[cell_idx], 'k', marker='o')
 
 
-def plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_fun, plot_kwargs, xlabel, ylabel, save_dir_img):
-    plot_for_cell_group(cell_ids, cell_type_dict, plot_fun, plot_kwargs, xlabel, ylabel, (14, 8.5), save_dir_img)
+def plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_fun, plot_kwargs, xlabel, ylabel, fig_title=None,
+                            sharey='all', save_dir_img=None):
+    plot_for_cell_group(cell_ids, cell_type_dict, plot_fun, plot_kwargs, xlabel, ylabel, (14, 8.5), fig_title=fig_title,
+                            sharey=sharey, save_dir_img=save_dir_img)
 
 
-def plot_for_cell_group(cell_ids, cell_type_dict, plot_fun, plot_kwargs, xlabel, ylabel, figsize, save_dir_img):
+def plot_for_cell_group(cell_ids, cell_type_dict, plot_fun, plot_kwargs, xlabel, ylabel, figsize, fig_title=None,
+                        sharey='all', save_dir_img=None):
     n_rows, n_columns = find_most_equal_divisors(len(cell_ids))
     if figsize is None:
         figsize = (4.5 * n_rows, 2.0 * n_columns)
-    fig, axes = pl.subplots(n_rows, n_columns, sharex='all', sharey='all', squeeze=False,
+    fig, axes = pl.subplots(n_rows, n_columns, sharex='all', sharey=sharey, squeeze=False,
                             figsize=figsize)
+    if fig_title is not None:
+        fig.suptitle(fig_title, fontsize=16)
     cell_idx = 0
     for i1 in range(n_rows):
         for i2 in range(n_columns):
@@ -45,6 +50,8 @@ def plot_for_cell_group(cell_ids, cell_type_dict, plot_fun, plot_kwargs, xlabel,
                 axes[i1, i2].set_xticks([])
                 axes[i1, i2].set_yticks([])
     pl.tight_layout()
+    if fig_title is not None:
+        pl.subplots_adjust(top=0.92)
     pl.savefig(save_dir_img)
 
 

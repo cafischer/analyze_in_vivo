@@ -32,7 +32,7 @@ if __name__ == '__main__':
         save_dir_img = os.path.join(save_dir_img, 'cut_ISIs_at_'+str(max_ISI))
 
     # parameter
-    bin_width = 2.0
+    bin_width = 1.0
     bins = np.arange(0, max_ISI+bin_width, bin_width)
 
     # over cells
@@ -45,6 +45,7 @@ if __name__ == '__main__':
     len_recording = np.zeros(len(cell_ids))
     firing_rate = np.zeros(len(cell_ids))
     fraction_burst = np.zeros(len(cell_ids))
+    peak_ISI_hist = np.zeros(len(cell_ids), dtype=object)
 
     for cell_idx, cell_id in enumerate(cell_ids):
         print cell_id
@@ -72,17 +73,20 @@ if __name__ == '__main__':
         # ISI histograms
         ISI_hist[cell_idx, :] = get_ISI_hist(ISIs, bins)
         cum_ISI_hist_y[cell_idx], cum_ISI_hist_x[cell_idx] = get_cumulative_ISI_hist(ISIs)
+        peak_ISI_hist[cell_idx] = (bins[:-1][np.argmax(ISI_hist[cell_idx, :])],
+                                   bins[1:][np.argmax(ISI_hist[cell_idx, :])])
 
         # save and plot
-        save_dir_cell = os.path.join(save_dir_img, cell_type, cell_id)
-        if not os.path.exists(save_dir_cell):
-            os.makedirs(save_dir_cell)
-
+        # save_dir_cell = os.path.join(save_dir_img, cell_type, cell_id)
+        # if not os.path.exists(save_dir_cell):
+        #     os.makedirs(save_dir_cell)
+        #
         # plot_cumulative_ISI_hist(cum_ISI_hist_x[i], cum_ISI_hist_y[i], xlim=(0, 200), title=cell_id,
         #                          save_dir=save_dir_cell)
-        # plot_ISI_hist(ISI_hist[i, :], bins, title=cell_id, save_dir=save_dir_cell)
-        # #pl.show()
-        pl.close('all')
+        # print peak_ISI_hist[cell_idx]
+        # plot_ISI_hist(ISI_hist[cell_idx, :], bins, title=cell_id, save_dir=save_dir_cell)
+        # pl.show()
+        # pl.close('all')
 
     # plot all cumulative ISI histograms in one
     ISIs_all = np.array([item for sublist in ISIs_per_cell for item in sublist])
@@ -103,6 +107,7 @@ if __name__ == '__main__':
 
     # save
     np.save(os.path.join(save_dir_img, cell_type, 'fraction_burst.npy'), fraction_burst)
+    np.save(os.path.join(save_dir_img, cell_type, 'peak_ISI_hist.npy'), peak_ISI_hist)
 
     # plot all ISI hists
     if cell_type == 'grid_cells':

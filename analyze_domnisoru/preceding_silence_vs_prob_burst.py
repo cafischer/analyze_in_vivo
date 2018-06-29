@@ -4,7 +4,7 @@ import numpy as np
 import os
 from grid_cell_stimuli import get_AP_max_idxs
 from grid_cell_stimuli.ISI_hist import get_ISIs
-from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data, get_celltype_dict
+from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data, get_celltype_dict, get_cell_groups
 from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_for_all_grid_cells
 from analyze_in_vivo.analyze_domnisoru.burst_len_vs_preceding_silence import get_n_spikes_per_event, \
     get_ISI_idx_per_event
@@ -86,20 +86,43 @@ if __name__ == '__main__':
 
     # save and plot
     if cell_type == 'grid_cells':
-        def plot_burst_len_vs_preceding_silence(ax, cell_idx, bins_prec_silence, prob_next_burst_single_cells,
-                                                prob_next_burst_burst_cells):
+        def plot_burst_len_vs_preceding_silence(ax, cell_idx, bins_prec_silence, prob_burst_after_single_cells,
+                                                prob_burst_after_burst_cells):
 
-            ax.semilogx(bins_prec_silence[:-1], prob_next_burst_single_cells[cell_idx], color='k',
-                    label='after single')
-            ax.semilogx(bins_prec_silence[:-1], prob_next_burst_burst_cells[cell_idx], color='k',
-                    linestyle='--', label='after burst')
+            ax.semilogx(bins_prec_silence[:-1], prob_burst_after_single_cells[cell_idx], color='k',
+                        label='after single')
+            ax.semilogx(bins_prec_silence[:-1], prob_burst_after_burst_cells[cell_idx], color='k',
+                        linestyle='--', label='after burst')
             if cell_idx == 8:
                 ax.legend(fontsize=10)
 
         plot_kwargs = dict(bins_prec_silence=bins_silence,
-                           prob_next_burst_single_cells=prob_burst_after_single_cells,
-                           prob_next_burst_burst_cells=prob_burst_after_burst_cells)
+                           prob_burst_after_single_cells=prob_burst_after_single_cells,
+                           prob_burst_after_burst_cells=prob_burst_after_burst_cells)
         plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_burst_len_vs_preceding_silence, plot_kwargs,
                                 xlabel='Prec. \nsilence (ms)', ylabel='Prob. next burst',
                                 save_dir_img=os.path.join(save_dir_img, 'preceding_silence_vs_burst_prob.png'))
+        #pl.show()
+
+        # plot averaged over cell_groups
+        prob_burst_after_single_cells = np.array(prob_burst_after_single_cells)
+        prob_burst_after_burst_cells = np.array(prob_burst_after_burst_cells)
+        cell_groups = get_cell_groups()
+        fig, ax = pl.subplots(1, len(cell_groups.keys()), figsize=(10, 5), sharey='all', sharex='all')
+        for i, (cell_group_name, cell_group_ids) in enumerate(cell_groups.iteritems()):
+            cell_idxs = np.array([cell_ids.index(cell_id) for cell_id in cell_group_ids])
+
+            ax[i].set_title(cell_group_name)
+            ax[i].errorbar(bins_silence[:-1], np.nanmean(prob_burst_after_single_cells[cell_idxs], 0),
+                        yerr=np.nanstd(prob_burst_after_single_cells[cell_idxs], 0), color='k', capsize=2,
+                        linestyle='--', label='after single')
+            ax[i].errorbar(bins_silence[:-1], np.nanmean(prob_burst_after_burst_cells[cell_idxs], 0),
+                        yerr=np.nanstd(prob_burst_after_burst_cells[cell_idxs]), color='k', capsize=2,
+                        label='after burst')
+            ax[i].set_xscale("log", nonposx='clip')
+            ax[i].legend(fontsize=10)
+            ax[i].set_xlabel('Prec. silence (ms)')
+        ax[0].set_ylabel('Prob. next burst')
+        pl.tight_layout()
+        pl.savefig(os.path.join(save_dir_img, 'preceding_silence_vs_burst_prob_cell_groups.png'))
         pl.show()

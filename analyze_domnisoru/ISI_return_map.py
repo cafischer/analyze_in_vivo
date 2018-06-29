@@ -23,7 +23,7 @@ if __name__ == '__main__':
                      's79_0003': -50, 's76_0002': -50, 's101_0009': -45}
     use_AP_max_idxs_domnisoru = True
     filter_long_ISIs = True
-    max_ISI = 10000
+    max_ISI = 200
     ISI_burst = 8  # ms
     steps = np.arange(0, max_ISI + 1.0, 1.0)
     if filter_long_ISIs:
@@ -162,4 +162,15 @@ if __name__ == '__main__':
                                 xlabel='ISI[n] (ms)', ylabel='Prob. ISI[n+1] < %i ms' % ISI_burst,
                                 save_dir_img=os.path.join(save_dir_img, 'prob_next_ISI_burst.png'))
 
+        # plot cumulative prob. next ISI < x ms
+        def plot_cum_prob_next_ISI_burst(ax, cell_idx, steps, prob_next_ISI_short, max_ISI):
+            prob_normed = prob_next_ISI_short[cell_idx, :] / np.nansum(prob_next_ISI_short[cell_idx, :])
+            ax.plot(steps, np.nancumsum(prob_normed), 'k', drawstyle='steps-post')
+            ax.set_xlim(0, max_ISI)
+            ax.set_ylim(0, 1)
+
+        plot_kwargs = dict(steps=steps, prob_next_ISI_short=prob_next_ISI_short, max_ISI=max_ISI)
+        plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_cum_prob_next_ISI_burst, plot_kwargs,
+                                xlabel='ISI[n] (ms)', ylabel='Cum. prob. \nISI[n+1] < %i ms' % ISI_burst,
+                                save_dir_img=os.path.join(save_dir_img, 'cum_prob_next_ISI_burst.png'))
         pl.show()

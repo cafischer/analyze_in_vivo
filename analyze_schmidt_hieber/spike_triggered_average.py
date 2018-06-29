@@ -50,12 +50,10 @@ def find_all_APs_in_v_trace(v, before_AP_idx, after_AP_idx, AP_threshold, do_det
 
 
 if __name__ == '__main__':
-
-    save_dir = '../results/schmidthieber/full_traces/STA/whole_trace/'
+    save_dir = '../results/schmidthieber/whole_traces/STA/'
     data_dir = '../data/'
     cell_ids = ["20101031_10o31c", "20110513_11513", "20110910_11910b",
                 "20111207_11d07c", "20111213_11d13b", "20120213_12213"]
-    #cell_ids = ["20110910_11910b"]
 
     # parameters
     do_detrend = True
