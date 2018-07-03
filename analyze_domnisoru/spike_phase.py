@@ -94,7 +94,7 @@ def plot_both_phase_hist_all_cells(AP_max_phases1_per_cell, AP_max_phases2_per_c
 
 if __name__ == '__main__':
     save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/spike_phase'
-    save_dir_in_out_field = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/in_out_field/vel_thresh_1'
+    #save_dir_in_out_field = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/in_out_field/vel_thresh_1'
     save_dir_theta_ramp = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/check/theta_ramp'
     save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
     cell_type = 'grid_cells'
@@ -130,8 +130,8 @@ if __name__ == '__main__':
         t = np.arange(0, len(v)) * data['dt']
         velocity = data['vel_100ms']
         dt = t[1] - t[0]
-        in_field_len_orig = np.load(os.path.join(save_dir_in_out_field, cell_type, cell_id, 'in_field_len_orig.npy'))
-        out_field_len_orig = np.load(os.path.join(save_dir_in_out_field, cell_type, cell_id, 'out_field_len_orig.npy'))
+        # TODO: use Domnisorus fields
+        #in_field_len_orig = np.load(os.path.join(save_dir_in_out_field, cell_type, cell_id, 'in_field_len_orig.npy'))
 
         # get theta and ramp
         theta = data['fVm']
@@ -139,9 +139,9 @@ if __name__ == '__main__':
         # theta = np.load(os.path.join(save_dir_theta_ramp, cell_type, cell_id, 'theta.npy'))
         # ramp = np.load(os.path.join(save_dir_theta_ramp, cell_type, cell_id, 'ramp.npy'))
 
-        # get phases
-        start_in, end_in = get_start_end_group_of_ones(in_field_len_orig.astype(int))
-        n_fields = len(start_in)
+        # # get fields
+        # start_in, end_in = get_start_end_group_of_ones(in_field_len_orig.astype(int))
+        # n_fields = len(start_in)
 
         # get APs
         if use_AP_max_idxs_domnisoru:
@@ -165,12 +165,12 @@ if __name__ == '__main__':
         # pl.plot(t[AP_max_idxs_single], v[AP_max_idxs_single], 'ob')
         # pl.show()
 
-        # remove low velocity spikes
-        to_low = velocity < velocity_threshold
-        AP_max_idxs = AP_max_idxs[np.array([~to_low[AP_max_idx] for AP_max_idx in AP_max_idxs], dtype=bool)]
-        AP_max_idxs_burst = AP_max_idxs_burst[np.array([~to_low[AP_max_idx_burst]
-                                                        for AP_max_idx_burst in AP_max_idxs_burst], dtype=bool)]
-
+        # # remove low velocity spikes
+        # to_low = velocity < velocity_threshold
+        # AP_max_idxs = AP_max_idxs[np.array([~to_low[AP_max_idx] for AP_max_idx in AP_max_idxs], dtype=bool)]
+        # AP_max_idxs_burst = AP_max_idxs_burst[np.array([~to_low[AP_max_idx_burst]
+        #                                                 for AP_max_idx_burst in AP_max_idxs_burst], dtype=bool)]
+        #
         AP_max_phases_theta = []
         AP_max_phases_ramp = []
         AP_max_phases_field = []
@@ -214,7 +214,7 @@ if __name__ == '__main__':
             AP_max_phases_ramp_single.append(get_spike_phases_by_min(AP_max_idxs_in_field_single, t, ramp,
                                                                      order=int(round(20. / dt)),
                                                                      dist_to_AP=int(round(2000. / dt))))
-            
+
             # respect to field
             phases_field = np.linspace(0, 360, end_in[i_field] - start_in[i_field] + 1)
             AP_max_phases_field.append(phases_field[AP_max_idxs_in_field - start_in[i_field]])
@@ -235,9 +235,9 @@ if __name__ == '__main__':
         #
         # pl.close('all')
         #
-        # AP_max_phases_theta_all = [item for sublist in AP_max_phases_theta for item in sublist]
-        # AP_max_phases_theta_all = np.array(AP_max_phases_theta_all)[~np.isnan(AP_max_phases_theta_all)]
-        # AP_max_phases_theta_per_cell.append(AP_max_phases_theta_all)
+        AP_max_phases_theta_all = [item for sublist in AP_max_phases_theta for item in sublist]
+        AP_max_phases_theta_all = np.array(AP_max_phases_theta_all)[~np.isnan(AP_max_phases_theta_all)]
+        AP_max_phases_theta_per_cell.append(AP_max_phases_theta_all)
         # plot_phase_hist(AP_max_phases_theta_all, os.path.join(save_dir_cell, 'single', 'theta.png'),
         #                 mean_phase=circmean(AP_max_phases_theta_all, 360, 0),
         #                 std_phase=circstd(AP_max_phases_theta_all, 360, 0),

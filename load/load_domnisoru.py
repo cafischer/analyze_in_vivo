@@ -13,7 +13,9 @@ def load_data(cell_id, param_list, save_dir):
         file = loadmat(os.path.join(save_dir, file_name))
         data = file[param]
         if 'Y' in param:
-            data += 200  # to bring position between 0 and 400
+            data += 196.8929860286835  # to make position start at 0
+            assert np.all(data >= 0)
+            assert np.all(data < get_track_len(cell_id))
         shape = np.shape(file[param])
         if shape[0] == 1:
             data_set[param] = data[0, :]
@@ -94,9 +96,21 @@ def get_celltype(cell_id, save_dir):
 
 def get_track_len(cell_id):
     if cell_id == 's82_0002' or cell_id == 's84_0002':
-        return 600  # cm
+        return 620.0  # cm
     else:
-        return 400  # cm
+        return 410.0  # cm
+
+
+def get_last_bin_edge(cell_id):
+    if cell_id == 's82_0002' or cell_id == 's84_0002':
+        return 616.58592993193  # cm
+    else:
+        return 405.70317910647157  # cm
+
+    # bin edges in Domnisoru
+    # units VR: -1140 : 28.94973617378945 : 1209 (2430 for 6 m tracks)
+    # units cm: -196.8929860286835 : 5.0 : 208.81019307778803 (419.69294390324643 for 6 m tracks)
+
 
 
 def get_cell_groups():

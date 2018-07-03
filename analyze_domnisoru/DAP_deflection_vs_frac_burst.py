@@ -94,6 +94,8 @@ if __name__ == '__main__':
     peak_auto_corr = peak_auto_corr[good_cell_indicator]
     cell_ids = np.array(cell_ids)[good_cell_indicator]
 
+    DAP_deflection_per_cell[np.isnan(DAP_deflection_per_cell)] = 0  # for plotting
+
     pl.figure()
     pl.plot(np.zeros(len(cell_ids))[DAP_deflection_per_cell == 0],
             fraction_burst[DAP_deflection_per_cell == 0], 'o', color='0.5')
@@ -129,7 +131,6 @@ if __name__ == '__main__':
     peak_ISI_hist = np.array([(p[0] + p[1]) / 2. for p in peak_ISI_hist])  # set middle of bin as peak
     pl.figure()
     pl.plot(DAP_time_per_cell, peak_ISI_hist, 'o', color='0.5')
-    pl.plot(DAP_time_per_cell, peak_auto_corr, 'o', color='r')
     for cell_idx in range(len(cell_ids)):
         pl.annotate(cell_ids[cell_idx], xy=(DAP_time_per_cell[cell_idx], peak_ISI_hist[cell_idx]))
     pl.xlim(0, 10)
@@ -138,4 +139,15 @@ if __name__ == '__main__':
     pl.xlabel('DAP time (ms)')
     pl.tight_layout()
     pl.savefig(os.path.join(save_dir_img, 'DAP_time_vs_ISI_peak.png'))
+
+    pl.figure()
+    pl.plot(DAP_time_per_cell, peak_auto_corr, 'o', color='0.5')
+    for cell_idx in range(len(cell_ids)):
+        pl.annotate(cell_ids[cell_idx], xy=(DAP_time_per_cell[cell_idx], peak_auto_corr[cell_idx]))
+    pl.xlim(0, 20)
+    pl.ylim(0, 20)
+    pl.ylabel('Peak of auto-correlation (ms)')
+    pl.xlabel('DAP time (ms)')
+    pl.tight_layout()
+    pl.savefig(os.path.join(save_dir_img, 'DAP_time_vs_auto_corr_peak.png'))
     pl.show()

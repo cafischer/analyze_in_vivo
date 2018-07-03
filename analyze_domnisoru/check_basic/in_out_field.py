@@ -6,7 +6,8 @@ import pandas as pd
 import json
 import random
 import copy
-from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data, load_field_indices, get_track_len
+from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data, load_field_indices, get_track_len, \
+    get_last_bin_edge
 import scipy.signal
 from cell_fitting.util import init_nan
 from grid_cell_stimuli import get_AP_max_idxs
@@ -134,8 +135,8 @@ if __name__ == '__main__':
     cell_type = 'grid_cells'
     cell_ids = load_cell_ids(save_dir, cell_type)
     param_list = ['Vm_ljpc', 'Y_cm', 'vel_100ms', 'spiketimes', 'fY_cm']
-    AP_thresholds = {'s73_0004': -55, 's90_0006': -45, 's82_0002': -35,
-                     's117_0002': -60, 's119_0004': -50, 's104_0007': -55, 's79_0003': -50, 's76_0002': -50, 's101_0009': -45}
+    AP_thresholds = {'s73_0004': -55, 's90_0006': -45, 's82_0002': -35, 's117_0002': -60, 's119_0004': -50,
+                     's104_0007': -55, 's79_0003': -50, 's76_0002': -50, 's101_0009': -45}
 
     # parameters
     use_AP_max_idxs_domnisoru = True
@@ -180,7 +181,7 @@ if __name__ == '__main__':
                                                                         velocity_threshold)
 
         # bin according to position and compute firing rate
-        bins = np.arange(0, track_len + bin_size, bin_size)
+        bins = np.arange(0, get_last_bin_edge(cell_id), bin_size)  # use same as matlab's edges
         n_bins = len(bins) - 1  # -1 for last edge
 
         # compute firing rate of original spike train
@@ -268,14 +269,15 @@ if __name__ == '__main__':
         # pl.tight_layout()
         # pl.savefig(os.path.join(save_dir_cell, 'position_vs_firing_rate.png'))
 
-        # pl.figure()
-        # pl.plot(firing_rate_real, 'k', label='Real')
-        # pl.plot(mean_firing_rate_shuffled, 'r', label='Shuffled mean')
-        # pl.xticks(np.arange(0, n_bins+n_bins/4, n_bins/4), np.arange(0, track_len+track_len/4, track_len/4))
-        # pl.xlabel('Position (cm)', fontsize=16)
-        # pl.ylabel('Firing rate (spikes/sec)', fontsize=16)
-        # pl.legend(fontsize=16)
-        # pl.savefig(os.path.join(save_dir_cell, 'firing_rate_binned.png'))
+        pl.figure()
+        pl.plot(firing_rate_real, 'k', label='Real')
+        pl.plot(mean_firing_rate_shuffled, 'r', label='Shuffled mean')
+        pl.xticks(np.arange(0, n_bins+n_bins/4, n_bins/4), np.arange(0, track_len+track_len/4, track_len/4))
+        pl.xlabel('Position (cm)', fontsize=16)
+        pl.ylabel('Firing rate (spikes/sec)', fontsize=16)
+        pl.legend(fontsize=16)
+        pl.savefig(os.path.join(save_dir_cell, 'firing_rate_binned.png'))
+        pl.show()
         #
         # pl.figure()
         # pl.plot(1 - p_value, 'g')

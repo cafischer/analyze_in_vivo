@@ -2,7 +2,7 @@ from __future__ import division
 import numpy as np
 import matplotlib.pyplot as pl
 import os
-from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data, get_celltype, get_track_len
+from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data, get_celltype, get_last_bin_edge
 import scipy.signal
 from cell_fitting.util import init_nan
 from grid_cell_stimuli import get_AP_max_idxs
@@ -133,8 +133,7 @@ if __name__ == '__main__':
         position = data['Y_cm']
         velocity = data['vel_100ms']
         dt = t[1] - t[0]
-        track_len = get_track_len(cell_id)
-        bins = np.arange(0, track_len + bin_size, bin_size)
+        bins = np.arange(0, get_last_bin_edge(cell_id), bin_size)  # use same as matlab's edges
         n_bins = len(bins) - 1  # -1 for last edge
         bins_cells.append(bins)
 
@@ -272,18 +271,3 @@ if __name__ == '__main__':
         pl.subplots_adjust(left=0.07, right=0.98, top=0.95)
         pl.savefig(os.path.join(save_dir_img, cell_type, 'position_vs_firing_rate.png'))
         pl.show()
-
-
-# # for testing: getting the firing rate
-# if __name__ == '__main__':
-#     spike_train = np.array([1, 1, 0, 0, 1, 1, 1, 0, 1])
-#     t = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8])
-#     position = np.array([0, 20, 20, 30, 60, 10, 20, 30, 50])
-#     dt = 1
-#     track_len = 100
-#     bins = np.arange(0, track_len+10, 10)
-#     firing_rate_tmp, firing_rate_per_run = get_spatial_firing_rate(spike_train, position, bins, dt)
-#
-#     print spike_train
-#     print bins
-#     print firing_rate_tmp

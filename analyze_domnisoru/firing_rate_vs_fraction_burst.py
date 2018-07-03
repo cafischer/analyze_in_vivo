@@ -153,13 +153,15 @@ if __name__ == '__main__':
         # #pl.savefig(os.path.join(save_dir_cell, 'event_rate_vs_fraction_burst.png'))
         # pl.show()
 
-    np.save(os.path.join(save_dir_img, 'fraction_burst.npy'), fraction_burst_cells)
-    np.save(os.path.join(save_dir_img, 'event_rate.npy'), event_rate_cells)
-    np.save(os.path.join(save_dir_img, 'firing_rate.npy'), firing_rate_cells)
+    # np.save(os.path.join(save_dir_img, 'fraction_burst.npy'), fraction_burst_cells)
+    # np.save(os.path.join(save_dir_img, 'event_rate.npy'), event_rate_cells)
+    # np.save(os.path.join(save_dir_img, 'firing_rate.npy'), firing_rate_cells)
 
     # get running fraction burst for all cells
     window_size_rate = 2
-    max_rate = max(np.max(np.max(firing_rate_cells)), np.max(np.max(event_rate_cells)))
+    max_firing_rate = np.max([np.max(fr) for fr in firing_rate_cells])  # because different length for each cell
+    max_even_rate = np.max([np.max(er) for er in event_rate_cells])
+    max_rate = max(max_firing_rate, max_even_rate)
     steps_rate = np.arange(0, max_rate+2, 2)
     mean_fraction_burst_for_firing_rate = np.zeros((len(cell_ids), len(steps_rate)))
     std_fraction_burst_for_firing_rate = np.zeros((len(cell_ids), len(steps_rate)))
@@ -228,3 +230,8 @@ if __name__ == '__main__':
     pl.tight_layout()
     pl.savefig(os.path.join(save_dir_img, 'event_rate_vs_fraction_burst_cell_groups.png'))
     pl.show()
+
+    # TODO
+    np.save(os.path.join(save_dir_img, 'fraction_burst.npy'), fraction_burst_cells)
+    np.save(os.path.join(save_dir_img, 'event_rate.npy'), event_rate_cells)
+    np.save(os.path.join(save_dir_img, 'firing_rate.npy'), firing_rate_cells)
