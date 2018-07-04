@@ -6,7 +6,7 @@ from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data, get_ce
 from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_for_all_grid_cells
 from grid_cell_stimuli import get_AP_max_idxs
 from cell_characteristics import to_idx
-from analyze_in_vivo.analyze_domnisoru.position_vs_firing_rate import get_spike_train
+from analyze_in_vivo.analyze_domnisoru.position_vs_firing_rate import get_spike_train, smooth_firing_rate
 import warnings
 pl.style.use('paper')
 
@@ -36,7 +36,7 @@ def auto_correlate(x, max_lag=0):
 if __name__ == '__main__':
     save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/spike_time_auto_corr'
     save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
-    cell_type = 'grid_cells'  #'pyramidal_layer2'  #
+    cell_type = 'grid_cells'
     cell_ids = load_cell_ids(save_dir, cell_type)
     cell_type_dict = get_celltype_dict(save_dir)
     AP_thresholds = {'s73_0004': -50, 's90_0006': -45, 's82_0002': -38, 's117_0002': -60, 's119_0004': -50,
@@ -45,7 +45,7 @@ if __name__ == '__main__':
 
     # parameters
     bin_size = 1.0  # ms
-    max_lag = 12
+    max_lag = 250
     use_AP_max_idxs_domnisoru = True
     save_dir_img = os.path.join(save_dir_img, cell_type)
     max_lag_idx = to_idx(max_lag, bin_size)
@@ -57,6 +57,7 @@ if __name__ == '__main__':
     # main
     auto_corr_cells = []
     peak_auto_corr = np.zeros(len(cell_ids))
+    theta_power = np.zeros(len(cell_ids))
     for cell_idx, cell_id in enumerate(cell_ids):
         print cell_id
 
@@ -98,6 +99,15 @@ if __name__ == '__main__':
         auto_corr_cells.append(auto_corr)
         peak_auto_corr[cell_idx] = t_auto_corr[max_lag_idx:][np.argmax(auto_corr[max_lag_idx:])]  # start at pos. half
                                                                                                   # as 1st max is taken
+        # compute power in the theta range of FFT(auto_corr)
+        smooth_auto_corr = smooth_firing_rate(auto_corr, std=1.0, window_size=3)
+        fft_auto_corr = np.fft.fft(smooth_auto_corr)
+        power = np.abs(fft_auto_corr)**2
+        freqs = np.fft.fftfreq(smooth_auto_corr.size, d=(t_auto_corr[1] - t_auto_corr[0]) / 1000.0)
+        sort_idx = np.argsort(freqs)
+        freqs = freqs[sort_idx]
+        power = power[sort_idx]
+        theta_power[cell_idx] = np.mean(power[np.logical_and(5 <= freqs, freqs <= 11)])
 
         # # plot
         # save_dir_cell = os.path.join(save_dir_img, cell_id)
@@ -112,6 +122,19 @@ if __name__ == '__main__':
         # pl.xlim(-max_lag, max_lag)
         # pl.tight_layout()
         # #pl.savefig(os.path.join(save_dir_cell, 'auto_corr_'+str(max_lag)+'.png'))
+        # #pl.show()
+
+        # pl.figure()
+        # pl.plot(t_auto_corr, auto_corr, 'k')
+        # pl.plot(t_auto_corr, smooth_auto_corr, 'r')
+        # #pl.show()
+        #
+        # pl.figure()
+        # pl.title('FFT auto-corr.')
+        # pl.plot(freqs[sort_idx], power[sort_idx])
+        # pl.xlim(0, 100)
+        # pl.xlabel('Frequency (Hz)')
+        # pl.ylabel('Power')
         # pl.show()
 
     np.save(os.path.join(save_dir_img, 'peak_auto_corr_'+str(max_lag)+'.npy'), peak_auto_corr)
@@ -122,6 +145,18 @@ if __name__ == '__main__':
             ax.set_xlim(-max_lag, max_lag)
         plot_kwargs = dict(t_auto_corr=t_auto_corr, auto_corr_cells=auto_corr_cells, bin_size=bin_size, max_lag=max_lag)
         plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_auto_corr, plot_kwargs,
-                                xlabel='Time (ms)', ylabel='Spike-time \nautocorrelation', sharey='none',
+                                xlabel='Time (ms)', ylabel='Spike-time \nautocorrelation',
                                 save_dir_img=os.path.join(save_dir_img, 'auto_corr_'+str(max_lag)+'.png'))
+
+        # plot theta power
+        def plot_theta_power(ax, cell_idx, theta_power):
+            ax.bar(0.5, theta_power[cell_idx], width=0.4, color='0.5')
+            ax.set_xlim(0, 1)
+            ax.set_xticks([])
+
+        plot_kwargs = dict(theta_power=theta_power)
+        plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_theta_power, plot_kwargs,
+                                xlabel='', ylabel='Theta power',
+                                save_dir_img=os.path.join(save_dir_img, 'theta_power.png'))
+
         pl.show()

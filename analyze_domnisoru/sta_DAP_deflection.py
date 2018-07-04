@@ -123,4 +123,4 @@ if __name__ == '__main__':
         pl.legend()
         pl.tight_layout()
         pl.savefig(os.path.join(save_dir_cell, 'v_APs.png'))
-        #pl.show()
+        pl.show()

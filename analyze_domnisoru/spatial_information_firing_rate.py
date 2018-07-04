@@ -44,7 +44,7 @@ if __name__ == '__main__':
     save_dir_rec_info = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/recording_info'
     save_dir_fields = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/in_out_field/vel_thresh_1'
     save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
-    cell_type = 'grid_cells'  #'pyramidal_layer2'  #
+    cell_type = 'grid_cells'
     cell_ids = load_cell_ids(save_dir, cell_type)
     cell_type_dict = get_celltype_dict(save_dir)
 

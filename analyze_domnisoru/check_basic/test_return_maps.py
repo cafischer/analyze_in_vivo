@@ -17,7 +17,7 @@ len_spike_train = to_idx(tstop, dt)
 # # a) being rather randomly
 # spike_train1 = np.random.random(len_spike_train) < 0.005
 #
-# # b) coming in blocks
+# b) coming in blocks
 # no_spikes = True
 # old_idx = 0
 # spike_train2 = np.zeros(len_spike_train)
@@ -31,9 +31,12 @@ len_spike_train = to_idx(tstop, dt)
 #         spike_train2[old_idx:old_idx+block_len] = np.random.random(block_len) < 0.0001
 #         no_spikes = False
 #     else:
-#         spike_train2[old_idx:old_idx + block_len] = np.random.random(block_len) < 0.1
+#         spike_train2[old_idx:old_idx + block_len] = np.random.random(block_len) < 0.001
 #         no_spikes = True
 #     old_idx = old_idx + block_len
+# for i in range(len(spike_train2)):
+#     if spike_train2[i] == 1:
+#         spike_train2[i+1:i+100] = 0
 
 # c) unregular oscillations
 freq_smooth = np.linspace(10, 50, len_spike_train)
@@ -55,8 +58,8 @@ spike_train3 = np.random.random(len_spike_train) < prob
 # spike_train3 = np.random.random(len_spike_train) < prob
 
 # d) increasing spike prob.
-spike_prob = np.linspace(0.00001, 0.001, len_spike_train)
-spike_train2 = np.random.random(len_spike_train) < spike_prob
+# spike_prob = np.linspace(0.00001, 0.001, len_spike_train)
+# spike_train2 = np.random.random(len_spike_train) < spike_prob
 
 # pl.figure()
 # pl.plot(np.arange(0, tstop, dt), spike_train1)
@@ -86,6 +89,7 @@ max_ISI = 200
 # pl.tight_layout()
 
 pl.figure()
+pl.title('2')
 pl.plot(ISIs2[:-1], ISIs2[1:], color='k', marker='o', linestyle='', markersize=6)
 pl.xlabel('ISI[n] (ms)')
 pl.ylabel('ISI[n+1] (ms)')
@@ -95,6 +99,7 @@ pl.tight_layout()
 #pl.show()
 
 pl.figure()
+pl.title('3')
 pl.plot(ISIs3[:-1], ISIs3[1:], color='k', marker='o', linestyle='', markersize=6)
 pl.xlabel('ISI[n] (ms)')
 pl.ylabel('ISI[n+1] (ms)')

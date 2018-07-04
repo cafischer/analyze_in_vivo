@@ -22,7 +22,7 @@ if __name__ == '__main__':
     cell_type = 'grid_cells'
     cell_type_dict = get_celltype_dict(save_dir)
     cell_ids = load_cell_ids(save_dir, cell_type)
-    param_list = ['Vm_ljpc', 'spiketimes', 'Y_cm']
+    param_list = ['Vm_ljpc', 'spiketimes']
     AP_thresholds = {'s73_0004': -55, 's90_0006': -45, 's82_0002': -35,
                      's117_0002': -60, 's119_0004': -50, 's104_0007': -55,
                      's79_0003': -50, 's76_0002': -50, 's101_0009': -45}

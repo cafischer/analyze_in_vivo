@@ -27,6 +27,7 @@ def get_n_th_burst_indicator(short_ISI_indicator):
 def plot_all_cells(cell_type_dict, burst_numbers, mean_v_n_th_burst_cells, std_v_n_th_burst_cells):
     if cell_type == 'grid_cells':
         def plot_fun(ax, cell_idx, burst_numbers, mean_v_n_th_burst_cells, std_v_n_th_burst_cells):
+            ax.axhline(0, color='0.5', linestyle='--')
             ax.errorbar(burst_numbers, mean_v_n_th_burst_cells[cell_idx, :],
                         yerr=std_v_n_th_burst_cells[cell_idx, :], color='k', capsize=2)
             ax.set_xticks(burst_numbers)
@@ -79,19 +80,44 @@ if __name__ == '__main__':
         ISIs = get_ISIs(AP_max_idxs, t)
         short_ISI_indicator = np.concatenate((ISIs <= ISI_burst, np.array([False])))
         n_th_burst_indicator = get_n_th_burst_indicator(short_ISI_indicator)
+
+        v_APs = np.zeros(len(burst_numbers), dtype=object)
+        t_APs = np.zeros(len(burst_numbers), dtype=object)
+        n_APs = np.zeros(len(burst_numbers), dtype=object)
         for i, n in enumerate(burst_numbers):
             n_th_burst_idxs = np.where(n_th_burst_indicator == n)[0]
-            mean_v_n_th_burst_cells[cell_idx, i] = np.mean(v[AP_max_idxs[n_th_burst_idxs - 1]]
+            mean_v_n_th_burst_cells[cell_idx, i] = np.mean(v[AP_max_idxs[n_th_burst_idxs - (n-1)]]
                                                            - v[AP_max_idxs[n_th_burst_idxs]])
-            std_v_n_th_burst_cells[cell_idx, i] = np.std(v[AP_max_idxs[n_th_burst_idxs - 1]]
+            std_v_n_th_burst_cells[cell_idx, i] = np.std(v[AP_max_idxs[n_th_burst_idxs - (n-1)]]
                                                          - v[AP_max_idxs[n_th_burst_idxs]])
 
-            # idx = 10
-            # if len(n_th_burst_idxs) > idx:
-            #     pl.figure()
-            #     pl.plot(t[AP_max_idxs[n_th_burst_idxs[idx]-1]:AP_max_idxs[n_th_burst_idxs[idx]]],
-            #             v[AP_max_idxs[n_th_burst_idxs[idx]-1]:AP_max_idxs[n_th_burst_idxs[idx]]], 'k')
-            #     pl.show()
+            # for testing
+            n_APs[i] = min(len(n_th_burst_idxs), 5)
+            idxs = range(len(n_th_burst_idxs))
+            np.random.shuffle(idxs)
+            v_APs[i] = []
+            t_APs[i] = []
+            for idx in range(n_APs[i]):
+                idx_rand = idxs[idx]
+                v_APs[i].append(v[AP_max_idxs[n_th_burst_idxs[idx_rand]-(n-1)]:AP_max_idxs[n_th_burst_idxs[idx_rand]]])
+                t_APs[i].append(np.arange(len(v_APs[i][idx])) * dt)
+
+        save_dir_cell = os.path.join(save_dir_img, cell_id)
+        if not os.path.exists(save_dir_cell):
+            os.makedirs(save_dir_cell)
+
+        colors = pl.cm.get_cmap('jet')(np.linspace(0, 1, 5))
+        fig, ax = pl.subplots(1, len(burst_numbers), figsize=(13, 5), sharey='all', sharex='all')
+        for i in range(len(burst_numbers)):
+            for idx in range(n_APs[i]):
+                ax[i].set_title('Burst length: %i' % burst_numbers[i])
+                ax[i].axhline(v_APs[i][idx][0], linestyle='--', color=colors[idx])
+                ax[i].plot(t_APs[i][idx], v_APs[i][idx], color=colors[idx])
+                ax[i].set_xlabel('Time (ms)')
+                ax[i].set_ylabel('Mem. pot. (mV)')
+        pl.tight_layout()
+        pl.savefig(os.path.join(save_dir_cell, 'diff_1st_AP_samples.png'))
+        #pl.show()
 
         pl.close('all')
         # pl.figure()
@@ -106,4 +132,4 @@ if __name__ == '__main__':
     # plot all cells
     pl.close('all')
     plot_all_cells(cell_type_dict, burst_numbers, mean_v_n_th_burst_cells, std_v_n_th_burst_cells)
-    pl.show()
+    #pl.show()

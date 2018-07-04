@@ -25,7 +25,8 @@ if __name__ == '__main__':
     filter_long_ISIs = True
     max_ISI = 200
     ISI_burst = 8  # ms
-    steps = np.arange(0, max_ISI + 1.0, 1.0)
+    bin_size = 1.0  # ms
+    steps = np.arange(0, max_ISI + bin_size, bin_size)
     if filter_long_ISIs:
         save_dir_img = os.path.join(save_dir_img, 'cut_ISIs_at_' + str(max_ISI))
     save_dir_img = os.path.join(save_dir_img, cell_type)
@@ -36,7 +37,8 @@ if __name__ == '__main__':
     ISIs_per_cell = [0] * len(cell_ids)
     n_ISIs = [0] * len(cell_ids)
     median_cells = init_nan((len(cell_ids), len(steps)))
-    prob_next_ISI_short = init_nan((len(cell_ids), len(steps)))
+    prob_next_ISI_burst = init_nan((len(cell_ids), len(steps)))
+    area_under_curve_cum_prob_next_ISI_burst = np.zeros(len(cell_ids))
 
     for cell_idx, cell_id in enumerate(cell_ids):
         print cell_id
@@ -69,7 +71,12 @@ if __name__ == '__main__':
             mean[i] = np.mean(next_ISI[idx])
 
             # probability next ISI < x ms
-            prob_next_ISI_short[cell_idx, i] = np.sum(next_ISI[idx] < ISI_burst) / float(np.sum(idx))
+            prob_next_ISI_burst[cell_idx, i] = np.sum(next_ISI[idx] < ISI_burst) / float(np.sum(idx))
+
+        # area under prob_next_ISI_burst
+        prob_normed = prob_next_ISI_burst[cell_idx, :] / np.nansum(prob_next_ISI_burst[cell_idx, :])
+        cum_prob = np.nancumsum(prob_normed)
+        area_under_curve_cum_prob_next_ISI_burst[cell_idx] = np.sum(cum_prob * bin_size) / (len(cum_prob) * bin_size)
 
         # save and plot
         save_dir_cell = os.path.join(save_dir_img, cell_type, cell_id)
@@ -94,7 +101,7 @@ if __name__ == '__main__':
 
         pl.figure()
         pl.title(cell_id, fontsize=16)
-        pl.plot(steps, prob_next_ISI_short[cell_idx, :], 'k')
+        pl.plot(steps, prob_next_ISI_burst[cell_idx, :], 'k')
         pl.xlabel('ISI[n] (ms)')
         pl.ylabel('Prob. ISI[n+1] < %i ms' % ISI_burst)
         pl.tight_layout()
@@ -157,7 +164,7 @@ if __name__ == '__main__':
             ax.set_xlim(0, max_ISI)
             ax.set_ylim(0, 1)
 
-        plot_kwargs = dict(steps=steps, prob_next_ISI_short=prob_next_ISI_short, max_ISI=max_ISI)
+        plot_kwargs = dict(steps=steps, prob_next_ISI_short=prob_next_ISI_burst, max_ISI=max_ISI)
         plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_prob_next_ISI_burst, plot_kwargs,
                                 xlabel='ISI[n] (ms)', ylabel='Prob. ISI[n+1] < %i ms' % ISI_burst,
                                 save_dir_img=os.path.join(save_dir_img, 'prob_next_ISI_burst.png'))
@@ -169,8 +176,23 @@ if __name__ == '__main__':
             ax.set_xlim(0, max_ISI)
             ax.set_ylim(0, 1)
 
-        plot_kwargs = dict(steps=steps, prob_next_ISI_short=prob_next_ISI_short, max_ISI=max_ISI)
+        plot_kwargs = dict(steps=steps, prob_next_ISI_short=prob_next_ISI_burst, max_ISI=max_ISI)
         plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_cum_prob_next_ISI_burst, plot_kwargs,
                                 xlabel='ISI[n] (ms)', ylabel='Cum. prob. \nISI[n+1] < %i ms' % ISI_burst,
                                 save_dir_img=os.path.join(save_dir_img, 'cum_prob_next_ISI_burst.png'))
+
+        # plot area of cum. prob. next ISI < x ms
+        def plot_area(ax, cell_idx, area_under_curve_cum_prob_next_ISI_burst):
+            ax.bar(0.5, area_under_curve_cum_prob_next_ISI_burst[cell_idx], width=0.4, color='0.5')
+            ax.set_ylim(0, 1)
+            ax.set_xlim(0, 1)
+            ax.set_xticks([])
+            ax.axhline(0.25, linestyle='--', color='0.5')
+            ax.axhline(0.5, linestyle='--', color='0.5')
+            ax.axhline(0.75, linestyle='--', color='0.5')
+
+        plot_kwargs = dict(area_under_curve_cum_prob_next_ISI_burst=area_under_curve_cum_prob_next_ISI_burst)
+        plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_area, plot_kwargs,
+                                xlabel='', ylabel='Area cum. prob. \nISI[n+1] < %i ms' % ISI_burst,
+                                save_dir_img=os.path.join(save_dir_img, 'area_cum_prob_next_ISI_burst.png'))
         pl.show()

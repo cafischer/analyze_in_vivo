@@ -232,6 +232,6 @@ if __name__ == '__main__':
     pl.show()
 
     # TODO
-    np.save(os.path.join(save_dir_img, 'fraction_burst.npy'), fraction_burst_cells)
-    np.save(os.path.join(save_dir_img, 'event_rate.npy'), event_rate_cells)
-    np.save(os.path.join(save_dir_img, 'firing_rate.npy'), firing_rate_cells)
+    # np.save(os.path.join(save_dir_img, 'fraction_burst.npy'), fraction_burst_cells)
+    # np.save(os.path.join(save_dir_img, 'event_rate.npy'), event_rate_cells)
+    # np.save(os.path.join(save_dir_img, 'firing_rate.npy'), firing_rate_cells)

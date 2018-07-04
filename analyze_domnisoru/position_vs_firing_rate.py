@@ -75,8 +75,8 @@ def get_spatial_occupancy(position, bins, bin_size):
     return occupancy_per_bin
 
 
-def smooth_firing_rate(firing_rate, std=1):
-    window = scipy.signal.gaussian(3, std)
+def smooth_firing_rate(firing_rate, std=1, window_size=3):
+    window = scipy.signal.gaussian(window_size, std)
     window /= np.sum(window)
 
     not_nan = ~np.isnan(firing_rate)
@@ -84,7 +84,7 @@ def smooth_firing_rate(firing_rate, std=1):
                   == np.where(not_nan)[0])  # firing rate should only be nan at the edges (= ascending without holes in between)
 
     firing_rate_smoothed = init_nan(len(firing_rate))
-    firing_rate_smoothed[not_nan] = np.convolve(firing_rate[not_nan], window, mode='same')  # TODO with 0-padding, bad for shuffling
+    firing_rate_smoothed[not_nan] = np.convolve(firing_rate[not_nan], window, mode='same')  # with 0-padding
 
     # # for test: smoothed firing rate
     # pl.figure()

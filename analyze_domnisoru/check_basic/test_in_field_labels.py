@@ -1,10 +1,10 @@
 import numpy as np
-from analyze_in_vivo.load.load_domnisoru import load_data, load_field_indices
+from analyze_in_vivo.load.load_domnisoru import load_data, load_field_indices, get_last_bin_edge
 
 save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
 cell_id = 's43_0003'
 #cell_id = 's82_0002'
-bins = np.arange(0, 400 + 5, 5)
+bins = np.arange(0, get_last_bin_edge(cell_id), 5)
 
 # load
 in_field_idx, _ = load_field_indices(cell_id, save_dir)
