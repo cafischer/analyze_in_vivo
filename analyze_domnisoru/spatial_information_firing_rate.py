@@ -6,7 +6,8 @@ from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data, get_ce
 from analyze_in_vivo.analyze_domnisoru.position_vs_firing_rate import get_spike_train
 from grid_cell_stimuli import get_AP_max_idxs
 import matplotlib.gridspec as gridspec
-from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_with_markers
+from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_with_markers, plot_for_all_grid_cells
+from cell_fitting.util import init_nan
 pl.style.use('paper')
 
 
@@ -24,18 +25,33 @@ def get_MI(x_binned, y_binned, bins_x, bins_y, n_bins_x, n_bins_y):
     not_zero = np.logical_and(prob_x_and_y_flat != 0, prob_x_times_y_flat != 0)
     summands[not_zero] = prob_x_and_y_flat[not_zero] \
                          * (np.log(prob_x_and_y_flat[not_zero] / prob_x_times_y_flat[not_zero]) / np.log(2))
+    MI = np.sum(summands)
 
     # plots for testing
+    # pl.set_cmap('plasma')
     # x, y = np.meshgrid(bins_y, bins_x)
     # pl.figure()
     # pl.pcolor(x, y, prob_x_and_y)
     # pl.colorbar()
+    # pl.clim(0, 0.01)
+    #
     # pl.figure()
     # pl.pcolor(x, y, prob_x_times_y)
     # pl.colorbar()
+    # pl.clim(0, 0.01)
+    #
+    # pl.figure()
+    # pl.title('MI %.2f' % MI)
+    # MI_in_shape = init_nan(np.shape(prob_x_and_y))
+    # non_zero = np.logical_and(prob_x_and_y != 0, prob_x_times_y != 0)
+    # MI_in_shape[non_zero] = prob_x_and_y[non_zero] * (np.log(prob_x_and_y[non_zero] / prob_x_times_y[non_zero]) / np.log(2))
+    # pl.pcolor(x, y, MI_in_shape)
+    # pl.colorbar()
+    # pl.xlabel('Position (cm)')
+    # pl.ylabel('Mem. Pot. (mV)')
+    # #pl.clim(0, 0.02)
     # pl.show()
-
-    return np.sum(summands)
+    return MI
 
 
 if __name__ == '__main__':
@@ -60,13 +76,13 @@ if __name__ == '__main__':
         os.makedirs(save_dir_img)
 
     # load
-    n_APs = np.load(os.path.join(save_dir_rec_info, cell_type, 'n_APs.npy'))
+    avg_firing_rate = np.load(os.path.join(save_dir_rec_info, cell_type, 'avg_firing_rate.npy'))
     n_runs = np.load(os.path.join(save_dir_rec_info, cell_type, 'n_runs.npy'))
     n_fields = np.load(os.path.join(save_dir_fields, cell_type, 'n_fields.npy'))
 
     inv_entropy = np.zeros(len(cell_ids))
     spatial_info_skaggs = np.zeros(len(cell_ids))
-    # MI_v = np.zeros(len(cell_ids))
+    MI_v = np.zeros(len(cell_ids))
     # MI_spiketrain = np.zeros(len(cell_ids))
     position_cells = []
     firing_rate_cells = []
@@ -80,7 +96,6 @@ if __name__ == '__main__':
         pos = data['Y_cm']
         dt = t[1] - t[0]
         firing_rate = np.load(os.path.join(save_dir_firing_rate, cell_type, cell_id, 'firing_rate.npy'))
-        avg_firing_rate = np.load(os.path.join(save_dir_firing_rate, cell_type, cell_id, 'avg_firing_rate.npy'))
         position = np.load(os.path.join(save_dir_firing_rate, cell_type, cell_id, 'position.npy'))
         occupancy_prob = np.load(os.path.join(save_dir_firing_rate, cell_type, cell_id, 'occupancy_prob.npy'))
         firing_rate_cells.append(firing_rate)
@@ -102,7 +117,7 @@ if __name__ == '__main__':
         inv_entropy[cell_idx] = 1 - entropy_cell / entropy_uniform
 
         # Skaggs, 1996 spatial information
-        scaled_firing_rate = firing_rate_not_nan / avg_firing_rate
+        scaled_firing_rate = firing_rate_not_nan / np.mean(firing_rate_not_nan)
         occupancy_prob_not_nan = occupancy_prob[~np.isnan(firing_rate)]
         summands = np.zeros(len(firing_rate_not_nan))
         summands[scaled_firing_rate != 0] = occupancy_prob_not_nan[scaled_firing_rate != 0] \
@@ -110,16 +125,23 @@ if __name__ == '__main__':
                                            * (np.log(scaled_firing_rate[scaled_firing_rate != 0]) / np.log(2))
         spatial_info_skaggs[cell_idx] = np.sum(summands)
 
-        # # Mutual information: voltage and position
-        # bins_v = np.arange(-90, 20, 10)  # bin v
-        # n_bins_v = len(bins_v) - 1
-        # v_binned = np.digitize(v, bins_v) - 1
-        # bin_size = 5  # cm
-        # track_len = 400  # cm
-        # bins_pos = np.arange(0, track_len + bin_size, bin_size)  # bin pos
-        # n_bins_pos = len(bins_pos) - 1
-        # pos_binned = np.digitize(pos, bins_pos) - 1
-        # MI_v[cell_idx] = get_MI(v_binned, pos_binned, bins_v, bins_pos, n_bins_v, n_bins_pos)
+        # Mutual information: voltage and position
+        bins_v = np.arange(-90, 20, 5)
+        n_bins_v = len(bins_v) - 1
+        v_binned = np.digitize(v, bins_v) - 1
+        bin_size = 5  # cm
+        track_len = 400  # cm
+        bins_pos = np.arange(0, track_len + bin_size, bin_size)
+        n_bins_pos = len(bins_pos) - 1
+        pos_binned = np.digitize(pos, bins_pos) - 1
+
+        # # plot for testing
+        # pl.figure()
+        # pl.plot(pos, v, 'k')
+        # pl.xlabel('Position (cm)')
+        # pl.ylabel('Mem. Pot. (mV)')
+
+        MI_v[cell_idx] = get_MI(v_binned, pos_binned, bins_v, bins_pos, n_bins_v, n_bins_pos)
 
         # # Mutual information: spiketrain and position
         # if use_AP_max_idxs_domnisoru:
@@ -134,151 +156,61 @@ if __name__ == '__main__':
 
     pl.close('all')
     if cell_type == 'grid_cells':
-        n_rows = 3
-        n_columns = 9
-        fig = pl.figure(figsize=(14, 8.5))
-        outer = gridspec.GridSpec(n_rows, n_columns, wspace=0.65, hspace=0.43)
+        def plot_firing_rate_and_spatial_info(ax, cell_idx, position_cells, firing_rate_cells, spatial_info_skaggs):
+            ax.plot(position_cells[cell_idx], firing_rate_cells[cell_idx], 'k')
+            ax.annotate('Skaggs, 1996: %.2f' % spatial_info_skaggs[cell_idx],
+                         xy=(0.1, 0.9), xycoords='axes fraction', fontsize=8, ha='left', va='top',
+                         bbox=dict(boxstyle='round', fc='w', edgecolor='0.8', alpha=0.8))
 
-        cell_idx = 0
-        for i in range(n_rows * n_columns):
-            inner = gridspec.GridSpecFromSubplotSpec(1, 1, subplot_spec=outer[i], wspace=4.0)
-            ax1 = pl.Subplot(fig, inner[0])
-            if cell_idx < len(cell_ids):
-                if cell_type_dict[cell_ids[cell_idx]] == 'stellate':
-                    ax1.set_title(cell_ids[cell_idx] + ' ' + u'\u2605', fontsize=12)
-                elif cell_type_dict[cell_ids[cell_idx]] == 'pyramidal':
-                    ax1.set_title(cell_ids[cell_idx] + ' ' + u'\u25B4', fontsize=12)
-                else:
-                    ax1.set_title(cell_ids[cell_idx], fontsize=12)
+        plot_kwargs = dict(position_cells=position_cells, firing_rate_cells=firing_rate_cells,
+                           spatial_info_skaggs=spatial_info_skaggs)
+        plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_firing_rate_and_spatial_info, plot_kwargs,
+                        xlabel='Position (cm)', ylabel='Firing rate (Hz)',
+                        save_dir_img=os.path.join(save_dir_img, 'firing_rate_spatial_info.png'))
 
-                ax1.plot(position_cells[cell_idx], firing_rate_cells[cell_idx], 'k')
-                ax1.annotate('Skaggs, 1996: %.2f' % spatial_info_skaggs[cell_idx],
-                             xy=(0.1, 0.9), xycoords='axes fraction', fontsize=8, ha='left', va='top',
-                             bbox=dict(boxstyle='round', fc='w', edgecolor='0.8', alpha=0.8))
-                if i >= (n_rows - 1) * n_columns:
-                    ax1.set_xlabel('Position (cm)', fontsize=10)
-                if i % n_columns == 0:
-                    ax1.set_ylabel('Firing rate (Hz)')
-                fig.add_subplot(ax1)
-                cell_idx += 1
-        pl.subplots_adjust(left=0.05, right=0.98, top=0.96, bottom=0.07)
-        pl.savefig(os.path.join(save_dir_img, 'firing_rate_spatial_info.png'))
-        #pl.show()
+        def plot_spatial_info(ax, cell_idx, spatial_info):
+            ax.bar(1, (spatial_info[cell_idx]), width=0.8, color='0.5')
 
-    if cell_type == 'grid_cells':
-        n_rows = 3
-        n_columns = 9
-        fig = pl.figure(figsize=(14, 8.5))
-        outer = gridspec.GridSpec(n_rows, n_columns, wspace=0.65, hspace=0.43)
+            ax.set_xlim(0, 2)
+            ax.set_ylim(0, np.max(spatial_info))
+            ax.set_xticks([])
 
-        cell_idx = 0
-        for i in range(n_rows * n_columns):
-            inner = gridspec.GridSpecFromSubplotSpec(1, 1, subplot_spec=outer[i], wspace=4.0)
-            ax1 = pl.Subplot(fig, inner[0])
-            if cell_idx < len(cell_ids):
-                if cell_type_dict[cell_ids[cell_idx]] == 'stellate':
-                    ax1.set_title(cell_ids[cell_idx] + ' ' + u'\u2605', fontsize=12)
-                elif cell_type_dict[cell_ids[cell_idx]] == 'pyramidal':
-                    ax1.set_title(cell_ids[cell_idx] + ' ' + u'\u25B4', fontsize=12)
-                else:
-                    ax1.set_title(cell_ids[cell_idx], fontsize=12)
+        plot_kwargs = dict(spatial_info=spatial_info_skaggs)
+        plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_spatial_info, plot_kwargs,
+                                xlabel='', ylabel='Spatial information',
+                                save_dir_img=os.path.join(save_dir_img, 'spatial_info_skaggs.png'))
 
-                ax1.bar(1, (spatial_info_skaggs[cell_idx]), width=0.8, color='0.5')
+        plot_kwargs = dict(spatial_info=MI_v)
+        plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_spatial_info, plot_kwargs,
+                                xlabel='', ylabel='MI (mem. pot.)',
+                                save_dir_img=os.path.join(save_dir_img, 'MI_v.png'))
 
-                ax1.set_xlim(0, 2)
-                ax1.set_ylim(np.min(spatial_info_skaggs), np.max(spatial_info_skaggs))
-                ax1.set_xticks([])
-
-                # if i >= (n_rows - 1) * n_columns:
-                #     ax1.set_xlabel('Skaggs, 1996', fontsize=12)
-                if i % n_columns == 0:
-                    ax1.set_ylabel('Spatial information')
-                fig.add_subplot(ax1)
-                cell_idx += 1
-        pl.subplots_adjust(left=0.05, right=0.98, top=0.96, bottom=0.07)
-        pl.savefig(os.path.join(save_dir_img, 'spatial_info.png'))
-        #pl.show()
-
-        # fig = pl.figure(figsize=(14, 8.5))
-        # outer = gridspec.GridSpec(n_rows, n_columns, wspace=0.65, hspace=0.43)
-        # cell_idx = 0
-        # for i in range(n_rows * n_columns):
-        #     inner = gridspec.GridSpecFromSubplotSpec(1, 1, subplot_spec=outer[i], wspace=4.0)
-        #     ax1 = pl.Subplot(fig, inner[0])
-        #     if cell_idx < len(cell_ids):
-        #         if get_celltype(cell_ids[cell_idx], save_dir) == 'stellate':
-        #             ax1.set_title(cell_ids[cell_idx] + ' ' + u'\u2605', fontsize=12)
-        #         elif get_celltype(cell_ids[cell_idx], save_dir) == 'pyramidal':
-        #             ax1.set_title(cell_ids[cell_idx] + ' ' + u'\u25B4', fontsize=12)
-        #         else:
-        #             ax1.set_title(cell_ids[cell_idx], fontsize=12)
-        #
-        #         ax1.bar(1, (MI_v[cell_idx]), width=0.8, color='0.5')
-        #
-        #         ax1.set_xlim(0, 2)
-        #         ax1.set_ylim(0.0, 1.0)
-        #         ax1.set_xticks([])
-        #
-        #         if i >= (n_rows - 1) * n_columns:
-        #             ax1.set_xlabel('MI', fontsize=12)
-        #         if i % n_columns == 0:
-        #             ax1.set_ylabel('Spatial information')
-        #         fig.add_subplot(ax1)
-        #         cell_idx += 1
-        # pl.subplots_adjust(left=0.05, right=0.98, top=0.96, bottom=0.07)
-        # pl.savefig(os.path.join(save_dir_img, 'MI_v.png'))
-
-        fig = pl.figure(figsize=(14, 8.5))
-        outer = gridspec.GridSpec(n_rows, n_columns, wspace=0.65, hspace=0.43)
-        cell_idx = 0
-        for i in range(n_rows * n_columns):
-            inner = gridspec.GridSpecFromSubplotSpec(1, 1, subplot_spec=outer[i], wspace=4.0)
-            ax1 = pl.Subplot(fig, inner[0])
-            if cell_idx < len(cell_ids):
-                if cell_type_dict[cell_ids[cell_idx]] == 'stellate':
-                    ax1.set_title(cell_ids[cell_idx] + ' ' + u'\u2605', fontsize=12)
-                elif cell_type_dict[cell_ids[cell_idx]] == 'pyramidal':
-                    ax1.set_title(cell_ids[cell_idx] + ' ' + u'\u25B4', fontsize=12)
-                else:
-                    ax1.set_title(cell_ids[cell_idx], fontsize=12)
-
-                ax1.bar(1, (inv_entropy[cell_idx]), width=0.8, color='0.5')
-
-                ax1.set_xlim(0, 2)
-                ax1.set_ylim(0.0, 1.0)
-                ax1.set_xticks([])
-
-                if i >= (n_rows - 1) * n_columns:
-                    ax1.set_xlabel('Inv. entropy', fontsize=12)
-                if i % n_columns == 0:
-                    ax1.set_ylabel('Spatial information')
-                fig.add_subplot(ax1)
-                cell_idx += 1
-        pl.subplots_adjust(left=0.05, right=0.98, top=0.96, bottom=0.07)
-        pl.savefig(os.path.join(save_dir_img, 'inv_entropy.png'))
-        # pl.show()
-
-        pl.figure()
-        pl.plot(inv_entropy, spatial_info_skaggs, 'ok')
-        pl.ylabel('Skaggs, 1996')
-        pl.xlabel('Inv. entropy')
-        pl.tight_layout()
-        pl.savefig(os.path.join(save_dir_img, 'entropy_vs_skaggs.png'))
+        plot_kwargs = dict(spatial_info=inv_entropy)
+        plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_spatial_info, plot_kwargs,
+                                xlabel='', ylabel='Inv. entropy',
+                                save_dir_img=os.path.join(save_dir_img, 'inv_entropy.png'))
 
         # pl.figure()
-        # pl.plot(MI_v, spatial_info_skaggs, 'ok')
+        # pl.plot(inv_entropy, spatial_info_skaggs, 'ok')
         # pl.ylabel('Skaggs, 1996')
-        # pl.xlabel('MI (mem. pot.)')
+        # pl.xlabel('Inv. entropy')
         # pl.tight_layout()
-        # pl.savefig(os.path.join(save_dir_img, 'mi_vs_skaggs.png'))
+        # pl.savefig(os.path.join(save_dir_img, 'entropy_vs_skaggs.png'))
+
+        pl.figure()
+        pl.plot(MI_v, spatial_info_skaggs, 'ok')
+        pl.ylabel('Skaggs, 1996')
+        pl.xlabel('MI (mem. pot.)')
+        pl.tight_layout()
+        pl.savefig(os.path.join(save_dir_img, 'mi_vs_skaggs.png'))
 
         # plot dependence of Skaggs, 1996 measure on firing characteristics
         fig, ax = pl.subplots()
-        plot_with_markers(ax, n_APs, spatial_info_skaggs, cell_ids, cell_type_dict)
+        plot_with_markers(ax, avg_firing_rate, spatial_info_skaggs, cell_ids, cell_type_dict)
         pl.ylabel('Skaggs, 1996')
-        pl.xlabel('# APs')
+        pl.xlabel('Avg. firing rate (Hz)')
         pl.tight_layout()
-        pl.savefig(os.path.join(save_dir_img, 'n_APs_vs_skaggs.png'))
+        pl.savefig(os.path.join(save_dir_img, 'firing_rate_vs_skaggs.png'))
 
         fig, ax = pl.subplots()
         plot_with_markers(ax, n_runs, spatial_info_skaggs, cell_ids, cell_type_dict)

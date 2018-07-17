@@ -8,7 +8,7 @@ pl.style.use('paper')
 
 if __name__ == '__main__':
     save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/AP_characteristic_correlations'
-    save_dir_characteristics = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/AP_characteristics'
+    save_dir_characteristics = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/AP_characteristics/all'
     save_dir_burst = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/ISI_hist'
     save_dir_spat_info = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/spatial_info'
     save_dir_ISI_hist = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/ISI_hist'
@@ -82,6 +82,26 @@ if __name__ == '__main__':
     pl.xticks([0, 1], ['no', 'yes'])
     pl.tight_layout()
     pl.savefig(os.path.join(save_dir_img, 'DAP_vs_spatial_info.png'))
+
+    peak_ISI_hist_good_cells = np.array([(p[0] + p[1]) / 2. for p in peak_ISI_hist_good_cells])
+    pl.figure()
+    pl.plot(np.zeros(len(cell_ids_good_cells))[DAP_deflection_good_cells == 0],
+            peak_ISI_hist_good_cells[DAP_deflection_good_cells == 0], 'o', color='0.5')
+    pl.plot(np.ones(len(cell_ids_good_cells))[DAP_deflection_good_cells > 0],
+            peak_ISI_hist_good_cells[DAP_deflection_good_cells > 0], 'o', color='0.5')
+    for cell_idx in range(len(cell_ids_good_cells)):
+        pl.annotate(cell_ids_good_cells[cell_idx], xy=((DAP_deflection_good_cells[cell_idx] > 0).astype(int),
+                                                       peak_ISI_hist_good_cells[cell_idx]))
+    pl.errorbar(-0.1, np.mean(peak_ISI_hist_good_cells[DAP_deflection_good_cells == 0]),
+                yerr=np.std(peak_ISI_hist_good_cells[DAP_deflection_good_cells == 0]), color='k', capsize=2, marker='o')
+    pl.errorbar(0.9, np.mean(peak_ISI_hist_good_cells[DAP_deflection_good_cells > 0]),
+                yerr=np.std(peak_ISI_hist_good_cells[DAP_deflection_good_cells > 0]), color='k', capsize=2, marker='o')
+    pl.ylabel('Peak of ISI hist. (ms)')
+    pl.xlabel('DAP')
+    pl.xlim(-1, 2)
+    pl.xticks([0, 1], ['no', 'yes'])
+    pl.tight_layout()
+    pl.savefig(os.path.join(save_dir_img, 'DAP_vs_peak_ISI_hist.png'))
 
     peak_ISI_hist = np.array([(p[0] + p[1]) / 2. for p in peak_ISI_hist])  # set middle of bin as peak
     pl.figure()

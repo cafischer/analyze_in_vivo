@@ -13,7 +13,6 @@ from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_for_all_grid_cells
 pl.style.use('paper')
 
 
-
 if __name__ == '__main__':
     # Note: no all APs are captured as the spikes are so small and noise is high and depth of hyperpolarization
     # between successive spikes varies
@@ -23,9 +22,8 @@ if __name__ == '__main__':
     cell_type_dict = get_celltype_dict(save_dir)
     cell_ids = load_cell_ids(save_dir, cell_type)
     param_list = ['Vm_ljpc', 'spiketimes']
-    AP_thresholds = {'s73_0004': -55, 's90_0006': -45, 's82_0002': -35,
-                     's117_0002': -60, 's119_0004': -50, 's104_0007': -55,
-                     's79_0003': -50, 's76_0002': -50, 's101_0009': -45}
+    AP_thresholds = {'s73_0004': -55, 's90_0006': -45, 's82_0002': -35, 's117_0002': -60, 's119_0004': -50,
+                     's104_0007': -55, 's79_0003': -50, 's76_0002': -50, 's101_0009': -45}
     use_AP_max_idxs_domnisoru = True
     filter_long_ISIs = False
     max_ISI = 200

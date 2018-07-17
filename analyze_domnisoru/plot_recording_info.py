@@ -10,9 +10,8 @@ pl.style.use('paper')
 
 if __name__ == '__main__':
     save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/recording_info'
-    save_dir_firing_rate = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/in_out_field'
     save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
-    cell_type = 'grid_cells'  #'pyramidal_layer2'  #
+    cell_type = 'grid_cells'
     cell_ids = load_cell_ids(save_dir, cell_type)
 
     AP_thresholds = {'s73_0004': -50, 's90_0006': -45, 's82_0002': -38,
@@ -50,8 +49,9 @@ if __name__ == '__main__':
         len_recording[cell_idx] = t[-1] / 1000.0 / 60.0  # min
         n_APs[cell_idx] = len(AP_max_idxs)
         n_runs[cell_idx] = np.sum(np.diff(position) < -get_track_len(cell_id) / 2.) + 1  # start at 0 + # resets
-        avg_firing_rate[cell_idx] = np.load(os.path.join(save_dir_firing_rate, cell_type, cell_id, 'avg_firing_rate.npy'))
+        avg_firing_rate[cell_idx] = n_APs[cell_idx] / (len_recording[cell_idx] * 60.0)
 
+    np.save(os.path.join(save_dir_img, 'avg_firing_rate.npy'), avg_firing_rate)
     np.save(os.path.join(save_dir_img, 'n_APs.npy'), n_APs)
     np.save(os.path.join(save_dir_img, 'n_runs.npy'), n_runs)
 

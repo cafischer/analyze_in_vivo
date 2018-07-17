@@ -41,10 +41,9 @@ if __name__ == '__main__':
     cell_type = 'grid_cells'
     cell_ids = load_cell_ids(save_dir, cell_type)
     cell_type_dict = get_celltype_dict(save_dir)
-    param_list = ['Vm_ljpc', 'spiketimes']
-    AP_thresholds = {'s73_0004': -55, 's90_0006': -45, 's82_0002': -35,
-                     's117_0002': -60, 's119_0004': -50, 's104_0007': -55,
-                     's79_0003': -50, 's76_0002': -50, 's101_0009': -45}
+    param_list = ['Vm_ljpc', 'spiketimes', 'vel_100ms']
+    AP_thresholds = {'s73_0004': -55, 's90_0006': -45, 's82_0002': -35, 's117_0002': -60, 's119_0004': -50,
+                     's104_0007': -55, 's79_0003': -50, 's76_0002': -50, 's101_0009': -45}
     use_AP_max_idxs_domnisoru = True
     ISI_burst = 8  # ms
     window_size = 2000  # ms
@@ -59,9 +58,11 @@ if __name__ == '__main__':
         event_rate_cells = np.load(os.path.join(save_dir_img, 'event_rate.npy'))
         firing_rate_cells = np.load(os.path.join(save_dir_img, 'firing_rate.npy'))
     else:
-        fraction_burst_cells = [0] * len(cell_ids)
-        event_rate_cells = [0] * len(cell_ids)
-        firing_rate_cells = [0] * len(cell_ids)
+        fraction_burst_cells = np.zeros(len(cell_ids), dtype=object)
+        event_rate_cells = np.zeros(len(cell_ids), dtype=object)
+        firing_rate_cells = np.zeros(len(cell_ids), dtype=object)
+        velocity_cells = np.zeros(len(cell_ids), dtype=object)
+
         for cell_idx, cell_id in enumerate(cell_ids):
             print cell_id
             # load
@@ -69,6 +70,7 @@ if __name__ == '__main__':
             v = data['Vm_ljpc']
             t = np.arange(0, len(v)) * data['dt']
             dt = t[1] - t[0]
+            velocity = data['vel_100ms']
             window_size_idx = to_idx(window_size, dt)
 
             # identify single and burst APs
@@ -88,6 +90,7 @@ if __name__ == '__main__':
             firing_rate = init_nan(len(t))
             event_rate = init_nan(len(t))
             fraction_burst = np.zeros(len(t))
+            mean_velocity = np.zeros(len(t))
 
             for i, t_step in enumerate(t):
                 idx = np.logical_and(i - window_size_idx/2.0 <= AP_max_idxs, AP_max_idxs <= i + window_size_idx/2.0)
@@ -104,6 +107,7 @@ if __name__ == '__main__':
             fraction_burst_cells[cell_idx] = fraction_burst
             event_rate_cells[cell_idx] = event_rate
             firing_rate_cells[cell_idx] = firing_rate
+            velocity_cells[cell_idx] = velocity
 
         # slower implementation due to many zeros
         # spike_indicator = np.zeros(len(t), dtype=int)
@@ -167,6 +171,8 @@ if __name__ == '__main__':
     std_fraction_burst_for_firing_rate = np.zeros((len(cell_ids), len(steps_rate)))
     mean_fraction_burst_for_event_rate = np.zeros((len(cell_ids), len(steps_rate)))
     std_fraction_burst_for_event_rate = np.zeros((len(cell_ids), len(steps_rate)))
+    mean_velocity_for_firing_rate = np.zeros((len(cell_ids), len(steps_rate)))
+    std_velocity_for_firing_rate = np.zeros((len(cell_ids), len(steps_rate)))
     for cell_idx in range(len(cell_ids)):
         mean_fraction_burst_for_firing_rate[cell_idx, :], std_fraction_burst_for_firing_rate[cell_idx,
                                                           :] = get_running_fraction_burst(cell_idx,
@@ -176,6 +182,10 @@ if __name__ == '__main__':
         mean_fraction_burst_for_event_rate[cell_idx, :], std_fraction_burst_for_event_rate[cell_idx,
                                                          :] = get_running_fraction_burst(cell_idx, fraction_burst_cells,
                                                                                          event_rate_cells, steps_rate,
+                                                                                         window_size_rate)
+        mean_velocity_for_firing_rate[cell_idx, :], std_velocity_for_firing_rate[cell_idx,
+                                                         :] = get_running_fraction_burst(cell_idx, velocity_cells,
+                                                                                         firing_rate_cells, steps_rate,
                                                                                          window_size_rate)
 
     # save and plot
@@ -191,6 +201,12 @@ if __name__ == '__main__':
         plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_rate_vs_burst, plot_kwargs,
                                 xlabel='Firing \nrate (Hz)', ylabel='Fraction burst events',
                                 save_dir_img=os.path.join(save_dir_img, 'firing_rate_vs_fraction_burst.png'))
+
+        plot_kwargs = dict(steps_rate=steps_rate, mean_fraction_burst_cells=mean_velocity_for_firing_rate,
+                           std_fraction_burst_cells=std_velocity_for_firing_rate)
+        plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_rate_vs_burst, plot_kwargs,
+                                xlabel='Firing \nrate (Hz)', ylabel='Velocity',
+                                save_dir_img=os.path.join(save_dir_img, 'firing_rate_vs_velocity.png'))
 
         # plot cumulative
         plot_kwargs = dict(steps_rate=steps_rate, mean_fraction_burst_cells=mean_fraction_burst_for_event_rate)

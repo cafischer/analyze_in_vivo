@@ -33,10 +33,15 @@ def plot_all_cells(cell_type_dict, burst_numbers, mean_v_n_th_burst_cells, std_v
             ax.set_xticks(burst_numbers)
             ax.set_xticklabels(burst_numbers)
 
+            ax.set_ylim(-35, 35)
+            ax.set_xlim(1, None)
+            ax.annotate('n-th > 1st AP', textcoords='data', xy=(1.2, 1.5), alpha=0.5, verticalalignment='bottom', rotation=90)
+            ax.annotate('n-th < 1st AP', textcoords='data', xy=(1.2, -1.5), alpha=0.5, verticalalignment='top', rotation=90)
+
         plot_kwargs = dict(burst_numbers=burst_numbers, mean_v_n_th_burst_cells=mean_v_n_th_burst_cells,
                            std_v_n_th_burst_cells=std_v_n_th_burst_cells)
         plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_fun, plot_kwargs,
-                                xlabel='n-th AP \nin burst', ylabel='Difference to \n1st AP (mV)',
+                                xlabel='n-th AP \nin burst', ylabel='Diff. to 1st AP (mV)',
                                 save_dir_img=os.path.join(save_dir_img, 'diff_1st_AP.png'))
 
 
@@ -86,10 +91,12 @@ if __name__ == '__main__':
         n_APs = np.zeros(len(burst_numbers), dtype=object)
         for i, n in enumerate(burst_numbers):
             n_th_burst_idxs = np.where(n_th_burst_indicator == n)[0]
-            mean_v_n_th_burst_cells[cell_idx, i] = np.mean(v[AP_max_idxs[n_th_burst_idxs - (n-1)]]
-                                                           - v[AP_max_idxs[n_th_burst_idxs]])
-            std_v_n_th_burst_cells[cell_idx, i] = np.std(v[AP_max_idxs[n_th_burst_idxs - (n-1)]]
-                                                         - v[AP_max_idxs[n_th_burst_idxs]])
+            sign = (v[AP_max_idxs[n_th_burst_idxs]] >= v[AP_max_idxs[n_th_burst_idxs - (n-1)]]).astype(int)
+            #sign[sign == 1] = 1
+            sign[sign == 0] = -1
+            diff = np.abs(np.abs(v[AP_max_idxs[n_th_burst_idxs]]) - np.abs(v[AP_max_idxs[n_th_burst_idxs - (n-1)]]))
+            mean_v_n_th_burst_cells[cell_idx, i] = np.mean(sign * diff)  # >0 -> n-tes AP bigger than 1st and vice versa
+            std_v_n_th_burst_cells[cell_idx, i] = np.std(sign * diff)
 
             # for testing
             n_APs[i] = min(len(n_th_burst_idxs), 5)
@@ -132,4 +139,4 @@ if __name__ == '__main__':
     # plot all cells
     pl.close('all')
     plot_all_cells(cell_type_dict, burst_numbers, mean_v_n_th_burst_cells, std_v_n_th_burst_cells)
-    #pl.show()
+    pl.show()

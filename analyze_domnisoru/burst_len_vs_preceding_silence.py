@@ -12,34 +12,43 @@ pl.style.use('paper')
 def get_n_spikes_per_event(burst_ISI_indicator):
     groups = np.split(burst_ISI_indicator, np.where(np.abs(np.diff(burst_ISI_indicator)) == 1)[0] + 1)
     n_spikes_per_event = []
-    for group in groups:
+    if False in groups[0]:
+        n_spikes_per_event.extend(np.ones(len(groups[0])))
+    else:
+        n_spikes_per_event.append(len(groups[0]) + 1)
+    for group in groups[1:]:
         if False in group:
-            n_spikes_per_event.extend(np.ones(len(group)))
+            n_spikes_per_event.extend(np.ones(len(group)-1))  # -1 because 1st ISI belongs to the last burst AP
         else:
             n_spikes_per_event.append(len(group)+1)
     return np.array(n_spikes_per_event)
 
 
 def get_ISI_idx_per_event(burst_ISI_indicator):
-    counter = 0
-    ISI_idx_per_event = []
-    for i in range(len(burst_ISI_indicator)):
-        if burst_ISI_indicator[i] == 0 or (burst_ISI_indicator[i-1] == 0 and burst_ISI_indicator[i] == 1):
+    ISI_idx_per_event = [0]
+    counter = 1
+    for i in range(1, len(burst_ISI_indicator)):
+        if (burst_ISI_indicator[i-1] == 0 and burst_ISI_indicator[i] == 0) \
+                or (burst_ISI_indicator[i-1] == 0 and burst_ISI_indicator[i] == 1):
             ISI_idx_per_event.append(counter)
         counter += 1
     return np.array(ISI_idx_per_event)
 
 
 if __name__ == '__main__':
+    # test
+    burst_ISI_indicator = np.array([False, True, False, False, True, True, False, False])
+    assert np.array_equal(get_ISI_idx_per_event(burst_ISI_indicator), np.array([0, 1, 3, 4, 7]))
+    assert np.array_equal(get_n_spikes_per_event(burst_ISI_indicator), np.array([1, 2, 1, 3, 1]))
+
     save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/Harris/burst_len_vs_preceding_silence'
     save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
     cell_type = 'grid_cells'
     cell_ids = load_cell_ids(save_dir, cell_type)
     cell_type_dict = get_celltype_dict(save_dir)
     param_list = ['Vm_ljpc', 'spiketimes']
-    AP_thresholds = {'s73_0004': -55, 's90_0006': -45, 's82_0002': -35,
-                     's117_0002': -60, 's119_0004': -50, 's104_0007': -55,
-                     's79_0003': -50, 's76_0002': -50, 's101_0009': -45}
+    AP_thresholds = {'s73_0004': -55, 's90_0006': -45, 's82_0002': -35, 's117_0002': -60, 's119_0004': -50,
+                     's104_0007': -55, 's79_0003': -50, 's76_0002': -50, 's101_0009': -45}
     use_AP_max_idxs_domnisoru = True
     ISI_burst = 8  # ms
     n_spikes_variants = [1, 2, 3, 4, 5]
@@ -70,7 +79,7 @@ if __name__ == '__main__':
         n_spikes_per_event = get_n_spikes_per_event(burst_ISI_indicator)
         ISI_idx_per_event = get_ISI_idx_per_event(burst_ISI_indicator)
 
-        if n_spikes_per_event[-1] == 1:  # shorten by 1 to be able to index ISIs (just neccesary if last spike is single)
+        if n_spikes_per_event[-1] == 1: # shorten by 1 to be able to index ISIs (just necessary if last spike is single)
             n_spikes_per_event = n_spikes_per_event[:-1]
             ISI_idx_per_event = ISI_idx_per_event[:-1]
 
@@ -85,6 +94,17 @@ if __name__ == '__main__':
                 std_preceding_silence[i] = np.std(ISIs[ISI_idx_per_event[n_spikes_per_event == n_spikes] - 1])
         med_preceding_silence_cells[cell_idx] = med_preceding_silence
         std_preceding_silence_cells[cell_idx] = std_preceding_silence
+
+        # # plot for testing
+        # colors = ['b', 'm', 'r', 'orange', 'y']
+        # pl.figure()
+        # pl.plot(t, v, 'k')
+        # for i, n_spikes in enumerate(n_spikes_variants):
+        #     if len(t[AP_max_idxs[ISI_idx_per_event[n_spikes_per_event == n_spikes]]]) > 0:
+        #         pl.plot([t[AP_max_idxs[ISI_idx_per_event[n_spikes_per_event == n_spikes]]],
+        #              t[AP_max_idxs[ISI_idx_per_event[n_spikes_per_event == n_spikes]]]-ISIs[ISI_idx_per_event[n_spikes_per_event == n_spikes] - 1]],
+        #             [-90, -90], color=colors[i], linewidth=3.0)
+        # pl.show()
 
     # save and plot
     if cell_type == 'grid_cells':

@@ -122,7 +122,13 @@ def get_cell_groups():
     edge_avoiding = ['s81_0004', 's84_0002', 's85_0007', 's90_0006', 's96_0009', 's100_0006', 's115_0018', 's115_0024',
                 's115_0030', 's120_0023']
     theta = ['s67_0000', 's73_0004', 's109_0002', 's118_0002']
-    return {'edge-accumulating': edge_accumulating, 'edge-avoiding': edge_avoiding, 'theta': theta}
+    dap = ['s79_0003', 's104_0007', 's109_0002', 's110_0002', 's119_0004']
+    all = ['s43_0003', 's66_0003', 's67_0000', 's73_0004', 's74_0006', 's76_0002', 's79_0003', 's81_0004', 's82_0002',
+           's84_0002', 's85_0007', 's90_0006', 's95_0006', 's96_0009', 's100_0006', 's101_0009', 's104_0007',
+           's109_0002',  's110_0002', 's115_0018', 's115_0024', 's115_0030', 's117_0002', 's118_0002', 's119_0004',
+           's120_0002', 's120_0023']
+    return {'edge-accumulating': edge_accumulating, 'edge-avoiding': edge_avoiding, 'theta': theta, 'DAP': dap,
+            'all': all}
 
 
 if __name__ == '__main__':
