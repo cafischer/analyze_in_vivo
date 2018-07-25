@@ -51,7 +51,13 @@ def plot_both_phase_hist_all_cells(AP_max_phases1_cells, AP_max_phases2_cells, t
         med2 = circ_median(AP_max_phases2_cells[cell_idx] / 360. * 2 * np.pi) * 360. / (2 * np.pi)
         stars = ['n.s.', '*', '**', '***']
         sig_levels = np.array([1, 0.1, 0.01, 0.001])
-        sig_label = stars[np.where(pval < sig_levels)[0][-1]]
+        idx = np.where(pval < sig_levels)[0]
+        if len(idx) == 0:
+            print pval
+            idx = 0
+        else:
+            idx = idx[-1]
+        sig_label = stars[idx]
         horizontal_square_bracket(ax, sig_label, x_l=med1, x_r=med2,
                                   y_d=ylim_max * 1.3, y_u=ylim_max * 1.38, y_text=ylim_max * 1.46)
         ax.set_ylim(None, ylim_max * 1.55)
@@ -181,6 +187,39 @@ if __name__ == '__main__':
                     n_spikes_in_field_theta == int(n_spikes_variant)]
                 AP_max_phases_ramp_cells[cell_idx, i] = AP_max_phases_ramp[
                     n_spikes_in_field_ramp == int(n_spikes_variant)]
+
+    # stds of bursts on ramp  TODO
+    from scipy.stats import circmean, circstd
+    variants = ['2', '3', '4', '$\geq5$']
+    stds = np.zeros(len(variants))
+    means = np.zeros(len(variants))
+    for i, variant in enumerate(variants):
+        idx_n_spike_variants = np.where(n_spikes_variants == variant)[0][0]
+        std_phase = np.zeros(len(cell_ids))
+        mean_phase = np.zeros(len(cell_ids))
+        for cell_idx, cell_id in enumerate(cell_ids):
+            std_phase[cell_idx] = circstd(AP_max_phases_ramp_cells[cell_idx, idx_n_spike_variants], 360, 0)
+            mean_phase[cell_idx] = circmean(AP_max_phases_ramp_cells[cell_idx, idx_n_spike_variants], 360, 0)
+        stds[i] = np.nanmean(std_phase)
+        means[i] = np.nanmean(mean_phase)
+    print variants
+    print stds
+    print means
+
+    print 'std'
+    print 'single', np.nanmean(
+        [circstd(AP_max_phases_ramp_cells[cell_idx, np.where(n_spikes_variants == 'single')[0][0]], 360, 0)
+         for cell_idx in range(len(cell_ids))])
+    print 'burst', np.nanmean(
+        [circstd(AP_max_phases_ramp_cells[cell_idx, np.where(n_spikes_variants == 'burst')[0][0]], 360, 0)
+         for cell_idx in range(len(cell_ids))])
+    print 'mean'
+    print 'single', np.nanmean(
+        [circmean(AP_max_phases_ramp_cells[cell_idx, np.where(n_spikes_variants == 'single')[0][0]], 360, 0)
+         for cell_idx in range(len(cell_ids))])
+    print 'burst', np.nanmean(
+        [circmean(AP_max_phases_ramp_cells[cell_idx, np.where(n_spikes_variants == 'burst')[0][0]], 360, 0)
+         for cell_idx in range(len(cell_ids))])
 
     # plots
     for i, n_spikes_variant in enumerate(n_spikes_variants):

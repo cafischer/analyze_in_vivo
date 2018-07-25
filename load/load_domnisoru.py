@@ -55,22 +55,23 @@ def load_cell_ids(save_dir, cell_type='grid_cells'):
     small_theta_cells = [str(x[0][0]) for x in small_theta_cells_tmp[0, 0]]
 
     if cell_type == 'grid_cells':
-        cells = grid_cells
+        cell_ids = grid_cells
     elif cell_type == 'stellate_layer2':
-        cells = list(set(layer2_cells).intersection(stellate_cells))
+        cell_ids = list(set(layer2_cells).intersection(stellate_cells))
     elif cell_type == 'pyramidal_layer2':
-        cells = list(set(layer2_cells).intersection(pyramidal_cells))
+        cell_ids = list(set(layer2_cells).intersection(pyramidal_cells))
     elif cell_type == 'pyramidal_layer3':
-        cells = list(set(layer3_cells).intersection(pyramidal_cells))
+        cell_ids = list(set(layer3_cells).intersection(pyramidal_cells))
     elif cell_type == 'giant_theta':
-        cells = giant_theta_cells
+        cell_ids = giant_theta_cells
     elif cell_type == 'small_theta':
-        cells = small_theta_cells
+        cell_ids = small_theta_cells
     else:
         raise ValueError('Cell type not available!')
-
-    cells = sorted(cells, key=lambda x: int(x[1:].split('_')[0]))
-    return cells
+    if 's66_0003' in cell_ids:  # remove because data is not reliable
+        cell_ids.remove('s66_0003')
+    cell_ids = sorted(cell_ids, key=lambda x: int(x[1:].split('_')[0]))
+    return cell_ids
 
 
 def get_celltype_dict(save_dir):

@@ -97,7 +97,13 @@ def get_v_and_t_per_run(v, t, position, track_len):
     return v_runs, t_runs
 
 
-def get_in_out_field_idxs_domnisoru(cell_id, save_dir, bins):
+def get_per_run(x, position, track_len):
+    run_start_idx = np.where(np.diff(position) < -track_len/2.)[0]
+    x = np.split(x, run_start_idx)
+    return x
+
+
+def get_in_out_field_idxs_domnisoru(cell_id, save_dir, bins, position):
     run_start_idxs = np.where(np.diff(position) < -get_track_len(cell_id) / 2.)[0] + 1  # +1 because diff shifts one to front
     n_runs = len(run_start_idxs) + 1  # +1 for first start at 0
     n_bins = len(bins) - 1
@@ -127,6 +133,14 @@ def get_in_out_field_idxs_domnisoru(cell_id, save_dir, bins):
         out_field_per_run_binned[run_i, pos_in_track] = pd.Series(out_field_per_run[run_i]).groupby(pos_binned).apply(lambda x:
                                                                     x.values[0]).values[np.unique(pos_binned) <= n_bins - 1]
     return in_field_per_run_binned, out_field_per_run_binned
+
+
+def get_bins_field_domnisoru(cell_id, save_dir, bins):
+    in_field, out_field = load_field_indices(cell_id, save_dir)
+    position_thresholded = load_data(cell_id, ['fY_cm'], save_dir)['fY_cm']
+    position_binned = np.digitize(position_thresholded, bins) - 1  # -1 so that it gives the left limit
+    bins_in_field = np.unique(position_binned[in_field])
+    return bins_in_field
 
 
 if __name__ == '__main__':
@@ -218,17 +232,10 @@ if __name__ == '__main__':
         out_field_len_orig = np.array([out_field[p] if p < len(bins)-1 else np.nan
                                        for p in orig_position_binned], dtype=bool)
 
-        # save and plot
-        np.save(os.path.join(save_dir_cell, 'in_field.npy'), in_field)
-        np.save(os.path.join(save_dir_cell, 'out_field.npy'), out_field)
-        np.save(os.path.join(save_dir_cell, 'in_field_len_orig.npy'), in_field_len_orig)
-        np.save(os.path.join(save_dir_cell, 'out_field_len_orig.npy'), out_field_len_orig)
-        np.save(os.path.join(save_dir_cell, 'firing_rate_real.npy'), firing_rate_real)
-
         with open(os.path.join(save_dir_cell, 'params.json'), 'w') as f:
             json.dump(params, f)
 
-        in_field_domnisoru, out_field_domnisoru = get_in_out_field_idxs_domnisoru(cell_id, save_dir, bins)
+        in_field_domnisoru, out_field_domnisoru = get_in_out_field_idxs_domnisoru(cell_id, save_dir, bins, position)
         start_in_domnisoru, _ = get_start_end_group_of_ones(in_field_domnisoru[1])
         n_fields[cell_idx] = len(start_in_domnisoru)
 
@@ -269,15 +276,15 @@ if __name__ == '__main__':
         # pl.tight_layout()
         # pl.savefig(os.path.join(save_dir_cell, 'position_vs_firing_rate.png'))
 
-        pl.figure()
-        pl.plot(firing_rate_real, 'k', label='Real')
-        pl.plot(mean_firing_rate_shuffled, 'r', label='Shuffled mean')
-        pl.xticks(np.arange(0, n_bins+n_bins/4, n_bins/4), np.arange(0, track_len+track_len/4, track_len/4))
-        pl.xlabel('Position (cm)', fontsize=16)
-        pl.ylabel('Firing rate (spikes/sec)', fontsize=16)
-        pl.legend(fontsize=16)
-        pl.savefig(os.path.join(save_dir_cell, 'firing_rate_binned.png'))
-        pl.show()
+        # pl.figure()
+        # pl.plot(firing_rate_real, 'k', label='Real')
+        # pl.plot(mean_firing_rate_shuffled, 'r', label='Shuffled mean')
+        # pl.xticks(np.arange(0, n_bins+n_bins/4, n_bins/4), np.arange(0, track_len+track_len/4, track_len/4))
+        # pl.xlabel('Position (cm)', fontsize=16)
+        # pl.ylabel('Firing rate (spikes/sec)', fontsize=16)
+        # pl.legend(fontsize=16)
+        # pl.savefig(os.path.join(save_dir_cell, 'firing_rate_binned.png'))
+        #pl.show()
         #
         # pl.figure()
         # pl.plot(1 - p_value, 'g')
@@ -386,4 +393,10 @@ if __name__ == '__main__':
         # #pl.show()
         # pl.close('all')
 
+    # save
+    np.save(os.path.join(save_dir_cell, 'in_field.npy'), in_field)
+    np.save(os.path.join(save_dir_cell, 'out_field.npy'), out_field)
+    np.save(os.path.join(save_dir_cell, 'in_field_len_orig.npy'), in_field_len_orig)
+    np.save(os.path.join(save_dir_cell, 'out_field_len_orig.npy'), out_field_len_orig)
+    np.save(os.path.join(save_dir_cell, 'firing_rate_real.npy'), firing_rate_real)
     np.save(os.path.join(save_dir_img, 'n_fields.npy'), n_fields)

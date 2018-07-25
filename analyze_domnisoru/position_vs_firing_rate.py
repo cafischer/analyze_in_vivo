@@ -12,12 +12,11 @@ import matplotlib.gridspec as gridspec
 def threshold_by_velocity(arrays_to_shorten, velocity, threshold=1):
     """
     Remove regions where velocity < threshold from the data. Note: Data will contain discontinuities.
-    :param v: (mV)
-    :param t: (ms)
-    :param position: (cm).
+    :param arrays_to_shorten:
+    :type list[array]
     :param velocity: (cm/sec).
     :param threshold: Threshold (cm/sec) below which to cut out the data.
-    :return: v, t, position, velocity with regions removed where velocity < threshold.
+    :return: arrays_to_shorten, velocity with regions removed where velocity < threshold.
     """
     to_low = velocity < threshold
     for i in range(len(arrays_to_shorten)):
@@ -96,23 +95,26 @@ def smooth_firing_rate(firing_rate, std=1, window_size=3):
 
 
 if __name__ == '__main__':
-    save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/in_out_field'
+    save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/position_vs_firing_rate'
     save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
     cell_type = 'grid_cells'
     cell_ids = load_cell_ids(save_dir, cell_type)
+    cell_ids = ['s109_0002']
     param_list = ['Vm_ljpc', 'Y_cm', 'vel_100ms', 'spiketimes']
-    AP_thresholds = {'s73_0004': -55, 's90_0006': -45, 's82_0002': -35,
-                     's117_0002': -60, 's119_0004': -50, 's104_0007': -55, 's79_0003': -50,
-                     's76_0002': -50, 's101_0009': -45}
+    AP_thresholds = {'s73_0004': -55, 's90_0006': -45, 's82_0002': -35, 's117_0002': -60, 's119_0004': -50,
+                     's104_0007': -55, 's79_0003': -50, 's76_0002': -50, 's101_0009': -45}
 
     # parameters
     use_AP_max_idxs_domnisoru = True
     use_velocity_threshold = True
-    bin_size = 5  # cm
+    bin_size = 4.0  # cm
     velocity_threshold = 1  # cm/sec
 
     if use_velocity_threshold:
         save_dir_img = os.path.join(save_dir_img, 'vel_thresh_'+str(velocity_threshold))
+    save_dir_img = os.path.join(save_dir_img, cell_type, 'bin_size_' + str(bin_size))
+    if not os.path.exists(save_dir_img):
+        os.makedirs(save_dir_img)
 
     firing_rate_cells = []
     position_cells = []
@@ -122,7 +124,7 @@ if __name__ == '__main__':
 
     for cell_id in cell_ids:
         print cell_id
-        save_dir_cell = os.path.join(save_dir_img, cell_type, cell_id)
+        save_dir_cell = os.path.join(save_dir_img, cell_id)
         if not os.path.exists(save_dir_cell):
             os.makedirs(save_dir_cell)
 
@@ -181,7 +183,6 @@ if __name__ == '__main__':
         axes[1].set_xlabel('Position (cm)')
         pl.tight_layout()
         pl.savefig(os.path.join(save_dir_cell, 'position_vs_firing_rate.png'))
-        #pl.show()
 
 
     # plot all firing rates
@@ -204,11 +205,6 @@ if __name__ == '__main__':
                     ax1.set_title(cell_ids[cell_idx] + ' ' + u'\u25B4', fontsize=12)
                 else:
                     ax1.set_title(cell_ids[cell_idx], fontsize=12)
-
-                # TODO ax1.plot(position_cells[cell_idx], t_cells[cell_idx] / 1000., '0.5', linewidth=0.8)
-                #     ax1.plot(position_cells[cell_idx][spike_train_cells[cell_idx].astype(bool)],
-                #                          (t_cells[cell_idx] / 1000.)[spike_train_cells[cell_idx].astype(bool)], 'or',
-                #                          markersize=0.1)
                 t_new = np.arange(len(position_cells[cell_idx]))*dt/1000.
                 ax1.plot(position_cells[cell_idx], t_new, '0.5', linewidth=0.8)
                 ax1.plot(position_cells[cell_idx][spike_train_cells[cell_idx].astype(bool)],
@@ -228,8 +224,8 @@ if __name__ == '__main__':
             fig.add_subplot(ax1)
             fig.add_subplot(ax2)
             cell_idx += 1
-        pl.subplots_adjust(left=0.06, right=0.99, top=0.95)
-        pl.savefig(os.path.join(save_dir_img, cell_type, 'position_vs_firing_rate.png'))
+        pl.subplots_adjust(left=0.07, bottom=0.07, right=0.99, top=0.95)
+        pl.savefig(os.path.join(save_dir_img, 'position_vs_firing_rate.png'))
         pl.show()
 
     else:
@@ -269,5 +265,5 @@ if __name__ == '__main__':
             fig.add_subplot(ax2)
             cell_idx += 1
         pl.subplots_adjust(left=0.07, right=0.98, top=0.95)
-        pl.savefig(os.path.join(save_dir_img, cell_type, 'position_vs_firing_rate.png'))
+        pl.savefig(os.path.join(save_dir_img, 'position_vs_firing_rate.png'))
         pl.show()

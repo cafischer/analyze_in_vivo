@@ -8,6 +8,7 @@ from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data, get_ce
 from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_with_markers
 from analyze_in_vivo.analyze_domnisoru.burst_len_vs_preceding_silence import get_n_spikes_per_event, \
     get_ISI_idx_per_event
+from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_for_all_grid_cells
 pl.style.use('paper')
 
 
@@ -103,8 +104,32 @@ if __name__ == '__main__':
     ax[1].set_title('1st ISI \n$\geq$ 3 APs in burst')
     ax[2].set_title('2nd ISI \n$\geq$ 3 APs in burst')
     for i in range(3):
-        ax[i].set_xlabel('Std. ISIs')
-        ax[i].set_ylabel('Mean ISIs')
+        ax[i].set_xlabel('Std. ISIs (ms)')
+        ax[i].set_ylabel('Mean ISIs (ms)')
     pl.tight_layout()
     pl.savefig(os.path.join(save_dir_img, 'mean_vs_std_diff_ISIs.png'))
+
+
+    def plot_ISIs(ax, cell_idx, mean_ISI_doublet, std_ISI_doublet,
+                  mean_ISI_1st_triplets_and_more, std_ISI_1st_triplets_and_more,
+                  mean_ISI_2nd_triplets_and_more, std_ISI_2nd_triplets_and_more):
+        ax.errorbar(-0.2, mean_ISI_doublet[cell_idx], yerr=std_ISI_doublet[cell_idx],
+                    color='k', label='1st, ISI doublets', marker='o', capsize=2)
+        ax.errorbar(0.5, mean_ISI_1st_triplets_and_more[cell_idx], yerr=std_ISI_1st_triplets_and_more[cell_idx],
+               color='b', label='1st ISI, $\geq$ 3 APs in burst', marker='o', capsize=2)
+        ax.errorbar(1.2, mean_ISI_2nd_triplets_and_more[cell_idx], yerr=std_ISI_2nd_triplets_and_more[cell_idx],
+               color='r', label='2nd ISI, $\geq$ 3 APs in burst', marker='o', capsize=2)
+        ax.set_xlim(-1, 2)
+        ax.set_xticks([])
+        if cell_idx == 8:
+            ax.legend(fontsize=8)
+
+    plot_kwargs = dict(mean_ISI_doublet=mean_ISI_doublet, std_ISI_doublet=std_ISI_doublet,
+                  mean_ISI_1st_triplets_and_more=mean_ISI_1st_triplets_and_more,
+                       std_ISI_1st_triplets_and_more=std_ISI_1st_triplets_and_more,
+                  mean_ISI_2nd_triplets_and_more=mean_ISI_2nd_triplets_and_more,
+                       std_ISI_2nd_triplets_and_more=std_ISI_2nd_triplets_and_more)
+    plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_ISIs, plot_kwargs,
+                            xlabel='', ylabel='Mean ISI (ms)',
+                            save_dir_img=os.path.join(save_dir_img, 'mean_diff_ISIs.png'))
     pl.show()
