@@ -12,6 +12,15 @@ from analyze_in_vivo.analyze_domnisoru.position_vs_firing_rate import threshold_
 pl.style.use('paper')
 
 
+def get_AP_max_idxs_above_and_under_velocity_threshold(AP_max_idxs, velocity, velocity_threshold):
+    spike_train = init_nan(len(velocity))
+    spike_train[AP_max_idxs] = AP_max_idxs
+    spike_train = threshold_by_velocity([spike_train], velocity, velocity_threshold)[0][0]
+    AP_max_idxs_above = spike_train[~np.isnan(spike_train)].astype(int)
+    AP_max_idxs_under = np.setxor1d(AP_max_idxs, AP_max_idxs_above).astype(int)
+    return AP_max_idxs_above, AP_max_idxs_under
+
+
 if __name__ == '__main__':
     save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/STA/velocity_thresholding'
     save_dir_in_out_field = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/in_out_field'
@@ -52,11 +61,9 @@ if __name__ == '__main__':
         AP_max_idxs = data['spiketimes']
 
         # divide into under and above velocity threshold
-        spike_train = init_nan(len(v))
-        spike_train[AP_max_idxs] = AP_max_idxs
-        spike_train = threshold_by_velocity([spike_train], velocity, velocity_threshold)[0][0]
-        AP_max_idxs_above = spike_train[~np.isnan(spike_train)].astype(int)
-        AP_max_idxs_under = np.setxor1d(AP_max_idxs, AP_max_idxs_above).astype(int)
+        AP_max_idxs_above, AP_max_idxs_under = get_AP_max_idxs_above_and_under_velocity_threshold(AP_max_idxs,
+                                                                                                  velocity,
+                                                                                                  velocity_threshold)
 
         v_APs_above = find_all_AP_traces(v, before_AP_idx_sta, after_AP_idx_sta, AP_max_idxs_above, AP_max_idxs)
         v_APs_under = find_all_AP_traces(v, before_AP_idx_sta, after_AP_idx_sta, AP_max_idxs_under, AP_max_idxs)

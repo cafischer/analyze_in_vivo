@@ -5,7 +5,7 @@ import os
 from grid_cell_stimuli import get_AP_max_idxs
 from grid_cell_stimuli.ISI_hist import get_ISIs, get_ISI_hist
 from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data, get_celltype
-from analyze_in_vivo.analyze_domnisoru.check_basic.in_out_field import get_start_end_group_of_ones
+from analyze_in_vivo.analyze_domnisoru.check_basic.in_out_field import get_starts_ends_group_of_ones
 from scipy.ndimage.filters import convolve
 from scipy.optimize import curve_fit, brentq
 from sklearn.metrics import mean_squared_error
@@ -113,7 +113,7 @@ if __name__ == '__main__':
             bin_idx_peak = np.argmax(ISI_hist)
             half_height = ISI_hist[bin_idx_peak] / 2.0
             bins_greater = ISI_hist >= half_height
-            starts, ends = get_start_end_group_of_ones(bins_greater.astype(int))
+            starts, ends = get_starts_ends_group_of_ones(bins_greater.astype(int))
             idx_group = np.array([True if s <= bin_idx_peak <= e else False for s, e in zip(starts, ends)])
             len_group = ends[idx_group] - starts[idx_group] + 1
             half_width[cell_idx, bin_idx] = len_group * bin_width

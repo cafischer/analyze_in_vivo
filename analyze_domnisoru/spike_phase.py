@@ -6,7 +6,7 @@ from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data, get_ce
 from grid_cell_stimuli.spike_phase import get_spike_phases, get_spike_phases_by_min, plot_phase_hist, plot_phase_hist_on_axes
 from grid_cell_stimuli import get_AP_max_idxs
 from grid_cell_stimuli.ISI_hist import get_ISIs
-from analyze_in_vivo.analyze_domnisoru.check_basic.in_out_field import get_start_end_group_of_ones
+from analyze_in_vivo.analyze_domnisoru.check_basic.in_out_field import get_starts_ends_group_of_ones
 from circular_statistics import circ_cmtest, circ_median
 from analyze_in_vivo.analyze_domnisoru.n_spikes_in_burst import get_n_spikes_in_burst
 from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_for_all_grid_cells
@@ -140,7 +140,7 @@ if __name__ == '__main__':
         # ramp = np.load(os.path.join(save_dir_theta_ramp, cell_type, cell_id, 'ramp.npy'))
 
         # # get fields
-        # start_in, end_in = get_start_end_group_of_ones(in_field_len_orig.astype(int))
+        # start_in, end_in = get_starts_ends_group_of_ones(in_field_len_orig.astype(int))
         # n_fields = len(start_in)
 
         # get APs
@@ -152,7 +152,7 @@ if __name__ == '__main__':
         # find burst indices
         ISIs = get_ISIs(AP_max_idxs, t)
         short_ISI_indicator = np.concatenate((ISIs <= ISI_burst, np.array([False])))
-        starts_burst, ends_burst = get_start_end_group_of_ones(short_ISI_indicator.astype(int))
+        starts_burst, ends_burst = get_starts_ends_group_of_ones(short_ISI_indicator.astype(int))
         n_spikes_in_bursts = get_n_spikes_in_burst(short_ISI_indicator)
         AP_max_idxs_burst = AP_max_idxs[starts_burst]
         AP_max_idxs_single = np.array(filter(lambda x: x not in AP_max_idxs[ends_burst+1],

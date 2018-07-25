@@ -4,7 +4,7 @@ import matplotlib.pyplot as pl
 import os
 from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data
 from grid_cell_stimuli import get_AP_max_idxs
-from analyze_in_vivo.analyze_domnisoru.check_basic.in_out_field import get_start_end_group_of_ones
+from analyze_in_vivo.analyze_domnisoru.check_basic.in_out_field import get_starts_ends_group_of_ones
 from analyze_in_vivo.analyze_domnisoru.sta import find_all_APs_in_v_trace
 from cell_characteristics import to_idx
 from grid_cell_stimuli.ISI_hist import get_ISIs
@@ -41,13 +41,13 @@ if __name__ == '__main__':
         after_AP_idx = to_idx(after_AP, dt)
 
         # get phases
-        start_in, end_in = get_start_end_group_of_ones(in_field_len_orig.astype(int))
+        start_in, end_in = get_starts_ends_group_of_ones(in_field_len_orig.astype(int))
         n_fields = len(start_in)
 
         # get APs
         AP_max_idxs = get_AP_max_idxs(v, AP_thresholds[cell_id], dt, interval=2, v_diff_onset_max=5)
         ISIs = get_ISIs(AP_max_idxs, t)
-        starts_burst, ends_burst = get_start_end_group_of_ones(
+        starts_burst, ends_burst = get_starts_ends_group_of_ones(
             np.concatenate((ISIs <= ISI_burst, np.array([False]))).astype(int))
         AP_max_idxs_burst = AP_max_idxs[starts_burst]
         AP_max_idxs_single = AP_max_idxs[~np.concatenate((ISIs <= ISI_burst, np.array([False])))]

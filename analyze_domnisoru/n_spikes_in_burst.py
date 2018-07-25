@@ -6,7 +6,7 @@ from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data, get_ce
 from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_for_all_grid_cells
 from grid_cell_stimuli import get_AP_max_idxs
 from grid_cell_stimuli.ISI_hist import get_ISIs
-from analyze_in_vivo.analyze_domnisoru.check_basic.in_out_field import get_start_end_group_of_ones
+from analyze_in_vivo.analyze_domnisoru.check_basic.in_out_field import get_starts_ends_group_of_ones
 
 
 def plot_n_spikes_in_burst_all_cells(cell_type_dict, bins, count_spikes):
@@ -94,7 +94,7 @@ if __name__ == '__main__':
         n_spikes_in_bursts = get_n_spikes_in_burst(short_ISI_indicator.astype(int))
         count_spikes[cell_idx, :] = np.histogram(n_spikes_in_bursts, bins)[0]
 
-        starts_burst, ends_burst = get_start_end_group_of_ones(short_ISI_indicator.astype(int))
+        starts_burst, ends_burst = get_starts_ends_group_of_ones(short_ISI_indicator.astype(int))
         AP_max_idxs_burst = AP_max_idxs[starts_burst]
         AP_max_idxs_single = np.array(filter(lambda x: x not in AP_max_idxs[ends_burst + 1],
                                              AP_max_idxs[~short_ISI_indicator]))

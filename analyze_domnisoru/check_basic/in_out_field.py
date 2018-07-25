@@ -80,14 +80,14 @@ def get_in_out_field(p_value, firing_rate_per_run, n_bins):
     return in_field, out_field
 
 
-def get_start_end_group_of_ones(x):
-    start = np.where(np.diff(x) == 1)[0] + 1
-    end = np.where(np.diff(x) == -1)[0]
+def get_starts_ends_group_of_ones(x):
+    starts = np.where(np.diff(x) == 1)[0] + 1
+    ends = np.where(np.diff(x) == -1)[0]
     if x[0] == 1:
-        start = np.concatenate((np.array([0]), start))
+        starts = np.concatenate((np.array([0]), starts))
     if x[-1] == 1:
-        end = np.concatenate((end, np.array([len(x) - 1])))
-    return start, end
+        ends = np.concatenate((ends, np.array([len(x) - 1])))
+    return starts, ends
 
 
 def get_v_and_t_per_run(v, t, position, track_len):
@@ -222,8 +222,8 @@ if __name__ == '__main__':
         # get in-field and out-field
         in_field, out_field = get_in_out_field(p_value, firing_rate_per_run, n_bins)
 
-        start_in, end_in = get_start_end_group_of_ones(in_field)
-        start_out, end_out = get_start_end_group_of_ones(out_field)
+        start_in, end_in = get_starts_ends_group_of_ones(in_field)
+        start_out, end_out = get_starts_ends_group_of_ones(out_field)
 
         # make in_field indicator for whole v vector
         orig_position_binned = np.digitize(data['Y_cm'], bins) - 1
@@ -236,7 +236,7 @@ if __name__ == '__main__':
             json.dump(params, f)
 
         in_field_domnisoru, out_field_domnisoru = get_in_out_field_idxs_domnisoru(cell_id, save_dir, bins, position)
-        start_in_domnisoru, _ = get_start_end_group_of_ones(in_field_domnisoru[1])
+        start_in_domnisoru, _ = get_starts_ends_group_of_ones(in_field_domnisoru[1])
         n_fields[cell_idx] = len(start_in_domnisoru)
 
         # pl.figure()
@@ -313,7 +313,7 @@ if __name__ == '__main__':
         # pl.savefig(os.path.join(save_dir_cell, 'firing_rate_and_fields.png'))
 
         # # plot firing fields
-        # start_in, end_in = get_start_end_group_of_ones(in_field_len_orig.astype(int))
+        # start_in, end_in = get_starts_ends_group_of_ones(in_field_len_orig.astype(int))
         # n_fields = len(start_in)
         # for i_field in range(n_fields):
         #     pl.figure()
@@ -337,8 +337,8 @@ if __name__ == '__main__':
         #     # v_to_low_run = copy.copy(v_runs[i_run])
         #     # v_to_low_run[~velocity_to_low_runs[i_run]] = np.nan
         #     # pl.plot(t_runs[i_run], v_to_low_run, '0.5')
-        #     # start_in_run, end_in_run = get_start_end_group_of_ones(in_field_len_orig_runs[i_run].astype(int))
-        #     # start_out_run, end_out_run = get_start_end_group_of_ones(out_field_len_orig_runs[i_run].astype(int))
+        #     # start_in_run, end_in_run = get_starts_ends_group_of_ones(in_field_len_orig_runs[i_run].astype(int))
+        #     # start_out_run, end_out_run = get_starts_ends_group_of_ones(out_field_len_orig_runs[i_run].astype(int))
         #     # for i, (s, e) in enumerate(zip(start_in_run, end_in_run)):
         #     #     pl.hlines(np.min(v_runs[i_run])-1, t_runs[i_run][s], t_runs[i_run][e], 'r', label='In field' if i == 0 else None, linewidth=3)
         #     # for i, (s, e) in enumerate(zip(start_out_run, end_out_run)):
@@ -354,8 +354,8 @@ if __name__ == '__main__':
         #     v_to_low_run = copy.copy(v_runs[i_run])
         #     v_to_low_run[~velocity_to_low_runs[i_run]] = np.nan
         #     axes[0].plot(t_runs[i_run]/1000., v_to_low_run, '0.5')
-        #     start_in_run, end_in_run = get_start_end_group_of_ones(in_field_len_orig_runs[i_run].astype(int))
-        #     start_out_run, end_out_run = get_start_end_group_of_ones(out_field_len_orig_runs[i_run].astype(int))
+        #     start_in_run, end_in_run = get_starts_ends_group_of_ones(in_field_len_orig_runs[i_run].astype(int))
+        #     start_out_run, end_out_run = get_starts_ends_group_of_ones(out_field_len_orig_runs[i_run].astype(int))
         #     for i, (s, e) in enumerate(zip(start_in_run, end_in_run)):
         #         axes[0].hlines(np.min(v_runs[i_run])-1, t_runs[i_run][s]/1000., t_runs[i_run][e]/1000., 'r',
         #                        label='In field' if i == 0 else None, linewidth=3)
@@ -376,8 +376,8 @@ if __name__ == '__main__':
         # v_to_low = copy.copy(data['Vm_ljpc'])
         # v_to_low[~velocity_to_low] = np.nan
         # pl.plot(t_orig, v_to_low, '0.5')
-        # start_in, end_in = get_start_end_group_of_ones(in_field_len_orig.astype(int))
-        # start_out, end_out = get_start_end_group_of_ones(out_field_len_orig.astype(int))
+        # start_in, end_in = get_starts_ends_group_of_ones(in_field_len_orig.astype(int))
+        # start_out, end_out = get_starts_ends_group_of_ones(out_field_len_orig.astype(int))
         # for i, (s, e) in enumerate(zip(start_in, end_in)):
         #     pl.hlines(np.min(data['Vm_ljpc']) - 1, t_orig[s]/1000., t_orig[e]/1000., 'r',
         #               label='In field' if i == 0 else None,

@@ -122,6 +122,8 @@ def plot_for_cell_group_grid(cell_ids, cell_type_dict, plot_fun, plot_kwargs, xl
             if cell_idx < len(cell_ids):
                 for subplot_idx in range(n_subplots):
                     ax = pl.Subplot(fig, inner[subplot_idx])
+                    fig.add_subplot(ax)
+
                     if subplot_idx == 0:
                         ax.set_title(get_cell_id_with_marker(cell_ids[cell_idx], cell_type_dict), fontsize=12)
 
@@ -133,7 +135,6 @@ def plot_for_cell_group_grid(cell_ids, cell_type_dict, plot_fun, plot_kwargs, xl
                     ax.yaxis.set_tick_params(labelsize=10)
 
                     plot_fun(ax, cell_idx, subplot_idx, **plot_kwargs)
-                    fig.add_subplot(ax)
                 cell_idx += 1
     pl.tight_layout()
     if fig_title is not None:

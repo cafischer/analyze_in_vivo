@@ -5,7 +5,7 @@ import os
 from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data
 from grid_cell_stimuli import get_AP_max_idxs
 from grid_cell_stimuli.ISI_hist import get_ISIs
-from analyze_in_vivo.analyze_domnisoru.check_basic.in_out_field import get_start_end_group_of_ones
+from analyze_in_vivo.analyze_domnisoru.check_basic.in_out_field import get_starts_ends_group_of_ones
 from cell_characteristics import to_idx
 
 
@@ -51,7 +51,7 @@ if __name__ == '__main__':
 
         # find burst indices
         ISIs = get_ISIs(AP_max_idxs, t)
-        starts_burst, ends_burst = get_start_end_group_of_ones(np.concatenate((ISIs <= max_ISI, np.array([False]))).astype(int))
+        starts_burst, ends_burst = get_starts_ends_group_of_ones(np.concatenate((ISIs <= max_ISI, np.array([False]))).astype(int))
         starts_burst = starts_burst[starts_burst < len(AP_max_idxs)-1]
 
         # first ISI after burst

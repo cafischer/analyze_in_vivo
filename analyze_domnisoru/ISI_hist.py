@@ -8,7 +8,7 @@ from grid_cell_stimuli.ISI_hist import get_ISIs, get_ISI_hist, get_cumulative_IS
 from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data, get_celltype_dict
 from scipy.stats import ks_2samp
 from itertools import combinations
-from analyze_in_vivo.analyze_domnisoru.check_basic.in_out_field import get_start_end_group_of_ones
+from analyze_in_vivo.analyze_domnisoru.check_basic.in_out_field import get_starts_ends_group_of_ones
 from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_for_all_grid_cells
 pl.style.use('paper')
 

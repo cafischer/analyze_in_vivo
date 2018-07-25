@@ -5,7 +5,7 @@ import os
 from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data, get_celltype_dict, load_field_indices
 from grid_cell_stimuli.spike_phase import get_spike_phases_by_min, plot_phase_hist_on_axes
 from grid_cell_stimuli.ISI_hist import get_ISIs
-from analyze_in_vivo.analyze_domnisoru.check_basic.in_out_field import get_start_end_group_of_ones
+from analyze_in_vivo.analyze_domnisoru.check_basic.in_out_field import get_starts_ends_group_of_ones
 from circular_statistics import circ_cmtest, circ_median
 from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_for_all_grid_cells
 from analyze_in_vivo.analyze_domnisoru.position_vs_firing_rate import threshold_by_velocity
@@ -133,7 +133,7 @@ if __name__ == '__main__':
         # get field
         in_field_indicator = np.zeros(len(t_thresh), dtype=int)
         in_field_indicator[in_field_idxs] = 1
-        start_in, end_in = get_start_end_group_of_ones(in_field_indicator)
+        start_in, end_in = get_starts_ends_group_of_ones(in_field_indicator)
         n_fields = len(start_in)
 
         AP_max_idxs_in_field = []
