@@ -1,8 +1,11 @@
 from __future__ import division
 import numpy as np
 import matplotlib.pyplot as pl
+from mpl_toolkits.mplot3d import Axes3D
 import os
 from analyze_in_vivo.load.load_domnisoru import load_cell_ids
+from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_with_markers
+from sklearn.cluster import KMeans
 pl.style.use('paper')
 
 
@@ -39,9 +42,9 @@ if __name__ == '__main__':
     DAP_deflection_good_cells = DAP_deflection[good_cell_indicator]
     DAP_time__good_cells = DAP_time[good_cell_indicator]
     fraction_burst_good_cells = fraction_burst[good_cell_indicator]
-    spatial_info_good_cells = spatial_info[good_cell_indicator]
-    peak_ISI_hist_good_cells = peak_ISI_hist[good_cell_indicator]
-    peak_auto_corr_good_cells = peak_auto_corr[good_cell_indicator]
+    #spatial_info_good_cells = spatial_info[good_cell_indicator]
+    #peak_ISI_hist_good_cells = peak_ISI_hist[good_cell_indicator]
+    #peak_auto_corr_good_cells = peak_auto_corr[good_cell_indicator]
     cell_ids_good_cells = np.array(cell_ids)[good_cell_indicator]
 
     # plots
@@ -64,67 +67,67 @@ if __name__ == '__main__':
     pl.tight_layout()
     pl.savefig(os.path.join(save_dir_img, 'DAP_vs_frac_burst.png'))
 
-    pl.figure()
-    pl.plot(np.zeros(len(cell_ids_good_cells))[DAP_deflection_good_cells == 0],
-            spatial_info_good_cells[DAP_deflection_good_cells == 0], 'o', color='0.5')
-    pl.plot(np.ones(len(cell_ids_good_cells))[DAP_deflection_good_cells > 0],
-            spatial_info_good_cells[DAP_deflection_good_cells > 0], 'o', color='0.5')
-    for cell_idx in range(len(cell_ids_good_cells)):
-        pl.annotate(cell_ids_good_cells[cell_idx], xy=((DAP_deflection_good_cells[cell_idx] > 0).astype(int),
-                                                       spatial_info_good_cells[cell_idx]))
-    pl.errorbar(-0.1, np.mean(spatial_info_good_cells[DAP_deflection_good_cells == 0]),
-                yerr=np.std(spatial_info_good_cells[DAP_deflection_good_cells == 0]), color='k', capsize=2, marker='o')
-    pl.errorbar(0.9, np.mean(spatial_info_good_cells[DAP_deflection_good_cells > 0]),
-                yerr=np.std(spatial_info_good_cells[DAP_deflection_good_cells > 0]), color='k', capsize=2, marker='o')
-    pl.ylabel('Spatial information')
-    pl.xlabel('DAP')
-    pl.xlim(-1, 2)
-    pl.xticks([0, 1], ['no', 'yes'])
-    pl.tight_layout()
-    pl.savefig(os.path.join(save_dir_img, 'DAP_vs_spatial_info.png'))
+    # pl.figure()
+    # pl.plot(np.zeros(len(cell_ids_good_cells))[DAP_deflection_good_cells == 0],
+    #         spatial_info_good_cells[DAP_deflection_good_cells == 0], 'o', color='0.5')
+    # pl.plot(np.ones(len(cell_ids_good_cells))[DAP_deflection_good_cells > 0],
+    #         spatial_info_good_cells[DAP_deflection_good_cells > 0], 'o', color='0.5')
+    # for cell_idx in range(len(cell_ids_good_cells)):
+    #     pl.annotate(cell_ids_good_cells[cell_idx], xy=((DAP_deflection_good_cells[cell_idx] > 0).astype(int),
+    #                                                    spatial_info_good_cells[cell_idx]))
+    # pl.errorbar(-0.1, np.mean(spatial_info_good_cells[DAP_deflection_good_cells == 0]),
+    #             yerr=np.std(spatial_info_good_cells[DAP_deflection_good_cells == 0]), color='k', capsize=2, marker='o')
+    # pl.errorbar(0.9, np.mean(spatial_info_good_cells[DAP_deflection_good_cells > 0]),
+    #             yerr=np.std(spatial_info_good_cells[DAP_deflection_good_cells > 0]), color='k', capsize=2, marker='o')
+    # pl.ylabel('Spatial information')
+    # pl.xlabel('DAP')
+    # pl.xlim(-1, 2)
+    # pl.xticks([0, 1], ['no', 'yes'])
+    # pl.tight_layout()
+    # pl.savefig(os.path.join(save_dir_img, 'DAP_vs_spatial_info.png'))
 
-    peak_ISI_hist_good_cells = np.array([(p[0] + p[1]) / 2. for p in peak_ISI_hist_good_cells])
-    pl.figure()
-    pl.plot(np.zeros(len(cell_ids_good_cells))[DAP_deflection_good_cells == 0],
-            peak_ISI_hist_good_cells[DAP_deflection_good_cells == 0], 'o', color='0.5')
-    pl.plot(np.ones(len(cell_ids_good_cells))[DAP_deflection_good_cells > 0],
-            peak_ISI_hist_good_cells[DAP_deflection_good_cells > 0], 'o', color='0.5')
-    for cell_idx in range(len(cell_ids_good_cells)):
-        pl.annotate(cell_ids_good_cells[cell_idx], xy=((DAP_deflection_good_cells[cell_idx] > 0).astype(int),
-                                                       peak_ISI_hist_good_cells[cell_idx]))
-    pl.errorbar(-0.1, np.mean(peak_ISI_hist_good_cells[DAP_deflection_good_cells == 0]),
-                yerr=np.std(peak_ISI_hist_good_cells[DAP_deflection_good_cells == 0]), color='k', capsize=2, marker='o')
-    pl.errorbar(0.9, np.mean(peak_ISI_hist_good_cells[DAP_deflection_good_cells > 0]),
-                yerr=np.std(peak_ISI_hist_good_cells[DAP_deflection_good_cells > 0]), color='k', capsize=2, marker='o')
-    pl.ylabel('Peak of ISI hist. (ms)')
-    pl.xlabel('DAP')
-    pl.xlim(-1, 2)
-    pl.xticks([0, 1], ['no', 'yes'])
-    pl.tight_layout()
-    pl.savefig(os.path.join(save_dir_img, 'DAP_vs_peak_ISI_hist.png'))
+    # peak_ISI_hist_good_cells = np.array([(p[0] + p[1]) / 2. for p in peak_ISI_hist_good_cells])
+    # pl.figure()
+    # pl.plot(np.zeros(len(cell_ids_good_cells))[DAP_deflection_good_cells == 0],
+    #         peak_ISI_hist_good_cells[DAP_deflection_good_cells == 0], 'o', color='0.5')
+    # pl.plot(np.ones(len(cell_ids_good_cells))[DAP_deflection_good_cells > 0],
+    #         peak_ISI_hist_good_cells[DAP_deflection_good_cells > 0], 'o', color='0.5')
+    # for cell_idx in range(len(cell_ids_good_cells)):
+    #     pl.annotate(cell_ids_good_cells[cell_idx], xy=((DAP_deflection_good_cells[cell_idx] > 0).astype(int),
+    #                                                    peak_ISI_hist_good_cells[cell_idx]))
+    # pl.errorbar(-0.1, np.mean(peak_ISI_hist_good_cells[DAP_deflection_good_cells == 0]),
+    #             yerr=np.std(peak_ISI_hist_good_cells[DAP_deflection_good_cells == 0]), color='k', capsize=2, marker='o')
+    # pl.errorbar(0.9, np.mean(peak_ISI_hist_good_cells[DAP_deflection_good_cells > 0]),
+    #             yerr=np.std(peak_ISI_hist_good_cells[DAP_deflection_good_cells > 0]), color='k', capsize=2, marker='o')
+    # pl.ylabel('Peak of ISI hist. (ms)')
+    # pl.xlabel('DAP')
+    # pl.xlim(-1, 2)
+    # pl.xticks([0, 1], ['no', 'yes'])
+    # pl.tight_layout()
+    # pl.savefig(os.path.join(save_dir_img, 'DAP_vs_peak_ISI_hist.png'))
 
-    peak_ISI_hist = np.array([(p[0] + p[1]) / 2. for p in peak_ISI_hist])  # set middle of bin as peak
-    pl.figure()
-    pl.plot(DAP_time, peak_ISI_hist, 'o', color='0.5')
-    for cell_idx in range(len(cell_ids)):
-        pl.annotate(cell_ids[cell_idx], xy=(DAP_time[cell_idx], peak_ISI_hist[cell_idx]))
-    pl.xlim(0, 10)
-    pl.ylim(0, 10)
-    pl.ylabel('Peak of ISI hist. (ms)')
-    pl.xlabel('DAP time (ms)')
-    pl.tight_layout()
-    pl.savefig(os.path.join(save_dir_img, 'DAP_time_vs_ISI_peak.png'))
+    # peak_ISI_hist = np.array([(p[0] + p[1]) / 2. for p in peak_ISI_hist])  # set middle of bin as peak
+    # pl.figure()
+    # pl.plot(DAP_time, peak_ISI_hist, 'o', color='0.5')
+    # for cell_idx in range(len(cell_ids)):
+    #     pl.annotate(cell_ids[cell_idx], xy=(DAP_time[cell_idx], peak_ISI_hist[cell_idx]))
+    # pl.xlim(0, 10)
+    # pl.ylim(0, 10)
+    # pl.ylabel('Peak of ISI hist. (ms)')
+    # pl.xlabel('DAP time (ms)')
+    # pl.tight_layout()
+    # pl.savefig(os.path.join(save_dir_img, 'DAP_time_vs_ISI_peak.png'))
 
-    pl.figure()
-    pl.plot(DAP_time, peak_auto_corr, 'o', color='0.5')
-    for cell_idx in range(len(cell_ids)):
-        pl.annotate(cell_ids[cell_idx], xy=(DAP_time[cell_idx], peak_auto_corr[cell_idx]))
-    pl.xlim(0, 20)
-    pl.ylim(0, 20)
-    pl.ylabel('Peak of auto-correlation (ms)')
-    pl.xlabel('DAP time (ms)')
-    pl.tight_layout()
-    pl.savefig(os.path.join(save_dir_img, 'DAP_time_vs_auto_corr_peak.png'))
+    # pl.figure()
+    # pl.plot(DAP_time, peak_auto_corr, 'o', color='0.5')
+    # for cell_idx in range(len(cell_ids)):
+    #     pl.annotate(cell_ids[cell_idx], xy=(DAP_time[cell_idx], peak_auto_corr[cell_idx]))
+    # pl.xlim(0, 20)
+    # pl.ylim(0, 20)
+    # pl.ylabel('Peak of auto-correlation (ms)')
+    # pl.xlabel('DAP time (ms)')
+    # pl.tight_layout()
+    # pl.savefig(os.path.join(save_dir_img, 'DAP_time_vs_auto_corr_peak.png'))
 
     pl.figure()
     pl.plot(AP_amp, DAP_deflection, 'ok')
@@ -141,5 +144,27 @@ if __name__ == '__main__':
     pl.xlabel('AP width (ms)')
     pl.tight_layout()
     pl.savefig(os.path.join(save_dir_img, 'DAP_deflection_vs_AP_width.png'))
+
+    kmeans = KMeans(n_clusters=2)
+    labels = kmeans.fit(np.vstack((AP_width, AP_amp)).T).labels_.astype(bool)
+    fig = pl.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    ax.plot(AP_width[labels], AP_amp[labels], DAP_deflection[labels], 'or')
+    ax.plot(AP_width[~labels], AP_amp[~labels], DAP_deflection[~labels], 'ob')
+    ax.set_xlabel('AP width (ms)')
+    ax.set_ylabel('AP amp. (mV)')
+    ax.set_zlabel('DAP deflection (mV)')
+    ax.view_init(elev=28, azim=38)
+    pl.tight_layout()
+    pl.savefig(os.path.join(save_dir_img, 'DAP_deflection_vs_AP_width_vs_AP_amp.png'))
+
+    # fig = pl.figure()
+    # ax = fig.add_subplot(111, projection='3d')
+    # ax.plot(AP_amp, AP_width, DAP_deflection, 'ok')
+    # ax.set_zlabel('DAP deflection (mV)')
+    # ax.set_ylabel('AP width (ms)')
+    # ax.set_xlabel('AP amp. (mV)')
+    # pl.tight_layout()
+    # pl.savefig(os.path.join(save_dir_img, 'DAP_deflection_vs_AP_width_vs_AP_amp.png'))
 
     pl.show()

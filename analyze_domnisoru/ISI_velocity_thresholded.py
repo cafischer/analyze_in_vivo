@@ -116,8 +116,6 @@ if __name__ == '__main__':
             ax.annotate('$<$ vel. thresh.', xy=(1, np.max(freqs)), textcoords='data',
                         horizontalalignment='left', verticalalignment='top', fontsize=9)
 
-        return [ax_twin]
-
     plot_kwargs = dict(steps=steps,
                        ISIs_above_cells=ISIs_above_cells, cum_ISI_hist_y_above=cum_ISI_hist_y_above,
                        cum_ISI_hist_x_above=cum_ISI_hist_x_above,

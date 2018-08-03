@@ -10,7 +10,7 @@ from grid_cell_stimuli import get_AP_max_idxs, find_all_AP_traces
 from cell_fitting.util import init_nan
 from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_for_all_grid_cells, plot_for_cell_group
 from analyze_in_vivo.analyze_domnisoru.position_vs_firing_rate import threshold_by_velocity, get_spike_train
-pl.style.use('paper')
+pl.style.use('paper_subplots')
 
 
 def get_in_or_out_field_AP_max_idxs(kind, AP_max_idxs, velocity, cell_id, save_dir):
@@ -59,13 +59,12 @@ if __name__ == '__main__':
     save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
     cell_type = 'grid_cells'
     cell_ids = load_cell_ids(save_dir, cell_type)
-    cell_ids.remove('s66_0003')
 
     # parameters
     use_AP_max_idxs_domnisoru = True
     do_detrend = False
-    kind = 'in_field'
-    before_AP_sta = 25
+    kind = 'all'
+    before_AP_sta = 10
     after_AP_sta = 25
     bins_v = np.arange(-90, 40+0.5, 0.5)
     AP_thresholds = {'s73_0004': -50, 's90_0006': -45, 's82_0002': -38,
@@ -152,7 +151,7 @@ if __name__ == '__main__':
     def plot_sta(ax, cell_idx, t_AP, sta_mean_cells, sta_std_cells):
         ax.plot(t_AP, sta_mean_cells[cell_idx], 'k')
         ax.fill_between(t_AP, sta_mean_cells[cell_idx] - sta_std_cells[cell_idx],
-                                  sta_mean_cells[cell_idx] + sta_std_cells[cell_idx], color='k', alpha=0.5)
+                        sta_mean_cells[cell_idx] + sta_std_cells[cell_idx], color='0.6')
 
     plot_kwargs = dict(t_AP=t_AP, sta_mean_cells=sta_mean_cells, sta_std_cells=sta_std_cells)
 
@@ -165,19 +164,18 @@ if __name__ == '__main__':
                                 xlabel='Time (ms)', ylabel='Mem. pot. (mV)', figsize=None,
                                 save_dir_img=os.path.join(save_dir_img, 'sta.png'))
 
+    # voltage histogram over time
+    def plot_v_hist(ax, cell_idx, t_AP, bins_v, v_hist_cells, before_AP_sta, after_AP_sta):
+        x, y = np.meshgrid(t_AP, bins_v[:-1])
+        ax.pcolor(x, y, v_hist_cells[cell_idx])
+        ax.set_xlim(t_AP[0], t_AP[-1])
+        ax.set_ylim(-90, -30)
 
-    # # voltage histogram over time
-    # def plot_v_hist(ax, cell_idx, t_AP, bins_v, v_hist_cells, before_AP_sta, after_AP_sta):
-    #     x, y = np.meshgrid(t_AP, bins_v[:-1])
-    #     ax.pcolor(x, y, v_hist_cells[cell_idx])
-    #     ax.set_xlim(t_AP[0], t_AP[-1])
-    #     ax.set_ylim(-90, -30)
-    #
-    # plot_kwargs = dict(t_AP=t_AP, bins_v=bins_v, v_hist_cells=v_hist_cells, before_AP_sta=before_AP_sta,
-    #                    after_AP_sta=after_AP_sta)
-    # if cell_type == 'grid_cells':
-    #   plot_for_all_grid_cells(cell_ids, get_celltype_dict(save_dir), plot_v_hist, plot_kwargs,
-    #                           xlabel='Time (ms)', ylabel='Mem. pot. distr. (mV)',
-    #                           save_dir_img=os.path.join(save_dir_img, 'v_hist.png'))
+    plot_kwargs = dict(t_AP=t_AP, bins_v=bins_v, v_hist_cells=v_hist_cells, before_AP_sta=before_AP_sta,
+                       after_AP_sta=after_AP_sta)
+    if cell_type == 'grid_cells':
+      plot_for_all_grid_cells(cell_ids, get_celltype_dict(save_dir), plot_v_hist, plot_kwargs,
+                              xlabel='Time (ms)', ylabel='Mem. pot. distr. (mV)',
+                              save_dir_img=os.path.join(save_dir_img, 'v_hist.png'))
 
     pl.show()

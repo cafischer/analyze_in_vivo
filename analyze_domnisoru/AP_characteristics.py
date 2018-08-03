@@ -14,14 +14,14 @@ pl.style.use('paper')
 
 
 if __name__ == '__main__':
-    save_dir_characteristics = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/AP_characteristics'
+    save_dir_characteristics = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/AP_characteristics/'
     save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
     cell_type = 'grid_cells'
     cell_ids = load_cell_ids(save_dir, cell_type)
     param_list = ['Vm_ljpc', 'spiketimes', 'vel_100ms']
 
     # parameters
-    kind = 'in_field'
+    kind = 'all'
     use_AP_max_idxs_domnisoru = True
     before_AP_sta = 25
     after_AP_sta = 25

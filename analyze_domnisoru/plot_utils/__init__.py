@@ -68,12 +68,12 @@ def plot_for_cell_group(cell_ids, cell_type_dict, plot_fun, plot_kwargs, xlabel,
     fig, axes = pl.subplots(n_rows, n_columns, sharey=sharey, sharex=sharex, squeeze=False,
                             figsize=figsize)
     if fig_title is not None:
-        fig.suptitle(fig_title, fontsize=16)
+        fig.suptitle(fig_title, fontsize=14)
     cell_idx = 0
     for i1 in range(n_rows):
         for i2 in range(n_columns):
             if cell_idx < len(cell_ids):
-                axes[i1, i2].set_title(get_cell_id_with_marker(cell_ids[cell_idx], cell_type_dict), fontsize=12)
+                axes[i1, i2].set_title(get_cell_id_with_marker(cell_ids[cell_idx], cell_type_dict))
 
                 plot_fun(axes[i1, i2], cell_idx, **plot_kwargs)
 
@@ -85,8 +85,7 @@ def plot_for_cell_group(cell_ids, cell_type_dict, plot_fun, plot_kwargs, xlabel,
             else:
                 axes[i1, i2].spines['left'].set_visible(False)
                 axes[i1, i2].spines['bottom'].set_visible(False)
-                axes[i1, i2].set_xticks([])
-                axes[i1, i2].set_yticks([])
+                axes[i1, i2].tick_params(left=False, bottom=False, labelleft=False, labelbottom=False)
     pl.tight_layout()
     if fig_title is not None:
         pl.subplots_adjust(top=0.92)
@@ -125,14 +124,14 @@ def plot_for_cell_group_grid(cell_ids, cell_type_dict, plot_fun, plot_kwargs, xl
                     fig.add_subplot(ax)
 
                     if subplot_idx == 0:
-                        ax.set_title(get_cell_id_with_marker(cell_ids[cell_idx], cell_type_dict), fontsize=12)
+                        ax.set_title(get_cell_id_with_marker(cell_ids[cell_idx], cell_type_dict))
 
                     if i1 == (n_rows - 1):
-                        ax.set_xlabel(xlabel, fontsize=12)
+                        ax.set_xlabel(xlabel)
                     if i2 == 0:
-                        ax.set_ylabel(ylabel, fontsize=12)
-                    ax.xaxis.set_tick_params(labelsize=10)
-                    ax.yaxis.set_tick_params(labelsize=10)
+                        ax.set_ylabel(ylabel)
+                    ax.xaxis.set_tick_params()
+                    ax.yaxis.set_tick_params()
 
                     plot_fun(ax, cell_idx, subplot_idx, **plot_kwargs)
                 cell_idx += 1

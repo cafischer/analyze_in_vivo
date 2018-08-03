@@ -33,6 +33,19 @@ def auto_correlate(x, max_lag=0):
     return auto_corr
 
 
+def change_bin_size_of_spike_train(spike_train, bin_size, dt):
+    bin_change = bin_size / dt
+    spike_train_new = np.zeros(int(round(len(spike_train) / bin_change)))
+    for i in range(len(spike_train_new)):
+        if sum(spike_train[i * int(bin_change):(i + 1) * int(bin_change)] == 1) == 1:
+            spike_train_new[i] = 1
+        elif sum(spike_train[i * int(bin_change):(i + 1) * int(bin_change)] == 1) == 0:
+            spike_train_new[i] = 0
+        else:
+            warnings.warn('More than one spike in bin!')
+    return spike_train_new
+
+
 if __name__ == '__main__':
     save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/spike_time_auto_corr'
     save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
@@ -77,15 +90,7 @@ if __name__ == '__main__':
         spike_train = get_spike_train(AP_max_idxs, len(v))  # for norm to firing rate: spike_train / len(AP_max_idxs)
 
         # change to bin size
-        bin_change = bin_size / dt
-        spike_train_new = np.zeros(int(round(len(spike_train) / bin_change)))
-        for i in range(len(spike_train_new)):
-            if sum(spike_train[i * int(bin_change):(i + 1) * int(bin_change)] == 1) == 1:
-                spike_train_new[i] = 1
-            elif sum(spike_train[i * int(bin_change):(i + 1) * int(bin_change)] == 1) == 0:
-                spike_train_new[i] = 0
-            else:
-                warnings.warn('More than one spike in bin!')
+        spike_train_new = change_bin_size_of_spike_train()
 
         # pl.figure()
         # pl.plot(t[spike_train==1], spike_train[spike_train==1], 'ok')
