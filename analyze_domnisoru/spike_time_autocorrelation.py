@@ -58,7 +58,7 @@ if __name__ == '__main__':
 
     # parameters
     bin_size = 1.0  # ms
-    max_lag = 250
+    max_lag = 50
     use_AP_max_idxs_domnisoru = True
     save_dir_img = os.path.join(save_dir_img, cell_type)
     max_lag_idx = to_idx(max_lag, bin_size)
@@ -90,7 +90,7 @@ if __name__ == '__main__':
         spike_train = get_spike_train(AP_max_idxs, len(v))  # for norm to firing rate: spike_train / len(AP_max_idxs)
 
         # change to bin size
-        spike_train_new = change_bin_size_of_spike_train()
+        spike_train_new = change_bin_size_of_spike_train(spike_train, bin_size, dt)
 
         # pl.figure()
         # pl.plot(t[spike_train==1], spike_train[spike_train==1], 'ok')

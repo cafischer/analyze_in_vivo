@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as pl
 from mpl_toolkits.mplot3d import Axes3D
 import os
-from analyze_in_vivo.load.load_domnisoru import load_cell_ids
+from analyze_in_vivo.load.load_domnisoru import load_cell_ids, get_cell_ids_DAP_cells, get_celltype_dict
 from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_with_markers
 from sklearn.cluster import KMeans
 pl.style.use('paper')
@@ -25,6 +25,10 @@ if __name__ == '__main__':
     save_dir_img = os.path.join(save_dir_img, cell_type)
     if not os.path.exists(save_dir_img):
         os.makedirs(save_dir_img)
+
+    theta_cells = load_cell_ids(save_dir, 'giant_theta')
+    DAP_cells = get_cell_ids_DAP_cells()
+    cell_type_dict = get_celltype_dict(save_dir)
 
     fraction_burst = np.load(os.path.join(save_dir_burst, cell_type, 'fraction_burst.npy'))
     spatial_info = np.load(os.path.join(save_dir_spat_info, cell_type, 'spatial_info.npy'))
@@ -48,24 +52,24 @@ if __name__ == '__main__':
     cell_ids_good_cells = np.array(cell_ids)[good_cell_indicator]
 
     # plots
-    pl.figure()
-    pl.plot(np.zeros(len(cell_ids_good_cells))[DAP_deflection_good_cells == 0],
-            fraction_burst_good_cells[DAP_deflection_good_cells == 0], 'o', color='0.5')
-    pl.plot(np.ones(len(cell_ids_good_cells))[DAP_deflection_good_cells > 0],
-            fraction_burst_good_cells[DAP_deflection_good_cells > 0], 'o', color='0.5')
-    for cell_idx in range(len(cell_ids_good_cells)):
-        pl.annotate(cell_ids_good_cells[cell_idx], xy=((DAP_deflection_good_cells[cell_idx] > 0).astype(int),
-                                                       fraction_burst_good_cells[cell_idx]))
-    pl.errorbar(-0.1, np.mean(fraction_burst_good_cells[DAP_deflection_good_cells == 0]),
-            yerr=np.std(fraction_burst_good_cells[DAP_deflection_good_cells == 0]), color='k', capsize=2, marker='o')
-    pl.errorbar(0.9, np.mean(fraction_burst_good_cells[DAP_deflection_good_cells > 0]),
-            yerr=np.std(fraction_burst_good_cells[DAP_deflection_good_cells > 0]), color='k', capsize=2, marker='o')
-    pl.xlim(-1, 2)
-    pl.xticks([0, 1], ['no', 'yes'])
-    pl.ylabel('Fraction ISI < 8 ms')
-    pl.xlabel('DAP')
-    pl.tight_layout()
-    pl.savefig(os.path.join(save_dir_img, 'DAP_vs_frac_burst.png'))
+    # pl.figure()
+    # pl.plot(np.zeros(len(cell_ids_good_cells))[DAP_deflection_good_cells == 0],
+    #         fraction_burst_good_cells[DAP_deflection_good_cells == 0], 'o', color='0.5')
+    # pl.plot(np.ones(len(cell_ids_good_cells))[DAP_deflection_good_cells > 0],
+    #         fraction_burst_good_cells[DAP_deflection_good_cells > 0], 'o', color='0.5')
+    # for cell_idx in range(len(cell_ids_good_cells)):
+    #     pl.annotate(cell_ids_good_cells[cell_idx], xy=((DAP_deflection_good_cells[cell_idx] > 0).astype(int),
+    #                                                    fraction_burst_good_cells[cell_idx]))
+    # pl.errorbar(-0.1, np.mean(fraction_burst_good_cells[DAP_deflection_good_cells == 0]),
+    #         yerr=np.std(fraction_burst_good_cells[DAP_deflection_good_cells == 0]), color='k', capsize=2, marker='o')
+    # pl.errorbar(0.9, np.mean(fraction_burst_good_cells[DAP_deflection_good_cells > 0]),
+    #         yerr=np.std(fraction_burst_good_cells[DAP_deflection_good_cells > 0]), color='k', capsize=2, marker='o')
+    # pl.xlim(-1, 2)
+    # pl.xticks([0, 1], ['no', 'yes'])
+    # pl.ylabel('Fraction ISI < 8 ms')
+    # pl.xlabel('DAP')
+    # pl.tight_layout()
+    # pl.savefig(os.path.join(save_dir_img, 'DAP_vs_frac_burst.png'))
 
     # pl.figure()
     # pl.plot(np.zeros(len(cell_ids_good_cells))[DAP_deflection_good_cells == 0],
@@ -106,17 +110,19 @@ if __name__ == '__main__':
     # pl.tight_layout()
     # pl.savefig(os.path.join(save_dir_img, 'DAP_vs_peak_ISI_hist.png'))
 
-    # peak_ISI_hist = np.array([(p[0] + p[1]) / 2. for p in peak_ISI_hist])  # set middle of bin as peak
-    # pl.figure()
-    # pl.plot(DAP_time, peak_ISI_hist, 'o', color='0.5')
+    peak_ISI_hist = np.array([(p[0] + p[1]) / 2. for p in peak_ISI_hist])  # set middle of bin as peak
+    fig, ax = pl.subplots()
+    plot_with_markers(ax, DAP_time, peak_ISI_hist, cell_ids, cell_type_dict,
+                      theta_cells=theta_cells, DAP_cells=DAP_cells)
+    pl.plot(np.arange(0, 10), np.arange(0, 10), '0.5', linestyle='--')
     # for cell_idx in range(len(cell_ids)):
     #     pl.annotate(cell_ids[cell_idx], xy=(DAP_time[cell_idx], peak_ISI_hist[cell_idx]))
-    # pl.xlim(0, 10)
-    # pl.ylim(0, 10)
-    # pl.ylabel('Peak of ISI hist. (ms)')
-    # pl.xlabel('DAP time (ms)')
-    # pl.tight_layout()
-    # pl.savefig(os.path.join(save_dir_img, 'DAP_time_vs_ISI_peak.png'))
+    pl.xlim(0, 10)
+    pl.ylim(0, 10)
+    pl.ylabel('Peak of ISI hist. (ms)')
+    pl.xlabel('DAP time (ms)')
+    pl.tight_layout()
+    pl.savefig(os.path.join(save_dir_img, 'DAP_time_vs_ISI_peak.png'))
 
     # pl.figure()
     # pl.plot(DAP_time, peak_auto_corr, 'o', color='0.5')
@@ -129,17 +135,19 @@ if __name__ == '__main__':
     # pl.tight_layout()
     # pl.savefig(os.path.join(save_dir_img, 'DAP_time_vs_auto_corr_peak.png'))
 
-    pl.figure()
-    pl.plot(AP_amp, DAP_deflection, 'ok')
+    fig, ax = pl.subplots()
+    plot_with_markers(ax, AP_amp, DAP_deflection, cell_ids, cell_type_dict, theta_cells=theta_cells,
+                      DAP_cells=DAP_cells)
     pl.ylabel('DAP deflection (mV)')
     pl.xlabel('AP amplitude (mV)')
     pl.tight_layout()
     pl.savefig(os.path.join(save_dir_img, 'DAP_deflection_vs_AP_amp.png'))
 
-    print 'Low AP width: '
-    print np.array(cell_ids)[AP_width < 0.7]
-    pl.figure()
-    pl.plot(AP_width, DAP_deflection, 'ok')
+    # print 'Low AP width: '
+    # print np.array(cell_ids)[AP_width < 0.7]
+    fig, ax = pl.subplots()
+    plot_with_markers(ax, AP_width, DAP_deflection, cell_ids, cell_type_dict, theta_cells=theta_cells,
+                      DAP_cells=DAP_cells)
     pl.ylabel('DAP deflection (mV)')
     pl.xlabel('AP width (ms)')
     pl.tight_layout()
@@ -149,22 +157,31 @@ if __name__ == '__main__':
     labels = kmeans.fit(np.vstack((AP_width, AP_amp)).T).labels_.astype(bool)
     fig = pl.figure()
     ax = fig.add_subplot(111, projection='3d')
-    ax.plot(AP_width[labels], AP_amp[labels], DAP_deflection[labels], 'or')
-    ax.plot(AP_width[~labels], AP_amp[~labels], DAP_deflection[~labels], 'ob')
+    plot_with_markers(ax, AP_width[labels], AP_amp[labels], np.array(cell_ids)[labels], cell_type_dict, DAP_deflection[labels], 'r',
+                      theta_cells, DAP_cells)
+    plot_with_markers(ax, AP_width[~labels], AP_amp[~labels], np.array(cell_ids)[~labels], cell_type_dict, DAP_deflection[~labels], 'b',
+                      theta_cells, DAP_cells)
+    # ax.plot(AP_width[labels], AP_amp[labels], DAP_deflection[labels], 'or')
+    # ax.plot(AP_width[~labels], AP_amp[~labels], DAP_deflection[~labels], 'ob')
     ax.set_xlabel('AP width (ms)')
     ax.set_ylabel('AP amp. (mV)')
     ax.set_zlabel('DAP deflection (mV)')
     ax.view_init(elev=28, azim=38)
+
+    # legend
+    fig_fake, ax_fake = pl.subplots()
+    handles = [ax_fake.scatter(0, 0, marker='o', s=100, linewidths=0.8,
+                               edgecolor='r', facecolor='None', label='Cluster 1'),
+               ax_fake.scatter(0, 0, marker='o', s=100, linewidths=0.8,
+                                    edgecolor='b', facecolor='None', label='Cluster 2')]
+    box = ax.get_position()
+    ax.set_position([box.x0, box.y0, box.width, box.height])
+    ax.legend(handles=handles, loc='top right', bbox_to_anchor=(1.0, 0.1))
+    pl.close(fig_fake)
+
     pl.tight_layout()
     pl.savefig(os.path.join(save_dir_img, 'DAP_deflection_vs_AP_width_vs_AP_amp.png'))
-
-    # fig = pl.figure()
-    # ax = fig.add_subplot(111, projection='3d')
-    # ax.plot(AP_amp, AP_width, DAP_deflection, 'ok')
-    # ax.set_zlabel('DAP deflection (mV)')
-    # ax.set_ylabel('AP width (ms)')
-    # ax.set_xlabel('AP amp. (mV)')
-    # pl.tight_layout()
-    # pl.savefig(os.path.join(save_dir_img, 'DAP_deflection_vs_AP_width_vs_AP_amp.png'))
+    print np.array(cell_ids)[labels]
+    print np.array(cell_ids)[~labels]
 
     pl.show()

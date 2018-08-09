@@ -5,12 +5,12 @@ import os
 from grid_cell_stimuli import get_AP_max_idxs
 from grid_cell_stimuli.ISI_hist import get_ISIs, get_ISI_hist, get_cumulative_ISI_hist, \
     plot_ISI_hist, plot_cumulative_ISI_hist, plot_cumulative_ISI_hist_all_cells, plot_cumulative_comparison_all_cells
-from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data, get_celltype_dict
+from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data, get_celltype_dict, get_cell_ids_good_recording
 from scipy.stats import ks_2samp
 from itertools import combinations
 from analyze_in_vivo.analyze_domnisoru.check_basic.in_out_field import get_starts_ends_group_of_ones
-from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_for_all_grid_cells
-pl.style.use('paper')
+from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_for_all_grid_cells, plot_for_cell_group
+pl.style.use('paper_subplots')
 
 
 if __name__ == '__main__':
@@ -18,8 +18,8 @@ if __name__ == '__main__':
     # between successive spikes varies
     save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/ISI_hist'
     save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
-    cell_type = 'grid_cells'
     cell_type_dict = get_celltype_dict(save_dir)
+    cell_type = 'grid_cells'
     cell_ids = load_cell_ids(save_dir, cell_type)
     param_list = ['Vm_ljpc', 'spiketimes']
     AP_thresholds = {'s73_0004': -55, 's90_0006': -45, 's82_0002': -35, 's117_0002': -60, 's119_0004': -50,
@@ -140,8 +140,35 @@ if __name__ == '__main__':
         plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_ISI_hist, plot_kwargs,
                                 xlabel='ISI (ms)', ylabel='Rel. frequency',
                                 save_dir_img=os.path.join(save_dir_img, 'ISI_hist'+str(bin_width)+'.png'))
+    else:
+        def plot_ISI_hist(ax, cell_idx, fraction_ISIs_filtered, ISI_hist, cum_ISI_hist_x, cum_ISI_hist_y):
+            if filter_long_ISIs:
+                ax.annotate('%i%%<200 ms' % int(round(fraction_ISIs_filtered[cell_idx] * 100)),
+                            xy=(0.07, 0.98), xycoords='axes fraction', fontsize=8, ha='left', va='top',
+                            bbox=dict(boxstyle='round', fc='w', edgecolor='0.8', alpha=0.8))
+
+            ax.bar(bins[:-1], ISI_hist[cell_idx, :] / (np.sum(ISI_hist[cell_idx, :]) * bin_width),
+                   bins[1] - bins[0], color='0.5', align='edge')
+            cum_ISI_hist_x_with_end = np.insert(cum_ISI_hist_x[cell_idx], len(cum_ISI_hist_x[cell_idx]), max_ISI)
+            cum_ISI_hist_y_with_end = np.insert(cum_ISI_hist_y[cell_idx], len(cum_ISI_hist_y[cell_idx]), 1.0)
+            ax_twin = ax.twinx()
+            ax_twin.plot(cum_ISI_hist_x_with_end, cum_ISI_hist_y_with_end, color='k', drawstyle='steps-post')
+            ax_twin.set_xlim(0, max_ISI)
+            ax_twin.set_ylim(0, 1)
+            if (cell_idx + 1) % 9 == 0:
+                ax_twin.set_yticks([0, 1])
+            else:
+                ax_twin.set_yticks([])
+            ax.spines['right'].set_visible(True)
 
 
+        plot_kwargs = dict(fraction_ISIs_filtered=fraction_ISIs_filtered, ISI_hist=ISI_hist,
+                           cum_ISI_hist_x=cum_ISI_hist_x, cum_ISI_hist_y=cum_ISI_hist_y)
+        plot_for_cell_group(cell_ids, cell_type_dict, plot_ISI_hist, plot_kwargs,
+                                xlabel='ISI (ms)', ylabel='Rel. frequency', figsize=(7, 7),
+                                save_dir_img=os.path.join(save_dir_img, 'ISI_hist' + str(bin_width) + '.png'))
+
+    if cell_type == 'grid_cells':
         def plot_fraction_burst(ax, cell_idx, fraction_burst):
             ax.bar(0.5, fraction_burst[cell_idx],
                    0.4, color='0.5')
@@ -153,17 +180,18 @@ if __name__ == '__main__':
                                 xlabel='', ylabel='Fraction burst',
                                 save_dir_img=os.path.join(save_dir_img, 'fraction_burst' + str(bin_width) + '.png'))
 
-    pl.figure()
-    pl.plot(len_recording / 1000.0, fraction_ISIs_filtered, 'ok')
-    pl.xlabel('Dur. recording (s)')
-    pl.ylabel('Fraction ISI < 200 ms')
-    pl.tight_layout()
-    pl.savefig(os.path.join(save_dir_img, 'dur_rec_vs_fraction_ISI.png'))
+    # pl.figure()
+    # pl.plot(len_recording / 1000.0, fraction_ISIs_filtered, 'ok')
+    # pl.xlabel('Dur. recording (s)')
+    # pl.ylabel('Fraction ISI < 200 ms')
+    # pl.tight_layout()
+    # pl.savefig(os.path.join(save_dir_img, 'dur_rec_vs_fraction_ISI.png'))
+    #
+    # pl.figure()
+    # pl.plot(firing_rate / 1000.0, fraction_ISIs_filtered, 'ok')
+    # pl.xlabel('Firing rate (Hz)')
+    # pl.ylabel('Fraction ISI < 200 ms')
+    # pl.tight_layout()
+    # pl.savefig(os.path.join(save_dir_img, 'firing_rate_vs_fraction_ISI.png'))
 
-    pl.figure()
-    pl.plot(firing_rate / 1000.0, fraction_ISIs_filtered, 'ok')
-    pl.xlabel('Firing rate (Hz)')
-    pl.ylabel('Fraction ISI < 200 ms')
-    pl.tight_layout()
-    pl.savefig(os.path.join(save_dir_img, 'firing_rate_vs_fraction_ISI.png'))
-    #pl.show()
+    pl.show()

@@ -23,7 +23,7 @@ if __name__ == '__main__':
     # parameters
     kind = 'all'
     use_AP_max_idxs_domnisoru = True
-    before_AP_sta = 25
+    before_AP_sta = 10
     after_AP_sta = 25
 
     save_dir_characteristics = os.path.join(save_dir_characteristics, kind, cell_type)
@@ -66,9 +66,12 @@ if __name__ == '__main__':
         spike_characteristics_dict['AP_max_idx'] = before_AP_idx
         spike_characteristics_dict['AP_onset'] = before_AP_idx - to_idx(1, dt)
         AP_amp_per_cell[cell_idx], AP_width_per_cell[cell_idx], DAP_deflection_per_cell[cell_idx], \
-        DAP_width_per_cell[cell_idx], DAP_time_per_cell[cell_idx], DAP_max_idx = get_spike_characteristics(sta_mean, t_AP,
-                                                                                              ['AP_amp', 'AP_width', 'DAP_deflection',
-                                                                                               'DAP_width', 'DAP_time', 'DAP_max_idx'],
+        DAP_width_per_cell[cell_idx], DAP_time_per_cell[cell_idx], DAP_max_idx = get_spike_characteristics(sta_mean,
+                                                                                                           t_AP,
+                                                                                              ['AP_amp', 'AP_width',
+                                                                                               'DAP_deflection',
+                                                                                               'DAP_width', 'DAP_time',
+                                                                                               'DAP_max_idx'],
                                                                                               sta_mean[0], check=False,
                                                                                               **spike_characteristics_dict)
 

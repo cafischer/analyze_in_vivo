@@ -74,6 +74,15 @@ def load_cell_ids(save_dir, cell_type='grid_cells'):
     return cell_ids
 
 
+def get_cell_ids_DAP_cells():
+    return ['s79_0003', 's104_0007', 's109_0002', 's110_0002', 's119_0004']
+
+
+def get_cell_ids_good_recording():
+    return ['s74_0006', 's79_0003', 's82_0002', 's84_0002', 's85_0007', 's104_0007', 's109_0002', 's110_0002',
+            's119_0004']
+
+
 def get_celltype_dict(save_dir):
     with open(os.path.join(save_dir, 'cell_types.json'), 'r') as f:
         cell_type_dict = json.load(f)

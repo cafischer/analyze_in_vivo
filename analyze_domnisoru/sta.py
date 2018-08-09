@@ -5,7 +5,7 @@ import os
 from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data, load_field_indices, get_celltype_dict
 from analyze_in_vivo.analyze_schmidt_hieber import detrend
 from cell_characteristics import to_idx
-from cell_characteristics.sta_stc import get_sta, plot_sta, get_sta_median, plot_APs
+from cell_characteristics.sta_stc import get_sta, get_sta_median, plot_APs
 from grid_cell_stimuli import get_AP_max_idxs, find_all_AP_traces
 from cell_fitting.util import init_nan
 from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_for_all_grid_cells, plot_for_cell_group
@@ -53,6 +53,18 @@ def get_in_or_out_field_AP_max_idxs(kind, AP_max_idxs, velocity, cell_id, save_d
     return AP_max_idxs_selected
 
 
+def plot_sta(ax, cell_idx, t_AP, sta_mean_cells, sta_std_cells):
+    ax.plot(t_AP, sta_mean_cells[cell_idx], 'k')
+    ax.fill_between(t_AP, sta_mean_cells[cell_idx] - sta_std_cells[cell_idx],
+                    sta_mean_cells[cell_idx] + sta_std_cells[cell_idx], color='0.6')
+
+
+def plot_v_hist(ax, cell_idx, t_AP, bins_v, v_hist_cells):
+    x, y = np.meshgrid(t_AP, bins_v[:-1])
+    ax.pcolor(x, y, v_hist_cells[cell_idx], cmap='gray_r')
+    ax.set_xlim(t_AP[0], t_AP[-1])
+
+
 if __name__ == '__main__':
     save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/STA'
     save_dir_in_out_field = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/in_out_field'
@@ -64,9 +76,9 @@ if __name__ == '__main__':
     use_AP_max_idxs_domnisoru = True
     do_detrend = False
     kind = 'all'
-    before_AP_sta = 10
-    after_AP_sta = 25
-    bins_v = np.arange(-90, 40+0.5, 0.5)
+    before_AP = 10
+    after_AP = 25
+    bins_v = np.arange(-75, 40+0.5, 0.5)
     AP_thresholds = {'s73_0004': -50, 's90_0006': -45, 's82_0002': -38,
                      's117_0002': -60, 's119_0004': -50, 's104_0007': -55,
                      's79_0003': -50, 's76_0002': -50, 's101_0009': -45}
@@ -78,10 +90,10 @@ if __name__ == '__main__':
 
     # main
     DAP_deflections = {}
-    sta_mean_cells = []
-    sta_std_cells = []
-    v_hist_cells = []
-    for i, cell_id in enumerate(cell_ids):
+    sta_mean_cells = np.zeros(len(cell_ids), dtype=object)
+    sta_std_cells = np.zeros(len(cell_ids), dtype=object)
+    v_hist_cells = np.zeros(len(cell_ids), dtype=object)
+    for cell_idx, cell_id in enumerate(cell_ids):
         print cell_id
 
         # load
@@ -90,8 +102,8 @@ if __name__ == '__main__':
         t = np.arange(0, len(v)) * data['dt']
         dt = t[1] - t[0]
         velocity = data['vel_100ms']
-        before_AP_idx_sta = to_idx(before_AP_sta, dt)
-        after_AP_idx_sta = to_idx(after_AP_sta, dt)
+        before_AP_idx = to_idx(before_AP, dt)
+        after_AP_idx = to_idx(after_AP, dt)
 
         # # for testing
         # pl.figure()
@@ -110,29 +122,35 @@ if __name__ == '__main__':
 
         if do_detrend:
             v = detrend(v, t, cutoff_freq=5)
-        v_APs = find_all_AP_traces(v, before_AP_idx_sta, after_AP_idx_sta, AP_max_idxs_selected, AP_max_idxs)
-        t_AP = np.arange(after_AP_idx_sta + before_AP_idx_sta + 1) * dt - before_AP_sta
+        v_APs = find_all_AP_traces(v, before_AP_idx, after_AP_idx, AP_max_idxs_selected, AP_max_idxs)
+        t_AP = np.arange(after_AP_idx + before_AP_idx + 1) * dt - before_AP
         if v_APs is None:
-            sta_mean_cells.append(init_nan(after_AP_idx_sta + before_AP_idx_sta + 1))
-            sta_std_cells.append(init_nan(after_AP_idx_sta + before_AP_idx_sta + 1))
+            sta_mean_cells[cell_idx] = init_nan(after_AP_idx + before_AP_idx + 1)
+            sta_std_cells[cell_idx] = init_nan(after_AP_idx + before_AP_idx + 1)
             continue
 
         # STA
-        sta_median, sta_mad = get_sta_median(v_APs)
-        sta_mean, sta_std = get_sta(v_APs)
-        sta_mean_cells.append(sta_mean)
-        sta_std_cells.append(sta_std)
+        #sta_median, sta_mad = get_sta_median(v_APs)
+        sta_mean_cells[cell_idx], sta_std_cells[cell_idx] = get_sta(v_APs)
 
-        # # histogram of voltage
-        # v_hist = np.zeros((len(bins_v)-1, np.size(v_APs, 1)))
-        # for c in range(np.size(v_APs, 1)):
-        #     v_hist[:, c] = np.histogram(v_APs[:, c], bins_v)[0]
-        # v_hist_cells.append(v_hist)
+        # histogram of voltage
+        v_hist = np.zeros((len(bins_v)-1, np.size(v_APs, 1)))
+        for c in range(np.size(v_APs, 1)):
+            v_hist[:, c] = np.histogram(v_APs[:, c], bins_v)[0]
+        v_hist_cells[cell_idx] = v_hist
+
+        # save
+        save_dir_cell = os.path.join(save_dir_img, cell_id)
+        if not os.path.exists(save_dir_cell):
+            os.makedirs(save_dir_cell)
+
+        np.save(os.path.join(save_dir_cell, 'sta_mean.npy'), sta_mean_cells[cell_idx])
+        np.save(os.path.join(save_dir_cell, 'sta_std.npy'), sta_std_cells[cell_idx])
+        np.save(os.path.join(save_dir_cell, 'v_hist.npy'), v_hist_cells[cell_idx])
+        np.save(os.path.join(save_dir_cell, 't_AP.npy'), t_AP)
+        np.save(os.path.join(save_dir_cell, 'bins_v.npy'), bins_v)
 
         # # plot
-        # save_dir_cell = os.path.join(save_dir_img, cell_id)
-        # if not os.path.exists(save_dir_cell):
-        #     os.makedirs(save_dir_cell)
         # np.save(os.path.join(save_dir_cell, 'sta_mean.npy'), sta_mean)
         # pl.close('all')
         # plot_sta(t_AP, sta_median, sta_mad, os.path.join(save_dir_cell, 'sta_median.png'))
@@ -148,34 +166,22 @@ if __name__ == '__main__':
 
     pl.close('all')
 
-    def plot_sta(ax, cell_idx, t_AP, sta_mean_cells, sta_std_cells):
-        ax.plot(t_AP, sta_mean_cells[cell_idx], 'k')
-        ax.fill_between(t_AP, sta_mean_cells[cell_idx] - sta_std_cells[cell_idx],
-                        sta_mean_cells[cell_idx] + sta_std_cells[cell_idx], color='0.6')
-
-    plot_kwargs = dict(t_AP=t_AP, sta_mean_cells=sta_mean_cells, sta_std_cells=sta_std_cells)
-
     if cell_type == 'grid_cells':
+        plot_kwargs = dict(t_AP=t_AP, sta_mean_cells=sta_mean_cells, sta_std_cells=sta_std_cells)
         plot_for_all_grid_cells(cell_ids, get_celltype_dict(save_dir), plot_sta, plot_kwargs,
                                 xlabel='Time (ms)', ylabel='Mem. pot. (mV)',
                                 save_dir_img=os.path.join(save_dir_img, 'sta.png'))
+
+        # voltage histogram over time
+        plot_kwargs = dict(t_AP=t_AP, bins_v=bins_v, v_hist_cells=v_hist_cells)
+
+        plot_for_all_grid_cells(cell_ids, get_celltype_dict(save_dir), plot_v_hist, plot_kwargs,
+                                xlabel='Time (ms)', ylabel='Mem. pot. distr. (mV)',
+                                save_dir_img=os.path.join(save_dir_img, 'v_hist.png'))
     else:
+        plot_kwargs = dict(t_AP=t_AP, sta_mean_cells=sta_mean_cells, sta_std_cells=sta_std_cells)
         plot_for_cell_group(cell_ids, get_celltype_dict(save_dir), plot_sta, plot_kwargs,
                                 xlabel='Time (ms)', ylabel='Mem. pot. (mV)', figsize=None,
                                 save_dir_img=os.path.join(save_dir_img, 'sta.png'))
-
-    # voltage histogram over time
-    def plot_v_hist(ax, cell_idx, t_AP, bins_v, v_hist_cells, before_AP_sta, after_AP_sta):
-        x, y = np.meshgrid(t_AP, bins_v[:-1])
-        ax.pcolor(x, y, v_hist_cells[cell_idx])
-        ax.set_xlim(t_AP[0], t_AP[-1])
-        ax.set_ylim(-90, -30)
-
-    plot_kwargs = dict(t_AP=t_AP, bins_v=bins_v, v_hist_cells=v_hist_cells, before_AP_sta=before_AP_sta,
-                       after_AP_sta=after_AP_sta)
-    if cell_type == 'grid_cells':
-      plot_for_all_grid_cells(cell_ids, get_celltype_dict(save_dir), plot_v_hist, plot_kwargs,
-                              xlabel='Time (ms)', ylabel='Mem. pot. distr. (mV)',
-                              save_dir_img=os.path.join(save_dir_img, 'v_hist.png'))
 
     pl.show()

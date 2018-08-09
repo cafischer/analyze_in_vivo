@@ -2,7 +2,8 @@ from __future__ import division
 import numpy as np
 import matplotlib.pyplot as pl
 import os
-from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data, get_celltype_dict, get_last_bin_edge
+from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data, get_celltype_dict, get_last_bin_edge, \
+    get_cell_ids_DAP_cells
 from analyze_in_vivo.analyze_domnisoru.position_vs_firing_rate import get_spike_train
 from grid_cell_stimuli import get_AP_max_idxs
 from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_with_markers, plot_for_all_grid_cells
@@ -218,7 +219,7 @@ if __name__ == '__main__':
         pca.fit(np.vstack([MI_v, spatial_info_skaggs]).T)
 
         theta_cells = load_cell_ids(save_dir, 'giant_theta')
-        DAP_cells = ['s79_0003', 's104_0007', 's109_0002', 's110_0002', 's119_0004']
+        DAP_cells = get_cell_ids_DAP_cells()
         fig, ax = pl.subplots()
         plot_with_markers(ax, MI_v, spatial_info_skaggs, cell_ids, cell_type_dict, theta_cells, DAP_cells)
         pl.plot(MI_v, regression.coef_[0, 0] * MI_v + regression.intercept_[0], 'r')
