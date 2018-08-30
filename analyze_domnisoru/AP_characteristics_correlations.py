@@ -6,6 +6,8 @@ import os
 from analyze_in_vivo.load.load_domnisoru import load_cell_ids, get_cell_ids_DAP_cells, get_celltype_dict
 from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_with_markers
 from sklearn.cluster import KMeans
+from sklearn import svm
+from sklearn.linear_model import Perceptron
 pl.style.use('paper')
 
 
@@ -110,19 +112,19 @@ if __name__ == '__main__':
     # pl.tight_layout()
     # pl.savefig(os.path.join(save_dir_img, 'DAP_vs_peak_ISI_hist.png'))
 
-    peak_ISI_hist = np.array([(p[0] + p[1]) / 2. for p in peak_ISI_hist])  # set middle of bin as peak
-    fig, ax = pl.subplots()
-    plot_with_markers(ax, DAP_time, peak_ISI_hist, cell_ids, cell_type_dict,
-                      theta_cells=theta_cells, DAP_cells=DAP_cells)
-    pl.plot(np.arange(0, 10), np.arange(0, 10), '0.5', linestyle='--')
-    # for cell_idx in range(len(cell_ids)):
-    #     pl.annotate(cell_ids[cell_idx], xy=(DAP_time[cell_idx], peak_ISI_hist[cell_idx]))
-    pl.xlim(0, 10)
-    pl.ylim(0, 10)
-    pl.ylabel('Peak of ISI hist. (ms)')
-    pl.xlabel('DAP time (ms)')
-    pl.tight_layout()
-    pl.savefig(os.path.join(save_dir_img, 'DAP_time_vs_ISI_peak.png'))
+    # peak_ISI_hist = np.array([(p[0] + p[1]) / 2. for p in peak_ISI_hist])  # set middle of bin as peak
+    # fig, ax = pl.subplots()
+    # plot_with_markers(ax, DAP_time, peak_ISI_hist, cell_ids, cell_type_dict,
+    #                   theta_cells=theta_cells, DAP_cells=DAP_cells)
+    # pl.plot(np.arange(0, 10), np.arange(0, 10), '0.5', linestyle='--')
+    # # for cell_idx in range(len(cell_ids)):
+    # #     pl.annotate(cell_ids[cell_idx], xy=(DAP_time[cell_idx], peak_ISI_hist[cell_idx]))
+    # pl.xlim(0, 10)
+    # pl.ylim(0, 10)
+    # pl.ylabel('Peak of ISI hist. (ms)')
+    # pl.xlabel('DAP time (ms)')
+    # pl.tight_layout()
+    # pl.savefig(os.path.join(save_dir_img, 'DAP_time_vs_ISI_peak.png'))
 
     # pl.figure()
     # pl.plot(DAP_time, peak_auto_corr, 'o', color='0.5')
@@ -135,26 +137,27 @@ if __name__ == '__main__':
     # pl.tight_layout()
     # pl.savefig(os.path.join(save_dir_img, 'DAP_time_vs_auto_corr_peak.png'))
 
-    fig, ax = pl.subplots()
-    plot_with_markers(ax, AP_amp, DAP_deflection, cell_ids, cell_type_dict, theta_cells=theta_cells,
-                      DAP_cells=DAP_cells)
-    pl.ylabel('DAP deflection (mV)')
-    pl.xlabel('AP amplitude (mV)')
-    pl.tight_layout()
-    pl.savefig(os.path.join(save_dir_img, 'DAP_deflection_vs_AP_amp.png'))
-
-    # print 'Low AP width: '
-    # print np.array(cell_ids)[AP_width < 0.7]
-    fig, ax = pl.subplots()
-    plot_with_markers(ax, AP_width, DAP_deflection, cell_ids, cell_type_dict, theta_cells=theta_cells,
-                      DAP_cells=DAP_cells)
-    pl.ylabel('DAP deflection (mV)')
-    pl.xlabel('AP width (ms)')
-    pl.tight_layout()
-    pl.savefig(os.path.join(save_dir_img, 'DAP_deflection_vs_AP_width.png'))
+    # fig, ax = pl.subplots()
+    # plot_with_markers(ax, AP_amp, DAP_deflection, cell_ids, cell_type_dict, theta_cells=theta_cells,
+    #                   DAP_cells=DAP_cells)
+    # pl.ylabel('DAP deflection (mV)')
+    # pl.xlabel('AP amplitude (mV)')
+    # pl.tight_layout()
+    # pl.savefig(os.path.join(save_dir_img, 'DAP_deflection_vs_AP_amp.png'))
+    #
+    # # print 'Low AP width: '
+    # # print np.array(cell_ids)[AP_width < 0.7]
+    # fig, ax = pl.subplots()
+    # plot_with_markers(ax, AP_width, DAP_deflection, cell_ids, cell_type_dict, theta_cells=theta_cells,
+    #                   DAP_cells=DAP_cells)
+    # pl.ylabel('DAP deflection (mV)')
+    # pl.xlabel('AP width (ms)')
+    # pl.tight_layout()
+    # pl.savefig(os.path.join(save_dir_img, 'DAP_deflection_vs_AP_width.png'))
 
     kmeans = KMeans(n_clusters=2)
     labels = kmeans.fit(np.vstack((AP_width, AP_amp)).T).labels_.astype(bool)
+
     fig = pl.figure()
     ax = fig.add_subplot(111, projection='3d')
     plot_with_markers(ax, AP_width[labels], AP_amp[labels], np.array(cell_ids)[labels], cell_type_dict, DAP_deflection[labels], 'r',
@@ -176,12 +179,68 @@ if __name__ == '__main__':
                                     edgecolor='b', facecolor='None', label='Cluster 2')]
     box = ax.get_position()
     ax.set_position([box.x0, box.y0, box.width, box.height])
-    ax.legend(handles=handles, loc='top right', bbox_to_anchor=(1.0, 0.1))
+    ax.legend(handles=handles, loc='upper right', bbox_to_anchor=(1.0, 0.1))
     pl.close(fig_fake)
 
     pl.tight_layout()
     pl.savefig(os.path.join(save_dir_img, 'DAP_deflection_vs_AP_width_vs_AP_amp.png'))
     print np.array(cell_ids)[labels]
     print np.array(cell_ids)[~labels]
+
+    # SVM
+    pl.close('all')
+    X = np.vstack((AP_width, AP_amp)).T
+    X = (X - np.mean(X, 0)) / np.std(X, 0)  # standardized
+    clf = svm.SVC(kernel='linear', C=1.0)
+    has_dap = DAP_deflection > 0
+    clf.fit(X, has_dap.astype(int))
+    #clf.fit(X, labels.astype(int))
+
+    print('accuracy:', clf.score(X, labels))
+    labels_predicted = clf.predict(X).astype(bool)
+    w1, w2 = clf.coef_[0, :]
+
+    fig, ax = pl.subplots()
+    plot_with_markers(ax, X[:, 0], X[:, 1], np.array(cell_ids), cell_type_dict, edgecolor='k',
+                      theta_cells=theta_cells, DAP_cells=DAP_cells)
+    plot_with_markers(ax, X[:, 0][labels_predicted], X[:, 1][labels_predicted], np.array(cell_ids)[labels_predicted],
+                      cell_type_dict, edgecolor='r', theta_cells=theta_cells, DAP_cells=DAP_cells)
+    # plot_with_markers(ax, X[:, 0][has_dap], X[:, 1][has_dap], np.array(cell_ids)[has_dap],
+    #                   cell_type_dict, edgecolor='y', theta_cells=theta_cells, DAP_cells=DAP_cells)
+    xlim = pl.xlim()
+    ylim = pl.ylim()
+    pl.plot(np.arange(xlim[0], xlim[1], 0.1), -(w1 * np.arange(xlim[0], xlim[1], 0.1) + clf.intercept_[0]) / w2, 'k')
+    ax.set_ylim(ylim)
+    ax.set_xlabel('AP width (ms)')
+    ax.set_ylabel('AP amp. (mV)')
+
+    print np.array(cell_ids)[labels_predicted]
+    print np.array(cell_ids)[~labels_predicted]
+
+    # # perceptron
+    # X = np.vstack((AP_width, AP_amp / 100.0)).T
+    # X = (X - np.mean(X, 0)) / np.std(X, 0)  # standardized
+    # clf = Perceptron(max_iter=1000, tol=1e-8, eta0=0.001)
+    # clf.fit(X, (DAP_deflection > 0).astype(int))
+    # #clf.fit(X, labels.astype(int))
+    #
+    # print clf.n_iter_
+    # print('accuracy:', clf.score(X, labels))
+    # labels_predicted = clf.predict(X).astype(bool)
+    # w1, w2 = clf.coef_[0, :]
+    #
+    # fig, ax = pl.subplots()
+    # plot_with_markers(ax, X[:, 0], X[:, 1], np.array(cell_ids), cell_type_dict, edgecolor='k',
+    #                   theta_cells=theta_cells, DAP_cells=DAP_cells)
+    # plot_with_markers(ax, X[:, 0][labels_predicted], X[:, 1][labels_predicted], np.array(cell_ids)[labels_predicted],
+    #                   cell_type_dict, edgecolor='r',
+    #                   theta_cells=theta_cells, DAP_cells=DAP_cells)
+    # # plot_with_markers(ax, AP_width[labels], AP_amp[labels], np.array(cell_ids)[labels],
+    # #                   cell_type_dict, edgecolor='y',
+    # #                   theta_cells=theta_cells, DAP_cells=DAP_cells)
+    # xlim = pl.xlim()
+    # pl.plot(np.arange(xlim[0], xlim[1], 0.1), -(w1 * np.arange(xlim[0], xlim[1], 0.1) + clf.intercept_[0]) / w2, 'k')
+    # ax.set_xlabel('AP width (ms)')
+    # ax.set_ylabel('AP amp. (mV)')
 
     pl.show()

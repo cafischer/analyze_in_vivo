@@ -4,7 +4,8 @@ from matplotlib.lines import Line2D
 import matplotlib.gridspec as gridspec
 
 
-def plot_with_markers(ax, x, y, cell_ids, cell_type_dict, z=None, edgecolor='k', theta_cells=None, DAP_cells=None):
+def plot_with_markers(ax, x, y, cell_ids, cell_type_dict, z=None, edgecolor='k', theta_cells=None, DAP_cells=None,
+                      legend=True):
     for cell_idx in range(len(cell_ids)):
         hatch = ''
         facecolor = 'None'
@@ -41,22 +42,23 @@ def plot_with_markers(ax, x, y, cell_ids, cell_type_dict, z=None, edgecolor='k',
                            edgecolor=edgecolor, facecolor=facecolor)
 
     # legend
-    fig_fake, ax_fake = pl.subplots()
-    handles = [ax_fake.scatter(0, 0, marker='*', s=150, linewidths=0.8,
-                         edgecolor='k', facecolor='None', label='Stellate'),
-                    ax_fake.scatter(0, 0, marker='^', s=100, linewidths=0.8,
-                                    edgecolor='k', facecolor='None', label='Pyramidal'),
-                    ax_fake.scatter(0, 0, marker='o', s=100, linewidths=0.8,
-                                    edgecolor='k', facecolor='None', label='Non-identified')]
-    if theta_cells is not None:
-        handles += [ax_fake.scatter(0, 0, marker='o', hatch='|||||', s=100, linewidths=0.8,
-                         edgecolor='k', facecolor='None', label='Large theta')]
-    if DAP_cells is not None:
-        handles += [ax_fake.scatter(0, 0, marker='o', hatch='-----', s=100, linewidths=0.8,
-                         edgecolor='k', facecolor='None', label='DAP')]
-    legend = ax.legend(handles=handles, loc='best')
-    ax.add_artist(legend)
-    pl.close(fig_fake)
+    if legend:
+        fig_fake, ax_fake = pl.subplots()
+        handles = [ax_fake.scatter(0, 0, marker='*', s=150, linewidths=0.8,
+                             edgecolor='k', facecolor='None', label='Stellate'),
+                        ax_fake.scatter(0, 0, marker='^', s=100, linewidths=0.8,
+                                        edgecolor='k', facecolor='None', label='Pyramidal'),
+                        ax_fake.scatter(0, 0, marker='o', s=100, linewidths=0.8,
+                                        edgecolor='k', facecolor='None', label='Non-identified')]
+        if theta_cells is not None:
+            handles += [ax_fake.scatter(0, 0, marker='o', hatch='|||||', s=100, linewidths=0.8,
+                             edgecolor='k', facecolor='None', label='Large theta')]
+        if DAP_cells is not None:
+            handles += [ax_fake.scatter(0, 0, marker='o', hatch='-----', s=100, linewidths=0.8,
+                             edgecolor='k', facecolor='None', label='DAP')]
+        legend = ax.legend(handles=handles, loc='best')
+        ax.add_artist(legend)
+        pl.close(fig_fake)
 
 
 def plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_fun, plot_kwargs, xlabel, ylabel, fig_title=None,
