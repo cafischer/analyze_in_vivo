@@ -2,7 +2,6 @@ import matplotlib.pyplot as pl
 import numpy as np
 import os
 from analyze_in_vivo.load.load_domnisoru import get_cell_ids_DAP_cells, get_celltype_dict, load_cell_ids
-from analyze_in_vivo.analyze_domnisoru.plot_utils import get_cell_id_with_marker, plot_with_markers
 pl.style.use('paper')
 
 
