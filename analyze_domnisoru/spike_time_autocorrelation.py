@@ -68,7 +68,7 @@ if __name__ == '__main__':
         os.makedirs(save_dir_img)
 
     # main
-    auto_corr_cells = []
+    auto_corr_cells = np.zeros((len(cell_ids), int(2*max_lag/bin_size+1)))
     peak_auto_corr = np.zeros(len(cell_ids))
     theta_power = np.zeros(len(cell_ids))
     for cell_idx, cell_id in enumerate(cell_ids):
@@ -101,7 +101,7 @@ if __name__ == '__main__':
         auto_corr = auto_correlate(spike_train_new, max_lag_idx)
         auto_corr[max_lag_idx] = 0  # for better plotting
         auto_corr /= (np.sum(auto_corr) * bin_size)  # normalize
-        auto_corr_cells.append(auto_corr)
+        auto_corr_cells[cell_idx, :] = auto_corr
         peak_auto_corr[cell_idx] = t_auto_corr[max_lag_idx:][np.argmax(auto_corr[max_lag_idx:])]  # start at pos. half
                                                                                                   # as 1st max is taken
         # compute power in the theta range of FFT(auto_corr)
@@ -143,6 +143,7 @@ if __name__ == '__main__':
         # pl.show()
 
     np.save(os.path.join(save_dir_img, 'peak_auto_corr_'+str(max_lag)+'.npy'), peak_auto_corr)
+    np.save(os.path.join(save_dir_img, 'auto_corr_'+str(max_lag)+'.npy'), auto_corr_cells)
 
     if cell_type == 'grid_cells':
         def plot_auto_corr(ax, cell_idx, t_auto_corr, auto_corr_cells, bin_size, max_lag):

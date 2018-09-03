@@ -25,7 +25,7 @@ if __name__ == '__main__':
     AP_thresholds = {'s73_0004': -55, 's90_0006': -45, 's82_0002': -35, 's117_0002': -60, 's119_0004': -50,
                      's104_0007': -55, 's79_0003': -50, 's76_0002': -50, 's101_0009': -45}
     use_AP_max_idxs_domnisoru = True
-    filter_long_ISIs = False
+    filter_long_ISIs = True
     max_ISI = 200
     burst_ISI = 8  # ms
     if filter_long_ISIs:

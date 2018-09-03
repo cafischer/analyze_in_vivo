@@ -56,6 +56,10 @@ def load_cell_ids(save_dir, cell_type='grid_cells'):
 
     if cell_type == 'grid_cells':
         cell_ids = grid_cells
+    elif cell_type == 'stellate_cells':
+        cell_ids = stellate_cells
+    elif cell_type == 'pyramidal_cells':
+        cell_ids = pyramidal_cells
     elif cell_type == 'stellate_layer2':
         cell_ids = list(set(layer2_cells).intersection(stellate_cells))
     elif cell_type == 'pyramidal_layer2':

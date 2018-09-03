@@ -29,8 +29,6 @@ if __name__ == '__main__':
     cell_type_dict = get_celltype_dict(save_dir)
 
     # parameters
-    use_AP_max_idxs_domnisoru = True
-    param_list = ['Vm_ljpc', 'spiketimes']
     if not os.path.exists(save_dir_img):
         os.makedirs(save_dir_img)
 
