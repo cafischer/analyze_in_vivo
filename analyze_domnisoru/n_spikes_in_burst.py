@@ -20,6 +20,15 @@ def plot_n_spikes_in_burst_all_cells(cell_type_dict, bins, count_spikes):
             labels[::4] = bins[::4]
             ax.set_xticklabels(labels)
 
+            # with log scale
+            ax_twin = ax.twinx()
+            ax_twin.plot(bins[:-1], count_spikes[cell_idx, :] / np.max(count_spikes[cell_idx, :]),
+                         marker='o', linestyle='-', color='k', markersize=5)
+            ax_twin.set_yscale('log')
+            # if not (cell_idx == 4 or cell_idx == 9):
+            #     ax_twin.set_yticklabels([])
+            ax.spines['right'].set_visible(True)
+
         plot_kwargs = dict(bins=bins, count_spikes=count_spikes)
         plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_fun, plot_kwargs,
                                 xlabel='# Spikes \nin event', ylabel='Rel. Frequency',

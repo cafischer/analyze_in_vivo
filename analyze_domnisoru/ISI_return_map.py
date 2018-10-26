@@ -12,6 +12,7 @@ pl.style.use('paper')
 
 
 if __name__ == '__main__':
+    save_dir_img2 = '/home/cf/Dropbox/thesis/figures_results'
     save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/ISI_return_map'
     save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
     cell_type = 'grid_cells'
@@ -147,6 +148,9 @@ if __name__ == '__main__':
         plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_ISI_return_map, plot_kwargs,
                                 xlabel='ISI[n] (ms)', ylabel='ISI[n+1] (ms)',
                                 save_dir_img=os.path.join(save_dir_img, 'return_map.png'))
+        plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_ISI_return_map, plot_kwargs,
+                                xlabel='ISI[n] (ms)', ylabel='ISI[n+1] (ms)',
+                                save_dir_img=os.path.join(save_dir_img2, 'ISI_return_map.png'))
 
         plot_kwargs = dict(ISIs_per_cell=ISIs_per_cell, max_ISI=max_ISI, log_scale=True)
         plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_ISI_return_map, plot_kwargs,

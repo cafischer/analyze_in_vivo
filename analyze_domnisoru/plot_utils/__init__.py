@@ -2,6 +2,7 @@ import matplotlib.pyplot as pl
 import numpy as np
 from matplotlib.lines import Line2D
 import matplotlib.gridspec as gridspec
+from analyze_in_vivo.load.load_domnisoru import get_cell_ids_DAP_cells, load_cell_ids
 
 
 def plot_with_markers(ax, x, y, cell_ids, cell_type_dict, z=None, edgecolor='k', theta_cells=None, DAP_cells=None,
@@ -42,28 +43,80 @@ def plot_with_markers(ax, x, y, cell_ids, cell_type_dict, z=None, edgecolor='k',
                            edgecolor=edgecolor, facecolor=facecolor)
 
     # legend
+    fig_fake, ax_fake = pl.subplots()
+    handles = [ax_fake.scatter(0, 0, marker='*', s=150, linewidths=0.8,
+                               edgecolor='k', facecolor='None', label='Stellate'),
+               ax_fake.scatter(0, 0, marker='^', s=100, linewidths=0.8,
+                               edgecolor='k', facecolor='None', label='Pyramidal'),
+               ax_fake.scatter(0, 0, marker='o', s=100, linewidths=0.8,
+                               edgecolor='k', facecolor='None', label='Non-identified')]
+    if theta_cells is not None:
+        handles += [ax_fake.scatter(0, 0, marker='s', hatch='|||||', s=100, linewidths=0.8,
+                         edgecolor='w', facecolor='None', label='Large theta')]
+    if DAP_cells is not None:
+        handles += [ax_fake.scatter(0, 0, marker='s', hatch='-----', s=100, linewidths=0.8,
+                         edgecolor='w', facecolor='None', label='DAP')]
     if legend:
-        fig_fake, ax_fake = pl.subplots()
-        handles = [ax_fake.scatter(0, 0, marker='*', s=150, linewidths=0.8,
-                             edgecolor='k', facecolor='None', label='Stellate'),
-                        ax_fake.scatter(0, 0, marker='^', s=100, linewidths=0.8,
-                                        edgecolor='k', facecolor='None', label='Pyramidal'),
-                        ax_fake.scatter(0, 0, marker='o', s=100, linewidths=0.8,
-                                        edgecolor='k', facecolor='None', label='Non-identified')]
-        if theta_cells is not None:
-            handles += [ax_fake.scatter(0, 0, marker='o', hatch='|||||', s=100, linewidths=0.8,
-                             edgecolor='k', facecolor='None', label='Large theta')]
-        if DAP_cells is not None:
-            handles += [ax_fake.scatter(0, 0, marker='o', hatch='-----', s=100, linewidths=0.8,
-                             edgecolor='k', facecolor='None', label='DAP')]
         legend = ax.legend(handles=handles, loc='best')
         ax.add_artist(legend)
-        pl.close(fig_fake)
+    pl.close(fig_fake)
+    return handles
+
+
+def get_handles_all_markers():
+    save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
+    theta_cells = load_cell_ids(save_dir, 'giant_theta')
+    DAP_cells = get_cell_ids_DAP_cells()
+
+    fig_fake, ax_fake = pl.subplots()
+    handles = [ax_fake.scatter(0, 0, marker='*', s=150, linewidths=0.8,
+                               edgecolor='k', facecolor='None', label='Stellate'),
+               ax_fake.scatter(0, 0, marker='^', s=100, linewidths=0.8,
+                               edgecolor='k', facecolor='None', label='Pyramidal'),
+               ax_fake.scatter(0, 0, marker='o', s=100, linewidths=0.8,
+                               edgecolor='k', facecolor='None', label='Non-identified')]
+    if theta_cells is not None:
+        handles += [ax_fake.scatter(0, 0, marker='s', hatch='|||||', s=100, linewidths=0.8,
+                                    edgecolor='w', facecolor='None', label='Large theta')]
+    if DAP_cells is not None:
+        handles += [ax_fake.scatter(0, 0, marker='s', hatch='-----', s=100, linewidths=0.8,
+                                    edgecolor='w', facecolor='None', label='DAP')]
+    pl.close(fig_fake)
+    return handles
+
+
+def get_handles_for_cell_id(cell_id, cell_type_dict):
+    save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
+    theta_cells = load_cell_ids(save_dir, 'giant_theta')
+    DAP_cells = get_cell_ids_DAP_cells()
+
+    hatch = None
+    if theta_cells is not None:
+        if cell_id in theta_cells:
+            hatch = '|||||'
+    if DAP_cells is not None:
+        if cell_id in DAP_cells:
+            hatch = '-----'
+    if theta_cells is not None and DAP_cells is not None:
+        if cell_id in theta_cells and cell_id in DAP_cells:
+            hatch = '+++++'
+    fig_fake, ax_fake = pl.subplots()
+    if cell_type_dict[cell_id] == 'stellate':
+        handle = ax_fake.scatter(0, 0, marker='*', s=150, linewidths=0.8, hatch=hatch,
+                                 edgecolor='k', facecolor='None', label=cell_id)
+    elif cell_type_dict[cell_id] == 'pyramidal':
+        handle = ax_fake.scatter(0, 0, marker='^', s=100, linewidths=0.8, hatch=hatch,
+                                 edgecolor='k', facecolor='None', label=cell_id)
+    else:
+        handle = ax_fake.scatter(0, 0, marker='o', s=100, linewidths=0.8, hatch=hatch,
+                                 edgecolor='k', facecolor='None', label=cell_id)
+    pl.close(fig_fake)
+    return handle
 
 
 def plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_fun, plot_kwargs, xlabel, ylabel, fig_title=None,
                             sharey='all', sharex='all', save_dir_img=None):
-    plot_for_cell_group(cell_ids, cell_type_dict, plot_fun, plot_kwargs, xlabel, ylabel, (14, 8.5), (3, 9),
+    plot_for_cell_group(cell_ids, cell_type_dict, plot_fun, plot_kwargs, xlabel, ylabel, (15, 8.5), (3, 9),
                         fig_title=fig_title, sharey=sharey, sharex=sharex, save_dir_img=save_dir_img)
 
 
@@ -83,7 +136,10 @@ def plot_for_cell_group(cell_ids, cell_type_dict, plot_fun, plot_kwargs, xlabel,
     for i1 in range(n_rows):
         for i2 in range(n_columns):
             if cell_idx < len(cell_ids):
-                axes[i1, i2].set_title(get_cell_id_with_marker(cell_ids[cell_idx], cell_type_dict))
+                #axes[i1, i2].set_title(get_cell_id_with_marker(cell_ids[cell_idx], cell_type_dict))
+                handle = get_handles_for_cell_id(cell_ids[cell_idx], cell_type_dict)
+                axes[i1, i2].legend(handles=[handle], bbox_to_anchor=(0, 1.01, 1, 0.1), loc="lower left", frameon=False,
+                                    handletextpad=0.1, mode='expand')
 
                 plot_fun(axes[i1, i2], cell_idx, **plot_kwargs)
 
@@ -96,6 +152,7 @@ def plot_for_cell_group(cell_ids, cell_type_dict, plot_fun, plot_kwargs, xlabel,
                 axes[i1, i2].spines['left'].set_visible(False)
                 axes[i1, i2].spines['bottom'].set_visible(False)
                 axes[i1, i2].tick_params(left=False, bottom=False, labelleft=False, labelbottom=False)
+    axes[-1, -1].legend(handles=get_handles_all_markers(), loc="lower left", bbox_to_anchor=(-0.025, -0.025))
     pl.tight_layout()
     if fig_title is not None:
         pl.subplots_adjust(top=0.92)
@@ -103,13 +160,13 @@ def plot_for_cell_group(cell_ids, cell_type_dict, plot_fun, plot_kwargs, xlabel,
 
 
 def plot_for_all_grid_cells_grid(cell_ids, cell_type_dict, plot_fun, plot_kwargs, xlabel, ylabel, n_subplots,
-                                 fig_title=None, save_dir_img=None):
-    plot_for_cell_group_grid(cell_ids, cell_type_dict, plot_fun, plot_kwargs, xlabel, ylabel, n_subplots, (14, 8.5),
-                             (3, 9), fig_title=fig_title, save_dir_img=save_dir_img)
+                                 wspace=None, fig_title=None, save_dir_img=None):
+    plot_for_cell_group_grid(cell_ids, cell_type_dict, plot_fun, plot_kwargs, xlabel, ylabel, n_subplots, (15, 8.5),
+                             (3, 9), wspace=wspace, fig_title=fig_title, save_dir_img=save_dir_img)
 
 
 def plot_for_cell_group_grid(cell_ids, cell_type_dict, plot_fun, plot_kwargs, xlabel, ylabel, n_subplots, figsize=None,
-                             n_rows_n_columns=None, fig_title=None, hspace=0.1, save_dir_img=None):
+                             n_rows_n_columns=None, fig_title=None, wspace=None, hspace=0.1, save_dir_img=None):
     if n_rows_n_columns is not None:
         n_rows, n_columns = n_rows_n_columns
     else:
@@ -118,7 +175,7 @@ def plot_for_cell_group_grid(cell_ids, cell_type_dict, plot_fun, plot_kwargs, xl
         figsize = (4.5 * n_rows, 2.0 * n_columns)
 
     fig = pl.figure(figsize=figsize)
-    outer = gridspec.GridSpec(n_rows, n_columns)
+    outer = gridspec.GridSpec(n_rows, n_columns, wspace=wspace)
 
     if fig_title is not None:
         fig.suptitle(fig_title, fontsize=16)
@@ -134,7 +191,10 @@ def plot_for_cell_group_grid(cell_ids, cell_type_dict, plot_fun, plot_kwargs, xl
                     fig.add_subplot(ax)
 
                     if subplot_idx == 0:
-                        ax.set_title(get_cell_id_with_marker(cell_ids[cell_idx], cell_type_dict))
+                        #ax.set_title(get_cell_id_with_marker(cell_ids[cell_idx], cell_type_dict))
+                        handle = get_handles_for_cell_id(cell_ids[cell_idx], cell_type_dict)
+                        ax.legend(handles=[handle], bbox_to_anchor=(-0.2, 1.01, 1, 0.1), loc="lower left",
+                                  frameon=False, handletextpad=0.1, mode='expand')
 
                     if i1 == (n_rows - 1):
                         ax.set_xlabel(xlabel)
@@ -143,11 +203,19 @@ def plot_for_cell_group_grid(cell_ids, cell_type_dict, plot_fun, plot_kwargs, xl
 
                     plot_fun(ax, cell_idx, subplot_idx, **plot_kwargs)
                 cell_idx += 1
+    ax = pl.Subplot(fig, outer[n_rows-1, n_columns-1])
+    fig.add_subplot(ax)
+    ax.legend(handles=get_handles_all_markers(), loc="lower left")
+    ax.spines['bottom'].set_visible(False)
+    ax.spines['left'].set_visible(False)
+    ax.set_xticks([])
+    ax.set_yticks([])
     pl.tight_layout()
     if fig_title is not None:
         pl.subplots_adjust(top=0.92)
     #pl.subplots_adjust(left=0.07, bottom=0.07, right=0.99, top=0.95)
-    pl.savefig(save_dir_img)
+    if save_dir_img is not None:
+        pl.savefig(save_dir_img)
 
 
 def get_cell_id_with_marker(cell_id, cell_type_dict):

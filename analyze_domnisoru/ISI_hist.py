@@ -4,8 +4,8 @@ import numpy as np
 import os
 from grid_cell_stimuli import get_AP_max_idxs
 from grid_cell_stimuli.ISI_hist import get_ISIs, get_ISI_hist, get_cumulative_ISI_hist, \
-    plot_ISI_hist, plot_cumulative_ISI_hist, plot_cumulative_ISI_hist_all_cells, plot_cumulative_comparison_all_cells
-from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data, get_celltype_dict, get_cell_ids_good_recording
+    plot_ISI_hist, plot_cumulative_ISI_hist, plot_cumulative_ISI_hist_all_cells, plot_cumulative_comparison_all_cells, plot_cumulative_ISI_hist_all_cells_with_bursty
+from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data, get_celltype_dict, get_cell_ids_bursty
 from scipy.stats import ks_2samp
 from itertools import combinations
 from analyze_in_vivo.analyze_domnisoru.check_basic.in_out_field import get_starts_ends_group_of_ones
@@ -16,6 +16,7 @@ pl.style.use('paper_subplots')
 if __name__ == '__main__':
     # Note: no all APs are captured as the spikes are so small and noise is high and depth of hyperpolarization
     # between successive spikes varies
+    save_dir_img2 = '/home/cf/Dropbox/thesis/figures_results'
     save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/ISI_hist'
     save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
     cell_type_dict = get_celltype_dict(save_dir)
@@ -93,10 +94,26 @@ if __name__ == '__main__':
         # pl.close('all')
 
     # plot all cumulative ISI histograms in one
-    ISIs_all = np.array([item for sublist in ISIs_per_cell for item in sublist])
-    cum_ISI_hist_y_avg, cum_ISI_hist_x_avg = get_cumulative_ISI_hist(ISIs_all)
-    plot_cumulative_ISI_hist_all_cells(cum_ISI_hist_y, cum_ISI_hist_x, cum_ISI_hist_y_avg, cum_ISI_hist_x_avg,
-                                       cell_ids, max_ISI, os.path.join(save_dir_img))
+    # ISIs_all = np.array([item for sublist in ISIs_per_cell for item in sublist])
+    # cum_ISI_hist_y_avg, cum_ISI_hist_x_avg = get_cumulative_ISI_hist(ISIs_all)
+    # plot_cumulative_ISI_hist_all_cells(cum_ISI_hist_y, cum_ISI_hist_x, cum_ISI_hist_y_avg, cum_ISI_hist_x_avg,
+    #                                                cell_ids, max_ISI, os.path.join(save_dir_img))
+
+
+    # cumulative ISI histogram for bursty and non-bursty group
+    cell_ids_bursty = get_cell_ids_bursty()
+    burst_label = np.array([True if cell_id in cell_ids_bursty else False for cell_id in cell_ids])
+    ISIs_all_bursty =  np.array([item for sublist in np.array(ISIs_per_cell)[burst_label] for item in sublist])
+    ISIs_all_nonbursty = np.array([item for sublist in np.array(ISIs_per_cell)[~burst_label] for item in sublist])
+    cum_ISI_hist_y_avg_bursty, cum_ISI_hist_x_avg_bursty = get_cumulative_ISI_hist(ISIs_all_bursty)
+    cum_ISI_hist_y_avg_nonbursty, cum_ISI_hist_x_avg_nonbursty = get_cumulative_ISI_hist(ISIs_all_nonbursty)
+    plot_cumulative_ISI_hist_all_cells_with_bursty(cum_ISI_hist_y, cum_ISI_hist_x,
+                                                   cum_ISI_hist_y_avg_bursty, cum_ISI_hist_x_avg_bursty,
+                                                   cum_ISI_hist_y_avg_nonbursty, cum_ISI_hist_x_avg_nonbursty,
+                                                   cell_ids, burst_label, max_ISI, os.path.join(save_dir_img2))
+    D, p_val = ks_2samp(ISIs_all_bursty, ISIs_all_nonbursty)
+    print p_val  # p-val small = reject that they come from same distribution
+
 
     # # for each pair of cells two sample Kolmogorov Smironov test (Note: ISIs are cut at 200 ms (=max(bins)))
     # p_val_dict = {}
@@ -116,10 +133,10 @@ if __name__ == '__main__':
     # plot all ISI hists
     if cell_type == 'grid_cells':
         def plot_ISI_hist(ax, cell_idx, fraction_ISIs_filtered, ISI_hist, cum_ISI_hist_x, cum_ISI_hist_y):
-            if filter_long_ISIs:
-                ax.annotate('%i%%<200 ms' % int(round(fraction_ISIs_filtered[cell_idx] * 100)),
-                                      xy=(0.07, 0.98), xycoords='axes fraction', fontsize=8, ha='left', va='top',
-                                      bbox=dict(boxstyle='round', fc='w', edgecolor='0.8', alpha=0.8))
+            # if filter_long_ISIs:
+            #     ax.annotate('%i%%<200 ms' % int(round(fraction_ISIs_filtered[cell_idx] * 100)),
+            #                           xy=(0.07, 0.98), xycoords='axes fraction', fontsize=8, ha='left', va='top',
+            #                           bbox=dict(boxstyle='round', fc='w', edgecolor='0.8', alpha=0.8))
 
             ax.bar(bins[:-1], ISI_hist[cell_idx, :] / (np.sum(ISI_hist[cell_idx, :]) * bin_width),
                              bins[1] - bins[0], color='0.5', align='edge')
@@ -140,6 +157,9 @@ if __name__ == '__main__':
         plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_ISI_hist, plot_kwargs,
                                 xlabel='ISI (ms)', ylabel='Rel. frequency',
                                 save_dir_img=os.path.join(save_dir_img, 'ISI_hist'+str(bin_width)+'.png'))
+        plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_ISI_hist, plot_kwargs,
+                                xlabel='ISI (ms)', ylabel='Rel. frequency',
+                                save_dir_img=os.path.join(save_dir_img2, 'ISI_hist.png'))
     else:
         def plot_ISI_hist(ax, cell_idx, fraction_ISIs_filtered, ISI_hist, cum_ISI_hist_x, cum_ISI_hist_y):
             if filter_long_ISIs:

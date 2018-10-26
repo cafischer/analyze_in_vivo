@@ -9,6 +9,7 @@ from analyze_in_vivo.analyze_domnisoru.sta import plot_sta, plot_v_hist
 from analyze_in_vivo.analyze_domnisoru.plot_utils import get_cell_id_with_marker, plot_with_markers
 from mpl_toolkits.mplot3d import Axes3D
 from sklearn import svm
+from sklearn.linear_model import Perceptron
 pl.style.use('paper_subplots')
 
 
@@ -75,20 +76,50 @@ if __name__ == '__main__':
     DAP_deflection = np.load(os.path.join(save_dir_characteristics, 'grid_cells', 'DAP_deflection.npy'))
     DAP_deflection[np.isnan(DAP_deflection)] = 0
 
-    # SVM
+    # preparation
     X = np.vstack((AP_width, AP_amp)).T
     mean = np.mean(X, 0)
     std = np.std(X, 0)
     X = (X - np.mean(X, 0)) / np.std(X, 0)  # z-standardized
-    clf = svm.SVC(kernel='linear', C=1.0)
     has_DAP = DAP_deflection > 0
-    clf.fit(X, has_DAP.astype(int))
-    labels_predicted = clf.predict(X).astype(bool)
-    w0 = clf.intercept_[0]
-    w1, w2 = clf.coef_[0, :]
-    # w0 = w0 * std[1] + mean[1]
-    # w1 = w1 * std[0] + mean[0]
-    # w2 = w2 * std[1] + mean[1]
+
+    # SVM
+    # clf = svm.SVC(kernel='linear', C=10.0)
+    # clf.fit(X, has_DAP.astype(int))
+    # labels_predicted = clf.predict(X).astype(bool)
+    # w0 = clf.intercept_[0]
+    # w1, w2 = clf.coef_[0, :]
+
+    # clf = svm.SVC(kernel='linear', C=1.0)
+    # clf.fit(np.array([AP_width]).T, has_DAP.astype(int))
+    # labels_predicted_width = clf.predict(np.array([AP_width]).T).astype(bool)
+    # threshold_AP_width = -clf.intercept_[0] / clf.coef_[0, 0]
+    #
+    # clf = svm.SVC(kernel='linear', C=1.0)
+    # clf.fit(np.array([AP_amp]).T, has_DAP.astype(int))
+    # labels_predicted_amp = clf.predict(np.array([AP_amp]).T).astype(bool)
+    # threshold_AP_amp = -clf.intercept_[0] / clf.coef_[0, 0]
+    #
+    # labels_predicted = np.logical_and(labels_predicted_amp, labels_predicted_width)
+
+    # Perceptron
+    # perceptron = Perceptron(max_iter=1000, tol=1, class_weight={1: 1, 0: 1})
+    # perceptron.fit(X, has_DAP.astype(int))
+    # labels_predicted = perceptron.predict(X).astype(bool)
+    # w0 = perceptron.intercept_
+    # w1, w2 = perceptron.coef_[0, :]
+    # print perceptron._max_iter
+
+    # conservative choice
+    max_AP_width_DAP = np.max(AP_width[has_DAP])
+    AP_width_next = np.min(AP_width[~has_DAP][AP_width[~has_DAP] > max_AP_width_DAP])
+    threshold_AP_width = np.round(max_AP_width_DAP + (AP_width_next - max_AP_width_DAP) / 2., 2)
+    min_AP_amp_DAP = np.min(AP_amp[has_DAP])
+    AP_amp_next = np.max(AP_amp[~has_DAP][AP_amp[~has_DAP] < min_AP_amp_DAP])
+    threshold_AP_amp = np.round(AP_amp_next + (min_AP_amp_DAP - AP_amp_next) / 2., 2)
+    print 'threshold_AP_width: ', threshold_AP_width
+    print 'threshold_AP_amp: ', threshold_AP_amp
+    labels_predicted = np.array([w <= threshold_AP_width and a >= threshold_AP_amp for w, a in zip(AP_width, AP_amp)])
 
     ax = pl.subplot(outer[:, :3])
     fig.add_subplot(ax)
@@ -98,19 +129,26 @@ if __name__ == '__main__':
     plot_with_markers(ax, AP_width[~labels_predicted], AP_amp[~labels_predicted], np.array(grid_cells)[~labels_predicted],
                       cell_type_dict, edgecolor='b',
                       theta_cells=theta_cells, DAP_cells=DAP_cells)
+    # plot_with_markers(ax, AP_width[has_DAP], AP_amp[has_DAP], np.array(grid_cells)[has_DAP],
+    #                   cell_type_dict, edgecolor='y',
+    #                   theta_cells=theta_cells, DAP_cells=DAP_cells)
+    ax.set_xlim(0.5, None)
     xlim = pl.xlim()
     ylim = pl.ylim()
-    x = np.arange(xlim[0], xlim[1]+0.1, 0.1)
-    x = (x - mean[0]) / std[0]
-    y = -(w1 * x + w0) / w2
-    x = x * std[0] + mean[0]
-    y = y * std[1] + mean[1]
-    pl.plot(x, y, 'k')
+    # x = np.arange(xlim[0], xlim[1]+0.1, 0.1)
+    # x = (x - mean[0]) / std[0]
+    # y = -(w1 * x + w0) / w2
+    # x = x * std[0] + mean[0]
+    # y = y * std[1] + mean[1]
+    # pl.plot(x, y, 'k')
+    pl.axvline(threshold_AP_width)
+    pl.axhline(threshold_AP_amp)
     ax.set_xlabel('AP width (ms)')
     ax.set_ylabel('AP amp. (mV)')
     ax.set_ylim(ylim)
     ax.legend(handles=[Line2D([0], [0], color='r', label='Good rec.'), Line2D([0], [0], color='b', label='Bad rec.')],
-              loc='lower right')
+              loc='lower left')
+    ax.text(-0.12, 1.0, 'A', transform=ax.transAxes, size=18, weight='bold')
 
     # example 1 select good APs
     cell_id = 's73_0004'
@@ -141,6 +179,7 @@ if __name__ == '__main__':
     ax2.set_xlabel('Time (ms)')
     ax2.set_ylabel('Mem. pot. (mV)')
     ax2.set_ylim(-75, 15)
+    ax1.text(-0.6, 1.0, 'B', transform=ax1.transAxes, size=18, weight='bold')
 
     # example 2 select good APs
     cell_id = 's85_0007'
@@ -171,6 +210,32 @@ if __name__ == '__main__':
     ax2.set_xlabel('Time (ms)')
     ax2.set_ylabel('Mem. pot. (mV)')
     ax2.set_ylim(-75, 15)
+
+    ax1.text(-0.6, 1.0, 'C', transform=ax1.transAxes, size=18, weight='bold')
+
+    pl.tight_layout()
+    pl.savefig(os.path.join(save_dir_img, 'good_recordings_old.png'))
+
+    # new plot TODO
+    fig, ax = pl.subplots()
+    fig.add_subplot(ax)
+    plot_with_markers(ax, AP_width[labels_predicted], AP_amp[labels_predicted], np.array(grid_cells)[labels_predicted],
+                      cell_type_dict, edgecolor='r',
+                      theta_cells=theta_cells, DAP_cells=DAP_cells)
+    plot_with_markers(ax, AP_width[~labels_predicted], AP_amp[~labels_predicted], np.array(grid_cells)[~labels_predicted],
+                      cell_type_dict, edgecolor='b',
+                      theta_cells=theta_cells, DAP_cells=DAP_cells)
+    # plot_with_markers(ax, AP_width[has_DAP], AP_amp[has_DAP], np.array(grid_cells)[has_DAP],
+    #                   cell_type_dict, edgecolor='y',
+    #                   theta_cells=theta_cells, DAP_cells=DAP_cells)
+    ax.set_xlim(0.5, None)
+    pl.axvline(threshold_AP_width)
+    pl.axhline(threshold_AP_amp)
+    ax.set_xlabel('AP width (ms)')
+    ax.set_ylabel('AP amp. (mV)')
+    ax.set_ylim(ylim)
+    ax.legend(handles=[Line2D([0], [0], color='r', label='Good rec.'), Line2D([0], [0], color='b', label='Bad rec.')],
+              loc='lower left')
     pl.tight_layout()
     pl.savefig(os.path.join(save_dir_img, 'good_recordings.png'))
 

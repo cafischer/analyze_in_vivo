@@ -67,6 +67,7 @@ def plot_v_hist(ax, cell_idx, t_AP, bins_v, v_hist_cells):
 
 if __name__ == '__main__':
     save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/STA'
+    save_dir_img2 = '/home/cf/Dropbox/thesis/figures_results'
     save_dir_in_out_field = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/in_out_field'
     save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
     cell_type = 'grid_cells'
@@ -171,6 +172,9 @@ if __name__ == '__main__':
         plot_for_all_grid_cells(cell_ids, get_celltype_dict(save_dir), plot_sta, plot_kwargs,
                                 xlabel='Time (ms)', ylabel='Mem. pot. (mV)',
                                 save_dir_img=os.path.join(save_dir_img, 'sta.png'))
+        plot_for_all_grid_cells(cell_ids, get_celltype_dict(save_dir), plot_sta, plot_kwargs,
+                                xlabel='Time (ms)', ylabel='Mem. pot. (mV)',
+                                save_dir_img=os.path.join(save_dir_img2, 'sta.png'))
 
         # voltage histogram over time
         plot_kwargs = dict(t_AP=t_AP, bins_v=bins_v, v_hist_cells=v_hist_cells)
@@ -178,6 +182,9 @@ if __name__ == '__main__':
         plot_for_all_grid_cells(cell_ids, get_celltype_dict(save_dir), plot_v_hist, plot_kwargs,
                                 xlabel='Time (ms)', ylabel='Mem. pot. distr. (mV)',
                                 save_dir_img=os.path.join(save_dir_img, 'v_hist.png'))
+        plot_for_all_grid_cells(cell_ids, get_celltype_dict(save_dir), plot_v_hist, plot_kwargs,
+                                xlabel='Time (ms)', ylabel='Mem. pot. distr. (mV)',
+                                save_dir_img=os.path.join(save_dir_img2, 'v_hist.png'))
     else:
         plot_kwargs = dict(t_AP=t_AP, sta_mean_cells=sta_mean_cells, sta_std_cells=sta_std_cells)
         plot_for_cell_group(cell_ids, get_celltype_dict(save_dir), plot_sta, plot_kwargs,

@@ -18,10 +18,9 @@ if __name__ == '__main__':
     bin_width = 1.0  # ms
     bins = np.arange(0, max_ISI+bin_width, bin_width)
 
-    good_AP_DAP_cell_ids = get_cell_ids_DAP_cells()
-    good_AP_no_DAP_cell_ids = ['s74_0006', 's82_0002']
-    bad_AP_no_DAP_cell_ids = ['s73_0004', 's95_0006', 's85_0007']
-    cell_ids = good_AP_DAP_cell_ids + good_AP_no_DAP_cell_ids + bad_AP_no_DAP_cell_ids
+    DAP_cell_ids = get_cell_ids_DAP_cells()
+    other_examplses = ['s73_0004', 's95_0006', 's76_0002', 's74_0006', 's85_0007']
+    cell_ids = DAP_cell_ids + other_examplses
     cell_idxs = [np.where(cell_id == cell_ids_grid)[0][0] for cell_id in cell_ids]
     cell_type_dict = get_celltype_dict(save_dir)
     param_list = ['Vm_ljpc', 'spiketimes']
@@ -80,7 +79,7 @@ if __name__ == '__main__':
     # title
     ax1.annotate('DAP', xy=(0.53, 0.96), xycoords='figure fraction', fontsize=14,
                  horizontalalignment='center')
-    ax1.annotate('No DAP', xy=(0.53, 0.49), xycoords='figure fraction', fontsize=14,
+    ax1.annotate('Other examples', xy=(0.53, 0.49), xycoords='figure fraction', fontsize=14,
                  horizontalalignment='center')
 
     pl.tight_layout()

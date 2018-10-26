@@ -21,6 +21,28 @@ def get_AP_max_idxs_above_and_under_velocity_threshold(AP_max_idxs, velocity, ve
     return AP_max_idxs_above, AP_max_idxs_under
 
 
+def plot_sta(ax, cell_idx, subplot_idx, t_AP, sta_mean_above_cells, sta_std_above_cells,
+             sta_mean_under_cells, sta_std_under_cells, xlims=(None, None), ylims=(None, None)):
+    if subplot_idx == 0:
+        ax.plot(t_AP, sta_mean_above_cells[cell_idx], 'k')
+        ax.fill_between(t_AP, sta_mean_above_cells[cell_idx] - sta_std_above_cells[cell_idx],
+                        sta_mean_above_cells[cell_idx] + sta_std_above_cells[cell_idx], color='k', alpha=0.5)
+        ax.set_xlim(xlims)
+        ax.set_ylim(ylims)
+        ax.set_xticks([])
+        ax.set_xlabel('')
+        ax.annotate('$\geq$ vel. thresh.', xy=(xlims[0], ylims[1]), textcoords='data',
+                    horizontalalignment='left', verticalalignment='top', fontsize=9)
+    if subplot_idx == 1:
+        ax.plot(t_AP, sta_mean_under_cells[cell_idx], 'k')
+        ax.fill_between(t_AP, sta_mean_under_cells[cell_idx] - sta_std_under_cells[cell_idx],
+                        sta_mean_under_cells[cell_idx] + sta_std_under_cells[cell_idx], color='k', alpha=0.5)
+        ax.set_xlim(xlims)
+        ax.set_ylim(ylims)
+        ax.annotate('$<$ vel. thresh.', xy=(xlims[0], ylims[1]), textcoords='data',
+                    horizontalalignment='left', verticalalignment='top', fontsize=9)
+
+
 if __name__ == '__main__':
     save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/STA/velocity_thresholding'
     save_dir_in_out_field = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/in_out_field'
@@ -82,27 +104,6 @@ if __name__ == '__main__':
             sta_mean_under_cells[cell_idx], sta_std_under_cells[cell_idx] = get_sta(v_APs_under)
 
     # plots
-    def plot_sta(ax, cell_idx, subplot_idx, t_AP, sta_mean_above_cells, sta_std_above_cells,
-                 sta_mean_under_cells, sta_std_under_cells, xlims=(None, None), ylims=(None, None)):
-        if subplot_idx == 0:
-            ax.plot(t_AP, sta_mean_above_cells[cell_idx], 'k')
-            ax.fill_between(t_AP, sta_mean_above_cells[cell_idx] - sta_std_above_cells[cell_idx],
-                            sta_mean_above_cells[cell_idx] + sta_std_above_cells[cell_idx], color='k', alpha=0.5)
-            ax.set_xlim(xlims)
-            ax.set_ylim(ylims)
-            ax.set_xticks([])
-            ax.set_xlabel('')
-            ax.annotate('$\geq$ vel. thresh.', xy=(xlims[0], ylims[1]), textcoords='data',
-                        horizontalalignment='left', verticalalignment='top', fontsize=9)
-        if subplot_idx == 1:
-            ax.plot(t_AP, sta_mean_under_cells[cell_idx], 'k')
-            ax.fill_between(t_AP, sta_mean_under_cells[cell_idx] - sta_std_under_cells[cell_idx],
-                            sta_mean_under_cells[cell_idx] + sta_std_under_cells[cell_idx], color='k', alpha=0.5)
-            ax.set_xlim(xlims)
-            ax.set_ylim(ylims)
-            ax.annotate('$<$ vel. thresh.', xy=(xlims[0], ylims[1]), textcoords='data',
-                        horizontalalignment='left', verticalalignment='top', fontsize=9)
-
     plot_kwargs = dict(t_AP=t_AP, sta_mean_above_cells=sta_mean_above_cells, sta_std_above_cells=sta_std_above_cells,
                        sta_mean_under_cells=sta_mean_under_cells, sta_std_under_cells=sta_std_under_cells,
                        xlims=(-before_AP_sta, after_AP_sta), ylims=(-85, 25))

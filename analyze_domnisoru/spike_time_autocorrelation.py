@@ -47,6 +47,7 @@ def change_bin_size_of_spike_train(spike_train, bin_size, dt):
 
 
 if __name__ == '__main__':
+    save_dir_img2 = '/home/cf/Dropbox/thesis/figures_results'
     save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/spike_time_auto_corr'
     save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
     cell_type = 'grid_cells'
@@ -153,6 +154,10 @@ if __name__ == '__main__':
         plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_auto_corr, plot_kwargs,
                                 xlabel='Time (ms)', ylabel='Spike-time \nautocorrelation',
                                 save_dir_img=os.path.join(save_dir_img, 'auto_corr_'+str(max_lag)+'.png'))
+
+        plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_auto_corr, plot_kwargs,
+                                xlabel='Time (ms)', ylabel='Spike-time \nautocorrelation',
+                                save_dir_img=os.path.join(save_dir_img2, 'auto_corr_' + str(max_lag) + '.png'))
 
         # plot theta power
         def plot_theta_power(ax, cell_idx, theta_power):

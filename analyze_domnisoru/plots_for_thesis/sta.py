@@ -21,11 +21,11 @@ if __name__ == '__main__':
     save_dir_sta = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/STA/not_detrended/all/grid_cells'
     save_dir_sta_good_APs = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/STA/good_AP/not_detrended/all/grid_cells'
     save_dir_characteristics = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/AP_characteristics/all'
-    good_AP_DAP_cell_ids = get_cell_ids_DAP_cells()
-    good_AP_no_DAP_cell_ids = ['s74_0006', 's82_0002']
-
-    bad_AP_no_DAP_cell_ids = ['s73_0004', 's95_0006', 's85_0007']
-    cell_ids = good_AP_DAP_cell_ids + good_AP_no_DAP_cell_ids + bad_AP_no_DAP_cell_ids
+    DAP_cell_ids = get_cell_ids_DAP_cells()
+    #good_AP_no_DAP_cell_ids = ['s74_0006', 's82_0002']
+    #bad_AP_no_DAP_cell_ids = ['s73_0004', 's85_0007', 's95_0006']
+    other_examples = ['s73_0004', 's95_0006', 's76_0002', 's74_0006', 's85_0007']  # hidden DAP+theta, bursty, highly bursty, non-bursty + good AP, non-bursty,
+    cell_ids = DAP_cell_ids + other_examples
     cell_type_dict = get_celltype_dict(save_dir)
 
     # parameters
@@ -83,11 +83,16 @@ if __name__ == '__main__':
     # title
     ax1.annotate('DAP', xy=(0.53, 0.967), xycoords='figure fraction', fontsize=14,
                  horizontalalignment='center')
-    ax2.annotate('No DAP', xy=(0.53, 0.471), xycoords='figure fraction', fontsize=14,
+    ax2.annotate('Other examples', xy=(0.53, 0.471), xycoords='figure fraction', fontsize=14,
                  horizontalalignment='center')
 
     pl.tight_layout()
     pl.subplots_adjust(top=0.94, bottom=0.06, left=0.1, right=0.98)
     pl.savefig(os.path.join(save_dir_img, 'sta.png'))
+
+    from cell_characteristics import to_idx
+    pl.figure()
+    pl.bar(bins_v[:-1], v_hist_cells[3][:, to_idx(5 + 10, t_AP[1] - t_AP[0])], width=bins_v[1] - bins_v[0])
+    pl.xlim(-80, -40)
 
     pl.show()

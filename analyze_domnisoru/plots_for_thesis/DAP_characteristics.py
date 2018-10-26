@@ -47,7 +47,7 @@ if __name__ == '__main__':
     fig, ax = pl.subplots()
     plot_with_markers(ax, DAP_time[DAP_cells_idxs], DAP_deflection[DAP_cells_idxs], cell_ids, cell_type_dict,
                       theta_cells=load_cell_ids(save_dir, 'giant_theta'), DAP_cells=cell_ids)
-    ax.set_xlabel('DAP time (ms)')
+    ax.set_xlabel('$Time_{AP-DAP}$ (ms)')
     ax.set_ylabel('DAP deflection (mV)')
     ax.set_xlim(0, None)
     ax.set_ylim(0, None)

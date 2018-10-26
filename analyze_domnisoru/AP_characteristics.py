@@ -32,6 +32,7 @@ if __name__ == '__main__':
 
     # main
     AP_amp_per_cell = np.zeros(len(cell_ids))
+    AP_abs_amp_per_cell = np.zeros(len(cell_ids))
     AP_width_per_cell = np.zeros(len(cell_ids))
     DAP_deflection_per_cell = np.zeros(len(cell_ids))
     DAP_amp_per_cell = np.zeros(len(cell_ids))
@@ -63,16 +64,17 @@ if __name__ == '__main__':
 
         # get AP characteristics from STA
         sta_mean, sta_std = get_sta(v_APs)
-        v_rest = sta_mean[to_idx(1, dt)]
+        v_rest = sta_mean[before_AP - to_idx(1, dt)]
         spike_characteristics_dict = get_spike_characteristics_dict()
         spike_characteristics_dict['AP_max_idx'] = before_AP_idx
         spike_characteristics_dict['AP_onset'] = before_AP_idx - to_idx(1, dt)
-        AP_amp_per_cell[cell_idx], AP_width_per_cell[cell_idx], \
+        AP_amp_per_cell[cell_idx], AP_width_per_cell[cell_idx], AP_max_idx, \
         DAP_deflection_per_cell[cell_idx], DAP_amp_per_cell[cell_idx], \
         DAP_width_per_cell[cell_idx], DAP_time_per_cell[cell_idx], \
-        DAP_max_idx = get_spike_characteristics(sta_mean, t_AP, ['AP_amp', 'AP_width', 'DAP_deflection', 'DAP_amp',
-                                                                 'DAP_width', 'DAP_time', 'DAP_max_idx'], v_rest,
-                                                check=False, **spike_characteristics_dict)
+        DAP_max_idx = get_spike_characteristics(sta_mean, t_AP, ['AP_amp', 'AP_width', 'AP_max_idx', 'DAP_deflection',
+                                                                 'DAP_amp', 'DAP_width', 'DAP_time', 'DAP_max_idx'],
+                                                v_rest, check=False, **spike_characteristics_dict)
+        AP_abs_amp_per_cell[cell_idx] = sta_mean[AP_max_idx]
 
         # test if DAP deflection greater than
         if DAP_max_idx is not None:
@@ -80,8 +82,10 @@ if __name__ == '__main__':
 
     not_nan = ~np.isnan(sem_at_DAP)
     cell_ids = np.array(cell_ids)
-    print cell_ids[not_nan][DAP_deflection_per_cell[not_nan] > sem_at_DAP[not_nan]]
-    print cell_ids[not_nan][DAP_deflection_per_cell[not_nan] < sem_at_DAP[not_nan]]
+    print 'cells with DAP defl. > sem', cell_ids[not_nan][DAP_deflection_per_cell[not_nan] > sem_at_DAP[not_nan]]
+    print 'cells without DAP defl. > sem', cell_ids[not_nan][DAP_deflection_per_cell[not_nan] < sem_at_DAP[not_nan]]
+    print 'DAP defl.: ', DAP_deflection_per_cell[not_nan]
+    print 'sem: ', sem_at_DAP[not_nan]
 
     np.save(os.path.join(save_dir_characteristics, 'DAP_deflection.npy'), DAP_deflection_per_cell)
     np.save(os.path.join(save_dir_characteristics, 'DAP_amp.npy'), DAP_amp_per_cell)
@@ -89,3 +93,4 @@ if __name__ == '__main__':
     np.save(os.path.join(save_dir_characteristics, 'DAP_time.npy'), DAP_time_per_cell)
     np.save(os.path.join(save_dir_characteristics, 'AP_width.npy'), AP_width_per_cell)
     np.save(os.path.join(save_dir_characteristics, 'AP_amp.npy'), AP_amp_per_cell)
+    np.save(os.path.join(save_dir_characteristics, 'AP_abs_amp.npy'), AP_abs_amp_per_cell)
