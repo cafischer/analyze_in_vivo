@@ -24,13 +24,14 @@ if __name__ == '__main__':
     peak_ISI_hist = np.load(os.path.join(save_dir_ISI_hist, 'grid_cells', 'peak_ISI_hist.npy'))
     peak_ISI_hist = np.array([(p[0] + p[1]) / 2. for p in peak_ISI_hist])  # set middle of bin as peak
 
+    ax.plot(np.arange(0, 10), np.arange(0, 10), '0.5', linestyle='--')
+    #ax.fill_between(np.arange(0, 10), np.arange(0, 10)-1, np.arange(0, 10)+1, color='0.7')
     plot_with_markers(ax, DAP_time, peak_ISI_hist, grid_cells, cell_type_dict,
                       theta_cells=theta_cells, DAP_cells=DAP_cells)
-    ax.plot(np.arange(0, 10), np.arange(0, 10), '0.5', linestyle='--')
-    ax.set_xlim(0, 10)
-    ax.set_ylim(0, 10)
-    ax.set_xticks([0, 5, 10])
-    ax.set_yticks([0, 5, 10])
+    ax.set_xlim(0, 7)
+    ax.set_ylim(0, 7)
+    ax.set_xticks(np.arange(0, 8, 2))
+    ax.set_yticks(np.arange(0, 8, 2))
     ax.set_aspect('equal', adjustable='box-forced')
     ax.set_ylabel('Peak of ISI hist. (ms)')
     ax.set_xlabel('DAP time (ms)')

@@ -2,7 +2,7 @@ from __future__ import division
 import numpy as np
 import matplotlib.pyplot as pl
 import os
-from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data, get_celltype_dict
+from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data, get_celltype_dict, get_cell_ids_bursty
 from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_for_all_grid_cells
 from grid_cell_stimuli import get_AP_max_idxs
 from grid_cell_stimuli.ISI_hist import get_ISIs
@@ -12,8 +12,8 @@ from analyze_in_vivo.analyze_domnisoru.check_basic.in_out_field import get_start
 def plot_n_spikes_in_burst_all_cells(cell_type_dict, bins, count_spikes):
     if cell_type == 'grid_cells':
         def plot_fun(ax, cell_idx, bins, count_spikes):
-            ax.bar(bins[:-1], count_spikes[cell_idx, :] / (np.sum(count_spikes[cell_idx, :]) * (bins[1] - bins[0])),
-                   color='0.5')
+            count_spikes_normed = count_spikes[cell_idx, :] / (np.sum(count_spikes[cell_idx, :]) * (bins[1] - bins[0]))
+            ax.bar(bins[:-1], count_spikes_normed, color='0.5')
             ax.set_xlim(bins[0] - 0.5, bins[-1])
             ax.set_xticks(bins)
             labels = [''] * len(bins)
@@ -22,24 +22,36 @@ def plot_n_spikes_in_burst_all_cells(cell_type_dict, bins, count_spikes):
 
             # with log scale
             ax_twin = ax.twinx()
-            ax_twin.plot(bins[:-1], count_spikes[cell_idx, :] / np.max(count_spikes[cell_idx, :]),
-                         marker='o', linestyle='-', color='k', markersize=5)
+            ax_twin.plot(bins[:-1], count_spikes_normed, marker='o', linestyle='-', color='k', markersize=3)
             ax_twin.set_yscale('log')
-            # if not (cell_idx == 4 or cell_idx == 9):
-            #     ax_twin.set_yticklabels([])
+            ax_twin.set_ylim(10**-4, 10**0)
+            if not (cell_idx == 8 or cell_idx == 17 or cell_idx == 25):
+                ax_twin.set_yticklabels([])
             ax.spines['right'].set_visible(True)
+
+        burst_label = np.array([True if cell_id in get_cell_ids_bursty() else False for cell_id in cell_ids])
+        colors_marker = np.zeros(len(burst_label), dtype=str)
+        colors_marker[burst_label] = 'r'
+        colors_marker[~burst_label] = 'b'
 
         plot_kwargs = dict(bins=bins, count_spikes=count_spikes)
         plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_fun, plot_kwargs,
                                 xlabel='# Spikes \nin event', ylabel='Rel. Frequency',
+                                colors_marker=colors_marker,
                                 save_dir_img=os.path.join(save_dir_img, 'count_spikes.png'))
 
+        plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_fun, plot_kwargs,
+                                xlabel='# Spikes \nin event', ylabel='Rel. Frequency',
+                                colors_marker=colors_marker,
+                                save_dir_img=os.path.join(save_dir_img2, 'count_spikes.png'))
+
         def plot_fun(ax, cell_idx, bins, count_spikes):
-            ax.plot(bins[:-1], count_spikes[cell_idx, :] / (np.sum(count_spikes[cell_idx, :]) * (bins[1] - bins[0])),
-                              marker='o', linestyle='-', color='0.5', markersize=5)
+            count_spikes_normed = count_spikes[cell_idx, :] / (np.sum(count_spikes[cell_idx, :]) * (bins[1] - bins[0]))
+            ax.plot(bins[:-1], count_spikes_normed, marker='o', linestyle='-', color='0.5', markersize=5)
             ax.set_yscale('log')
             ax.set_xlim(bins[0] - 0.5, bins[-1])
             ax.set_xticks(bins)
+            ax.set_ylim(10**-3, 10**0)
             labels = [''] * len(bins)
             labels[::4] = bins[::4]
             ax.set_xticklabels(labels)
@@ -60,6 +72,7 @@ def get_n_spikes_in_burst(burst_ISI_indicator):
 
 
 if __name__ == '__main__':
+    save_dir_img2 = '/home/cf/Dropbox/thesis/figures_results'
     save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/bursting'
     save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
     cell_type = 'grid_cells'

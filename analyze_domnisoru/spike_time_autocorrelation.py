@@ -2,7 +2,7 @@ from __future__ import division
 import numpy as np
 import matplotlib.pyplot as pl
 import os
-from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data, get_celltype_dict
+from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data, get_celltype_dict, get_cell_ids_bursty
 from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_for_all_grid_cells
 from grid_cell_stimuli import get_AP_max_idxs
 from cell_characteristics import to_idx
@@ -147,6 +147,11 @@ if __name__ == '__main__':
     np.save(os.path.join(save_dir_img, 'auto_corr_'+str(max_lag)+'.npy'), auto_corr_cells)
 
     if cell_type == 'grid_cells':
+        burst_label = np.array([True if cell_id in get_cell_ids_bursty() else False for cell_id in cell_ids])
+        colors_marker = np.zeros(len(burst_label), dtype=str)
+        colors_marker[burst_label] = 'r'
+        colors_marker[~burst_label] = 'b'
+
         def plot_auto_corr(ax, cell_idx, t_auto_corr, auto_corr_cells, bin_size, max_lag):
             ax.bar(t_auto_corr, auto_corr_cells[cell_idx], bin_size, color='0.5', align='center')
             ax.set_xlim(-max_lag, max_lag)
@@ -156,7 +161,7 @@ if __name__ == '__main__':
                                 save_dir_img=os.path.join(save_dir_img, 'auto_corr_'+str(max_lag)+'.png'))
 
         plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_auto_corr, plot_kwargs,
-                                xlabel='Time (ms)', ylabel='Spike-time \nautocorrelation',
+                                xlabel='Time (ms)', ylabel='Spike-time \nautocorrelation', colors_marker=colors_marker,
                                 save_dir_img=os.path.join(save_dir_img2, 'auto_corr_' + str(max_lag) + '.png'))
 
         # plot theta power

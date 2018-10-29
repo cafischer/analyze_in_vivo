@@ -2,9 +2,12 @@ from __future__ import division
 import numpy as np
 import matplotlib.pyplot as pl
 import os
-from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data, get_celltype, get_track_len
+from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data, get_celltype, get_track_len, \
+    get_cell_ids_bursty, get_celltype_dict
+from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_with_markers
 from grid_cell_stimuli import get_AP_max_idxs
 import matplotlib.gridspec as gridspec
+from scipy.stats import median_test
 pl.style.use('paper')
 
 
@@ -55,6 +58,31 @@ if __name__ == '__main__':
     np.save(os.path.join(save_dir_img, 'n_APs.npy'), n_APs)
     np.save(os.path.join(save_dir_img, 'n_runs.npy'), n_runs)
 
+    # plot avg. firing rate in bursty and non-bursty neurons
+    cell_type_dict = get_celltype_dict(save_dir)
+    burst_label = np.array([True if cell_id in get_cell_ids_bursty() else False for cell_id in cell_ids])
+
+    stat, p, m, table = median_test(avg_firing_rate[burst_label], avg_firing_rate[~burst_label])
+    print 'p-val: ', p  # if p is small, reject H0 that medians are the same
+
+    fig, ax = pl.subplots()
+    plot_with_markers(ax, -1 * np.ones(np.sum(burst_label)), avg_firing_rate[burst_label],
+                      np.array(cell_ids)[burst_label],
+                      cell_type_dict, edgecolor='r')
+    plot_with_markers(ax, 1 * np.ones(np.sum(~burst_label)), avg_firing_rate[~burst_label],
+                      np.array(cell_ids)[~burst_label],
+                      cell_type_dict, edgecolor='b')
+    ax.boxplot(avg_firing_rate[burst_label], positions=[-0.5])
+    ax.boxplot(avg_firing_rate[~burst_label], positions=[1.5])
+    # ax.errorbar(-0.5, np.mean(avg_firing_rate[burst_label]), yerr=np.std(avg_firing_rate[burst_label]),
+    #             marker='o', capsize=2, color='r')
+    # ax.errorbar(1.5, np.mean(avg_firing_rate[~burst_label]), yerr=np.std(avg_firing_rate[~burst_label]),
+    #             marker='o', capsize=2, color='b')
+    ax.set_xlim(-1.5, 2)
+    ax.set_xticks([])
+    pl.show()
+
+    #
     pl.close('all')
     if cell_type == 'grid_cells':
         n_rows = 3

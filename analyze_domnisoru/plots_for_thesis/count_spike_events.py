@@ -67,8 +67,8 @@ if __name__ == '__main__':
         ax = pl.subplot(axes[i])
         fig.add_subplot(ax)
         ax.set_title(get_cell_id_with_marker(cell_id, cell_type_dict))
-        ax.bar(bins[:-1], count_spikes[cell_idx, :] / np.max(count_spikes[cell_idx, :]),
-               color='0.5')
+        count_spikes_normed = count_spikes[cell_idx, :] / np.max(count_spikes[cell_idx, :])
+        ax.bar(bins[:-1], count_spikes_normed, color='0.5')
         ax.set_xlim(bins[0] - 0.5, bins[-1])
         ax.set_ylim(0, 1)
         ax.set_xticks(bins)
@@ -78,8 +78,7 @@ if __name__ == '__main__':
         ax_twin = ax.twinx()
         # ax_twin.plot(bins[:-1], np.log(count_spikes[cell_idx, :]) / np.max(np.log(count_spikes[cell_idx, :])),
         #         marker='o', linestyle='-', color='k', markersize=5)
-        ax_twin.plot(bins[:-1], count_spikes[cell_idx, :] / np.max(count_spikes[cell_idx, :]),
-                     marker='o', linestyle='-', color='k', markersize=5)
+        ax_twin.plot(bins[:-1], count_spikes_normed, marker='o', linestyle='-', color='k', markersize=5)
         ax_twin.set_yscale('log')
         if not(i == 4 or i == 9):
             ax_twin.set_yticklabels([])

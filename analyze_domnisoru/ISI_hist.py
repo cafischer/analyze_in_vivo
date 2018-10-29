@@ -132,6 +132,10 @@ if __name__ == '__main__':
 
     # plot all ISI hists
     if cell_type == 'grid_cells':
+        colors_marker = np.zeros(len(burst_label), dtype=str)
+        colors_marker[burst_label] = 'r'
+        colors_marker[~burst_label] = 'b'
+
         def plot_ISI_hist(ax, cell_idx, fraction_ISIs_filtered, ISI_hist, cum_ISI_hist_x, cum_ISI_hist_y):
             # if filter_long_ISIs:
             #     ax.annotate('%i%%<200 ms' % int(round(fraction_ISIs_filtered[cell_idx] * 100)),
@@ -158,7 +162,7 @@ if __name__ == '__main__':
                                 xlabel='ISI (ms)', ylabel='Rel. frequency',
                                 save_dir_img=os.path.join(save_dir_img, 'ISI_hist'+str(bin_width)+'.png'))
         plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_ISI_hist, plot_kwargs,
-                                xlabel='ISI (ms)', ylabel='Rel. frequency',
+                                xlabel='ISI (ms)', ylabel='Rel. frequency', colors_marker=colors_marker,
                                 save_dir_img=os.path.join(save_dir_img2, 'ISI_hist.png'))
     else:
         def plot_ISI_hist(ax, cell_idx, fraction_ISIs_filtered, ISI_hist, cum_ISI_hist_x, cum_ISI_hist_y):

@@ -2,6 +2,7 @@ from __future__ import division
 import numpy as np
 import matplotlib.pyplot as pl
 from matplotlib.lines import Line2D
+from matplotlib.patches import Patch
 import os
 import matplotlib.gridspec as gridspec
 from analyze_in_vivo.load.load_domnisoru import get_celltype_dict, get_cell_ids_DAP_cells, load_cell_ids
@@ -220,11 +221,11 @@ if __name__ == '__main__':
     fig, ax = pl.subplots()
     fig.add_subplot(ax)
     plot_with_markers(ax, AP_width[labels_predicted], AP_amp[labels_predicted], np.array(grid_cells)[labels_predicted],
-                      cell_type_dict, edgecolor='r',
-                      theta_cells=theta_cells, DAP_cells=DAP_cells)
-    plot_with_markers(ax, AP_width[~labels_predicted], AP_amp[~labels_predicted], np.array(grid_cells)[~labels_predicted],
-                      cell_type_dict, edgecolor='b',
-                      theta_cells=theta_cells, DAP_cells=DAP_cells)
+                      cell_type_dict, edgecolor='#A11E22', theta_cells=theta_cells, DAP_cells=DAP_cells, legend=False)
+    handles = plot_with_markers(ax, AP_width[~labels_predicted],
+                                AP_amp[~labels_predicted], np.array(grid_cells)[~labels_predicted],
+                                cell_type_dict, edgecolor='#EBA631', theta_cells=theta_cells, DAP_cells=DAP_cells,
+                                legend=False)
     # plot_with_markers(ax, AP_width[has_DAP], AP_amp[has_DAP], np.array(grid_cells)[has_DAP],
     #                   cell_type_dict, edgecolor='y',
     #                   theta_cells=theta_cells, DAP_cells=DAP_cells)
@@ -234,8 +235,9 @@ if __name__ == '__main__':
     ax.set_xlabel('AP width (ms)')
     ax.set_ylabel('AP amp. (mV)')
     ax.set_ylim(ylim)
-    ax.legend(handles=[Line2D([0], [0], color='r', label='Good rec.'), Line2D([0], [0], color='b', label='Bad rec.')],
-              loc='lower left')
+    handles_extra = [Patch(color='#A11E22', label='Good rec.'), Patch(color='#EBA631', label='Bad rec.')]
+    ax.legend(handles=handles+handles_extra,
+              loc='upper right')
     pl.tight_layout()
     pl.savefig(os.path.join(save_dir_img, 'good_recordings.png'))
 

@@ -3,11 +3,12 @@ import matplotlib.pyplot as pl
 from mpl_toolkits.mplot3d import Axes3D
 import os
 from sklearn.decomposition import PCA
-from sklearn.cluster import KMeans, DBSCAN, SpectralClustering
+from sklearn.cluster import KMeans
 from cell_characteristics import to_idx
 from analyze_in_vivo.load.load_domnisoru import load_cell_ids, get_cell_ids_DAP_cells, get_celltype_dict
 from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_with_markers
 from matplotlib.pyplot import Line2D
+from matplotlib.patches import Patch
 pl.style.use('paper')
 
 
@@ -35,15 +36,6 @@ if __name__ == '__main__':
     n_clusters = 2
     kmeans = KMeans(n_clusters=n_clusters, random_state=0).fit(transformed)
     labels = kmeans.labels_
-
-    # # DBSCAN
-    # dbscan = DBSCAN(eps=0.01).fit(transformed)
-    # labels = dbscan.labels_
-
-    # # Spectral Clustering
-    # n_clusters = 2
-    # spectral = SpectralClustering(n_clusters=n_clusters, random_state=1).fit(transformed)
-    # labels = spectral.labels_
 
     print('Bursty: ', cell_ids[labels.astype(bool)])
     print('Non-bursty: ', cell_ids[~labels.astype(bool)])
@@ -177,12 +169,9 @@ if __name__ == '__main__':
                       cell_type_dict, edgecolor='b', theta_cells=theta_cells, DAP_cells=DAP_cells, legend=False)
     handles = plot_with_markers(ax, transformed[labels == 1, 0], transformed[labels == 1, 1], cell_ids[labels == 1],
                       cell_type_dict, edgecolor='r', theta_cells=theta_cells, DAP_cells=DAP_cells, legend=False)
-    legend1 = ax.legend(handles=handles, bbox_to_anchor=(1.05, 1.0), loc=2, borderaxespad=0.)
-    handles = [Line2D([0], [0], color='b', label='Non-bursty'),
-               Line2D([0], [0], color='r', label='Bursty')]
-    legend2 = ax.legend(handles=handles, bbox_to_anchor=(1.05, 0.135), loc=2, borderaxespad=0.)
+    handles_bursty = [Patch(color='r', label='Bursty'), Patch(color='b', label='Non-bursty')]
+    legend1 = ax.legend(handles=handles+handles_bursty, bbox_to_anchor=(1.05, 1.0), loc=2, borderaxespad=0.)
     ax.add_artist(legend1)
-    ax.add_artist(legend2)
     ax.set_xlabel('PC1')
     ax.set_ylabel('PC2')
 
