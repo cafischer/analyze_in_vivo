@@ -64,10 +64,10 @@ if __name__ == '__main__':
 
         # get AP characteristics from STA
         sta_mean, sta_std = get_sta(v_APs)
-        v_rest = sta_mean[before_AP - to_idx(1, dt)]
+        v_rest = sta_mean[before_AP_idx - to_idx(5.0, dt)]
         spike_characteristics_dict = get_spike_characteristics_dict()
         spike_characteristics_dict['AP_max_idx'] = before_AP_idx
-        spike_characteristics_dict['AP_onset'] = before_AP_idx - to_idx(1, dt)
+        spike_characteristics_dict['AP_onset'] = before_AP_idx - to_idx(1.0, dt)
         AP_amp_per_cell[cell_idx], AP_width_per_cell[cell_idx], AP_max_idx, \
         DAP_deflection_per_cell[cell_idx], DAP_amp_per_cell[cell_idx], \
         DAP_width_per_cell[cell_idx], DAP_time_per_cell[cell_idx], \

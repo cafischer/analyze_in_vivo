@@ -2,16 +2,16 @@ from __future__ import division
 import numpy as np
 import matplotlib.pyplot as pl
 import os
-from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data, get_celltype_dict
+from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data, get_celltype_dict, get_cell_ids_DAP_cells
 from analyze_in_vivo.analyze_schmidt_hieber import detrend
 from cell_characteristics import to_idx
 from cell_characteristics.sta_stc import get_sta
-from grid_cell_stimuli import get_AP_max_idxs, find_all_AP_traces
+from grid_cell_stimuli import find_all_AP_traces
 from cell_characteristics.analyze_APs import get_spike_characteristics
 from cell_fitting.optimization.evaluation import get_spike_characteristics_dict
 from cell_fitting.util import init_nan
-from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_for_all_grid_cells, plot_for_all_grid_cells_grid
-from scipy.interpolate import UnivariateSpline
+from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_for_all_grid_cells, plot_for_all_grid_cells_grid, \
+    plot_with_markers
 pl.style.use('paper_subplots')
 
 
@@ -32,6 +32,8 @@ if __name__ == '__main__':
     before_AP = 10
     after_AP = 25
     DAP_deflections = init_nan(len(cell_ids))
+    DAP_times = init_nan(len(cell_ids))
+    DAP_width_substitute = init_nan(len(cell_ids))
     folder_detrend = {True: 'detrended', False: 'not_detrended'}
     folder_field = {(True, False): 'in_field', (False, True): 'out_field', (False, False): 'all'}
     save_dir_img = os.path.join(save_dir_img, folder_detrend[do_detrend], folder_field[(in_field, out_field)],
@@ -83,13 +85,13 @@ if __name__ == '__main__':
         for i, v_AP in enumerate(v_APs):
             spike_characteristics_dict = get_spike_characteristics_dict(for_data=True)
             AP_amps[i], AP_widths[i] = get_spike_characteristics(v_AP, t_AP, ['AP_amp', 'AP_width'],
-                                                                 v_AP[before_AP - to_idx(1.0, dt)],
+                                                                 v_rest=v_AP[before_AP_idx - to_idx(5.0, dt)],
                                                                  AP_max_idx=before_AP_idx,
                                                                  AP_onset=before_AP_idx - to_idx(1.0, dt),
                                                                  std_idx_times=(0, 1), check=False,
                                                                  **spike_characteristics_dict)
 
-        good_APs = np.logical_and(AP_amps > 55.1, AP_widths < 0.72)  # TODO  np.logical_and(AP_amps > 52.82, AP_widths < 0.72)
+        good_APs = np.logical_and(AP_amps > 51.84, AP_widths < 0.72)
         v_APs_good = v_APs[good_APs]
 
         # STA
@@ -101,13 +103,33 @@ if __name__ == '__main__':
             sta_std_good_APs_cells[cell_idx] = sta_std
 
             # get DAP deflection
+            # if cell_id == 's101_0009':
+            #     check = True
+            # else:
+            #     check = False
             spike_characteristics_dict = get_spike_characteristics_dict(for_data=False)  # dont want interpolation
-            DAP_deflections[cell_idx], DAP_max_idx = get_spike_characteristics(sta_mean_good_APs_cells[cell_idx], t_AP,
-                                                                  ['DAP_deflection', 'DAP_max_idx'],
-                                                                  sta_mean_good_APs_cells[cell_idx][before_AP - to_idx(1.0, dt)],
-                                                                  AP_max_idx=before_AP_idx,
-                                                                  AP_onset=before_AP_idx - to_idx(1.0, dt), check=False,
-                                                                  **spike_characteristics_dict)
+            print 'v_rest: ', sta_mean_good_APs_cells[cell_idx][before_AP_idx - to_idx(5.0, dt)]
+            DAP_deflections[cell_idx], DAP_max_idx, DAP_times[cell_idx], fAHP_min_idx = get_spike_characteristics(
+                sta_mean_good_APs_cells[cell_idx], t_AP,
+                ['DAP_deflection', 'DAP_max_idx', 'DAP_time', 'fAHP_min_idx'],
+                v_rest=sta_mean_good_APs_cells[cell_idx][before_AP_idx - to_idx(5.0, dt)],
+                AP_max_idx=before_AP_idx,
+                AP_onset=before_AP_idx - to_idx(1.0, dt), check=False,
+                **spike_characteristics_dict)
+
+            # get something like the DAP width
+            v_fAHP = sta_mean_good_APs_cells[cell_idx][fAHP_min_idx]
+            crossings = np.nonzero(np.diff(np.sign(sta_mean_good_APs_cells[cell_idx][DAP_max_idx:] - v_fAHP)) == -2)[0]
+            if DAP_max_idx is not None and len(crossings) >= 1:
+                width_idx = crossings[0] + DAP_max_idx
+                DAP_width_substitute[cell_idx] = t_AP[width_idx] - t_AP[fAHP_min_idx]
+                print 'DAP_width_substitute: ', DAP_width_substitute[cell_idx]
+                # pl.figure()
+                # pl.plot(t_AP, sta_mean_good_APs_cells[cell_idx])
+                # pl.plot(t_AP[width_idx], sta_mean_good_APs_cells[cell_idx][width_idx], 'or')
+                # pl.plot(t_AP[fAHP_min_idx], sta_mean_good_APs_cells[cell_idx][fAHP_min_idx], 'or')
+                # pl.show()
+
             if DAP_max_idx is not None:
                 sem_at_DAP = sta_std_good_APs_cells[cell_idx][DAP_max_idx] / np.sqrt(len(v_APs_good))
                 if DAP_deflections[cell_idx] > sem_at_DAP:
@@ -208,6 +230,26 @@ if __name__ == '__main__':
     # cell_ids_DAP_idx = np.array([np.where(id==np.array(cell_ids))[0][0] for id in cell_ids_DAP])
 
     if cell_type == 'grid_cells':
+        # fig, ax = pl.subplots()
+        # plot_with_markers(ax, DAP_width_substitute, DAP_deflections, np.array(cell_ids), get_celltype_dict(save_dir),
+        #                   theta_cells=load_cell_ids(save_dir, 'giant_theta'), DAP_cells=get_cell_ids_DAP_cells())
+        # ax.set_xlabel('DAP width approximation (ms)')
+        # ax.set_ylabel('DAP deflection (mV)')
+
+        fig, ax = pl.subplots()
+        handles = plot_with_markers(ax, DAP_times, DAP_deflections, np.array(cell_ids), get_celltype_dict(save_dir),
+                                 theta_cells=load_cell_ids(save_dir, 'giant_theta'), DAP_cells=get_cell_ids_DAP_cells(),
+                                 legend=False)
+        ax.set_xlabel('Time$_{AP-DAP}$ (ms)')
+        ax.set_ylabel('DAP deflection (mV)')
+        ax.set_xlim(0, 7.0)
+        ax.set_ylim(0, 2.5)
+        print np.array(cell_ids)[~np.isnan(DAP_times)]
+        print 'DAP_deflections', DAP_deflections[~np.isnan(DAP_deflections)]
+        print 'DAP time', DAP_times[~np.isnan(DAP_times)]
+        pl.legend(handles=handles, loc='upper left')
+        pl.savefig(os.path.join(save_dir_img2, 'dap_characteristics_selected_APs.png'))
+
         t_AP = np.arange(-before_AP_idx, after_AP_idx + 1) * dt
 
         plot_kwargs = dict(t_AP=t_AP, sta_mean_cells=sta_mean_good_APs_cells, sta_std_cells=sta_std_good_APs_cells)

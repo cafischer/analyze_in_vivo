@@ -217,7 +217,7 @@ if __name__ == '__main__':
     pl.tight_layout()
     pl.savefig(os.path.join(save_dir_img, 'good_recordings_old.png'))
 
-    # new plot TODO
+    # new plot
     fig, ax = pl.subplots()
     fig.add_subplot(ax)
     plot_with_markers(ax, AP_width[labels_predicted], AP_amp[labels_predicted], np.array(grid_cells)[labels_predicted],
@@ -226,6 +226,9 @@ if __name__ == '__main__':
                                 AP_amp[~labels_predicted], np.array(grid_cells)[~labels_predicted],
                                 cell_type_dict, edgecolor='#EBA631', theta_cells=theta_cells, DAP_cells=DAP_cells,
                                 legend=False)
+    # for i, cell_id in enumerate(grid_cells):
+    #     ax.annotate(cell_id, xy=(AP_width[i], AP_amp[i]))
+
     # plot_with_markers(ax, AP_width[has_DAP], AP_amp[has_DAP], np.array(grid_cells)[has_DAP],
     #                   cell_type_dict, edgecolor='y',
     #                   theta_cells=theta_cells, DAP_cells=DAP_cells)

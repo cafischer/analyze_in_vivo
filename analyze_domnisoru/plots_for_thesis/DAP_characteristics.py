@@ -45,13 +45,16 @@ if __name__ == '__main__':
     #     ax.set_xticks([])
 
     fig, ax = pl.subplots()
-    plot_with_markers(ax, DAP_time[DAP_cells_idxs], DAP_deflection[DAP_cells_idxs], cell_ids, cell_type_dict,
-                      theta_cells=load_cell_ids(save_dir, 'giant_theta'), DAP_cells=cell_ids)
+    handles = plot_with_markers(ax, DAP_time[DAP_cells_idxs], DAP_deflection[DAP_cells_idxs], cell_ids, cell_type_dict,
+                      theta_cells=load_cell_ids(save_dir, 'giant_theta'), DAP_cells=cell_ids, legend=False)
     ax.set_xlabel('$Time_{AP-DAP}$ (ms)')
     ax.set_ylabel('DAP deflection (mV)')
-    ax.set_xlim(0, None)
-    ax.set_ylim(0, None)
-
+    ax.set_xlim(0, 7.0)
+    ax.set_ylim(0, 2.5)
+    pl.legend(handles=handles, loc='upper left')
+    print cell_ids
+    print 'DAP_deflections', DAP_deflection[DAP_cells_idxs]
+    print 'DAP time', DAP_time[DAP_cells_idxs]
     pl.tight_layout()
     pl.savefig(os.path.join(save_dir_img, 'dap_characteristics.png'))
     pl.show()
