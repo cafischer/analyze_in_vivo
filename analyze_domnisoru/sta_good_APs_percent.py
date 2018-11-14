@@ -16,8 +16,7 @@ pl.style.use('paper_subplots')
 
 
 if __name__ == '__main__':
-    save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/STA/good_AP'
-    save_dir_img2 = '/home/cf/Dropbox/thesis/figures_results'
+    save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/STA/good_AP/percent'
     save_dir_in_out_field = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/in_out_field'
     save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
     cell_type = 'grid_cells'
@@ -25,19 +24,19 @@ if __name__ == '__main__':
     param_list = ['Vm_ljpc', 'spiketimes']
 
     # parameters
+    use_threshold = 'AP width'  # 'AP amplitude', 'AP width', 'both'
+    quantile = 20  # percent
     use_AP_max_idxs_domnisoru = True
     do_detrend = False
     in_field = False
     out_field = False
     before_AP = 10
     after_AP = 25
-    DAP_deflections = init_nan(len(cell_ids))
-    DAP_times = init_nan(len(cell_ids))
-    DAP_width_substitute = init_nan(len(cell_ids))
     folder_detrend = {True: 'detrended', False: 'not_detrended'}
     folder_field = {(True, False): 'in_field', (False, True): 'out_field', (False, False): 'all'}
-    save_dir_img = os.path.join(save_dir_img, folder_detrend[do_detrend], folder_field[(in_field, out_field)],
-                                cell_type)
+    save_dir_img = os.path.join(save_dir_img, cell_type, 'quantile_'+str(quantile), use_threshold)
+    if not os.path.exists(save_dir_img):
+        os.makedirs(save_dir_img)
 
     # main
     sta_mean_good_APs_cells = np.zeros(len(cell_ids), dtype=object)
@@ -91,65 +90,28 @@ if __name__ == '__main__':
                                                                  std_idx_times=(0, 1), check=False,
                                                                  **spike_characteristics_dict)
 
-        good_APs = np.logical_and(AP_amps > 51.84, AP_widths < 0.72)
+        AP_amp_thresh = np.nanpercentile(AP_amps, 100 - quantile)
+        AP_width_thresh = np.nanpercentile(AP_widths, quantile)
+        if use_threshold == 'AP amplitude':
+            good_APs = AP_amps >= AP_amp_thresh
+        elif use_threshold == 'AP width':
+            good_APs = AP_widths <= AP_width_thresh
+        elif use_threshold == 'both':
+            good_APs = np.logical_and(AP_amps >= AP_amp_thresh, AP_widths <= AP_width_thresh)
         v_APs_good = v_APs[good_APs]
 
         # STA
         sta_mean_cells[cell_idx], sta_std_cells[cell_idx] = get_sta(v_APs)
         sta_mean, sta_std = get_sta(v_APs_good)
         sta_diff_cells[cell_idx] = np.diff(sta_mean_cells[cell_idx])  # derivative
-        if len(v_APs_good) > 5:
+        if len(v_APs_good) > 2:
             sta_mean_good_APs_cells[cell_idx] = sta_mean
             sta_std_good_APs_cells[cell_idx] = sta_std
-
-            # get DAP deflection
-            # if cell_id == 's101_0009':
-            #     check = True
-            # else:
-            #     check = False
-            spike_characteristics_dict = get_spike_characteristics_dict(for_data=False)  # dont want interpolation
-            print 'v_rest: ', sta_mean_good_APs_cells[cell_idx][before_AP_idx - to_idx(5.0, dt)]
-            DAP_deflections[cell_idx], DAP_max_idx, DAP_times[cell_idx], fAHP_min_idx = get_spike_characteristics(
-                sta_mean_good_APs_cells[cell_idx], t_AP,
-                ['DAP_deflection', 'DAP_max_idx', 'DAP_time', 'fAHP_min_idx'],
-                v_rest=sta_mean_good_APs_cells[cell_idx][before_AP_idx - to_idx(5.0, dt)],
-                AP_max_idx=before_AP_idx,
-                AP_onset=before_AP_idx - to_idx(1.0, dt), check=False,
-                **spike_characteristics_dict)
-
-            # get something like the DAP width
-            v_fAHP = sta_mean_good_APs_cells[cell_idx][fAHP_min_idx]
-            crossings = np.nonzero(np.diff(np.sign(sta_mean_good_APs_cells[cell_idx][DAP_max_idx:] - v_fAHP)) == -2)[0]
-            if DAP_max_idx is not None and len(crossings) >= 1:
-                width_idx = crossings[0] + DAP_max_idx
-                DAP_width_substitute[cell_idx] = t_AP[width_idx] - t_AP[fAHP_min_idx]
-                print 'DAP_width_substitute: ', DAP_width_substitute[cell_idx]
-                # pl.figure()
-                # pl.plot(t_AP, sta_mean_good_APs_cells[cell_idx])
-                # pl.plot(t_AP[width_idx], sta_mean_good_APs_cells[cell_idx][width_idx], 'or')
-                # pl.plot(t_AP[fAHP_min_idx], sta_mean_good_APs_cells[cell_idx][fAHP_min_idx], 'or')
-                # pl.show()
-
-            if DAP_max_idx is not None:
-                sem_at_DAP = sta_std_good_APs_cells[cell_idx][DAP_max_idx] / np.sqrt(len(v_APs_good))
-                if DAP_deflections[cell_idx] > sem_at_DAP:
-                    print ' DAP deflection > sem: ', cell_id
-
             sta_diff_good_APs_cells[cell_idx] = np.diff(sta_mean_good_APs_cells[cell_idx])  # derivative
         else:
             sta_mean_good_APs_cells[cell_idx] = init_nan(len(sta_mean))
             sta_std_good_APs_cells[cell_idx] = init_nan(len(sta_mean))
             sta_diff_good_APs_cells[cell_idx] = init_nan(len(sta_mean)-1)
-
-        # save
-        save_dir_cell = os.path.join(save_dir_img, cell_id)
-        if not os.path.exists(save_dir_cell):
-            os.makedirs(save_dir_cell)
-
-        np.save(os.path.join(save_dir_cell, 'sta_mean.npy'), sta_mean_good_APs_cells[cell_idx])
-        np.save(os.path.join(save_dir_cell, 'sta_std.npy'), sta_std_good_APs_cells[cell_idx])
-
-    print 'Cells with DAP deflection: ', np.array(cell_ids)[DAP_deflections > 0]
 
 
     def plot_sta(ax, cell_idx, t_AP, sta_mean_cells, sta_std_cells):
@@ -191,16 +153,6 @@ if __name__ == '__main__':
             ax.annotate('%.3f' % diff_selected_all[cell_idx], xy=(25, ylim[1]), textcoords='data',
                         horizontalalignment='right', verticalalignment='top', fontsize=8)
 
-            # # smooth
-            # std = np.std(sta_mean_good_APs_cells[cell_idx][to_idx(2, dt):to_idx(3, dt)])
-            # #std = sta_std_cells[cell_idx][:-1]
-            # w = np.ones(len(sta_mean_good_APs_cells[cell_idx])) / std
-            # print 'w1', w[0]
-            # splines = UnivariateSpline(t_AP, sta_mean_good_APs_cells[cell_idx], w=w, s=None, k=3)
-            # smoothed = splines(t_AP)
-            #
-            # ax.plot(t_AP, smoothed, 'r')
-
         elif subplot_idx == 1:
             if ~np.any(np.isnan(sta_mean_cells[cell_idx])):
                 ax.fill_between((0, 3.5), ylim[0], ylim[1], color='0.8')
@@ -208,16 +160,6 @@ if __name__ == '__main__':
             ax.set_ylim(ylim)
             ax.annotate('all APs', xy=(25, ylim[0]), textcoords='data',
                         horizontalalignment='right', verticalalignment='bottom', fontsize=8)
-
-            # # smooth
-            # std = np.std(sta_mean_cells[cell_idx][to_idx(2, dt):to_idx(3, dt)])
-            # #std = sta_std_good_APs_cells[cell_idx][:-1]
-            # w = np.ones(len(sta_mean_cells[cell_idx])) / std
-            # print 'w2', w[0]
-            # splines = UnivariateSpline(t_AP, sta_mean_cells[cell_idx], w=w, s=None, k=3)
-            # smoothed = splines(t_AP)
-            #
-            # ax.plot(t_AP, smoothed, 'r')
 
 
     max_after_0 = np.array([np.max(sta[before_AP_idx:before_AP_idx+to_idx(3.5, dt)]) for sta in sta_diff_cells])
@@ -230,31 +172,18 @@ if __name__ == '__main__':
     # cell_ids_DAP_idx = np.array([np.where(id==np.array(cell_ids))[0][0] for id in cell_ids_DAP])
 
     if cell_type == 'grid_cells':
-        # fig, ax = pl.subplots()
-        # plot_with_markers(ax, DAP_width_substitute, DAP_deflections, np.array(cell_ids), get_celltype_dict(save_dir),
-        #                   theta_cells=load_cell_ids(save_dir, 'giant_theta'), DAP_cells=get_cell_ids_DAP_cells())
-        # ax.set_xlabel('DAP width approximation (ms)')
-        # ax.set_ylabel('DAP deflection (mV)')
-
-        fig, ax = pl.subplots()
-        handles = plot_with_markers(ax, DAP_times, DAP_deflections, np.array(cell_ids), get_celltype_dict(save_dir),
-                                 theta_cells=load_cell_ids(save_dir, 'giant_theta'), DAP_cells=get_cell_ids_DAP_cells(),
-                                 legend=False)
-        ax.set_xlabel('Time$_{AP-DAP}$ (ms)')
-        ax.set_ylabel('DAP deflection (mV)')
-        ax.set_xlim(0, 7.0)
-        ax.set_ylim(0, 2.5)
-        print np.array(cell_ids)[~np.isnan(DAP_times)]
-        print 'DAP_deflections', DAP_deflections[~np.isnan(DAP_deflections)]
-        print 'DAP time', DAP_times[~np.isnan(DAP_times)]
-        pl.legend(handles=handles, loc='upper left')
-        pl.savefig(os.path.join(save_dir_img2, 'dap_characteristics_selected_APs.png'))
-
         t_AP = np.arange(-before_AP_idx, after_AP_idx + 1) * dt
+        if use_threshold == 'AP amplitude':
+            quantile_str = str(100 - quantile)
+        elif use_threshold == 'AP width':
+            quantile_str = str(quantile)
+        elif use_threshold == 'both':
+            quantile_str = str(100 - quantile)+', '+str(quantile)
 
         plot_kwargs = dict(t_AP=t_AP, sta_mean_cells=sta_mean_good_APs_cells, sta_std_cells=sta_std_good_APs_cells)
         plot_for_all_grid_cells(cell_ids, get_celltype_dict(save_dir), plot_sta, plot_kwargs,
                                 xlabel='Time (ms)', ylabel='Mem. pot. (mV)',
+                                fig_title='Threshold by '+use_threshold+' (quantile: ' + quantile_str+')',
                                 save_dir_img=os.path.join(save_dir_img, 'sta_selected_APs.png'))
 
         plot_kwargs = dict(t_AP=t_AP,
@@ -266,11 +195,8 @@ if __name__ == '__main__':
                            )
         plot_for_all_grid_cells_grid(cell_ids, get_celltype_dict(save_dir), plot_sta_grid, plot_kwargs,
                                 xlabel='Time (ms)', ylabel='Mem. pot. \n(mV)', n_subplots=2,
+                                fig_title='Threshold by '+use_threshold+' (quantile: ' + quantile_str+')',
                                 save_dir_img=os.path.join(save_dir_img, 'sta_selected_and_all_APs.png'))
-
-        plot_for_all_grid_cells_grid(cell_ids, get_celltype_dict(save_dir), plot_sta_grid, plot_kwargs,
-                                xlabel='Time (ms)', ylabel='Mem. pot. \n(mV)', n_subplots=2,
-                                save_dir_img=os.path.join(save_dir_img2, 'sta_selected_APs.png'))
 
         plot_kwargs = dict(t_AP=t_AP[:-1],
                            sta_mean_cells=sta_diff_cells,
@@ -281,5 +207,6 @@ if __name__ == '__main__':
         plot_for_all_grid_cells_grid(cell_ids, get_celltype_dict(save_dir), plot_sta_derivative_grid, plot_kwargs,
                                      xlabel='Time (ms)', ylabel=r'$\frac{Mem. pot.}{Time} \left(\frac{mV}{ms}\right)$',
                                      n_subplots=2,
-                                     save_dir_img=os.path.join(save_dir_img2, 'sta_selected_APs_derivative.png'))
+                                     fig_title='Threshold by '+use_threshold+' (quantile: ' + quantile_str+')',
+                                     save_dir_img=os.path.join(save_dir_img, 'sta_selected_APs_derivative.png'))
         pl.show()

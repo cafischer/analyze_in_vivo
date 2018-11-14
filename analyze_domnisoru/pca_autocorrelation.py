@@ -24,6 +24,8 @@ if __name__ == '__main__':
     auto_corr_cells = np.load(os.path.join(save_dir_auto_corr, cell_type, 'auto_corr_'+str(max_lag)+'.npy'))
     max_lag_idx = to_idx(max_lag, bin_size)
     t_auto_corr = np.concatenate((np.arange(-max_lag_idx, 0, 1), np.arange(0, max_lag_idx + 1, 1))) * bin_size
+    theta_cells = load_cell_ids(save_dir, 'giant_theta')
+    DAP_cells = get_cell_ids_DAP_cells()
 
     # PCA
     auto_corr_cells_centered = auto_corr_cells - np.mean(auto_corr_cells, 0)
@@ -48,18 +50,19 @@ if __name__ == '__main__':
     # ax.set_ylabel('PC2')
     # ax.set_zlabel('PC3')
 
-    pl.figure()
-    ax = pl.subplot()
-    # for label in range(n_clusters):
-    #     ax.plot(transformed[labels==label, 0], transformed[labels==label, 1], 'o')
-    ax.plot(transformed[labels==0, 0], transformed[labels==0, 1], 'or')
-    ax.plot(transformed[labels==1, 0], transformed[labels==1, 1], 'ob')
-    #ax.plot(transformed[labels == 2, 0], transformed[labels == 2, 1], 'oy')
-    #ax.plot(transformed[labels == 3, 0], transformed[labels == 3, 1], 'og')
-    for i in range(len(cell_ids)):
-        ax.annotate(cell_ids[i], xy=(transformed[i, 0], transformed[i, 1]))
-    ax.set_xlabel('PC1')
-    ax.set_ylabel('PC2')
+    # pl.figure()
+    # ax = pl.subplot()
+    # ax.plot(transformed[labels==1, 0], transformed[labels==1, 1], 'ob')
+    # plot_with_markers(ax, transformed[labels == 0, 0], transformed[labels == 0, 1], cell_ids[labels == 0],
+    #                   cell_type_dict, edgecolor='b', theta_cells=theta_cells, DAP_cells=DAP_cells, legend=False)
+    # handles = plot_with_markers(ax, transformed[labels == 1, 0], transformed[labels == 1, 1], cell_ids[labels == 1],
+    #                   cell_type_dict, edgecolor='r', theta_cells=theta_cells, DAP_cells=DAP_cells, legend=False)
+    # handles_bursty = [Patch(color='r', label='Bursty'), Patch(color='b', label='Non-bursty')]
+    # legend1 = ax.legend(handles=handles+handles_bursty, bbox_to_anchor=(1.05, 1.0), loc=2, borderaxespad=0.)
+    # for i in range(len(cell_ids)):
+    #     ax.annotate(cell_ids[i], xy=(transformed[i, 0], transformed[i, 1]))
+    # ax.set_xlabel('PC1')
+    # ax.set_ylabel('PC2')
 
     # pl.figure()
     # for i in np.where(labels)[0]:
@@ -129,8 +132,6 @@ if __name__ == '__main__':
 
 
     # plot for thesis
-    theta_cells = load_cell_ids(save_dir, 'giant_theta')
-    DAP_cells = get_cell_ids_DAP_cells()
     fig, ax = pl.subplots(figsize=(8, 5.5))
 
     left, bottom, width, height = [0.5, 0.75, 0.2, 0.2]
@@ -180,5 +181,30 @@ if __name__ == '__main__':
     pl.tight_layout()
     pl.subplots_adjust(top=0.7)
     pl.savefig(os.path.join(save_dir_img, 'pca_autocorrelation.png'))
+
+
+    # plot for Andreas
+    fig, ax = pl.subplots(figsize=(8, 5.5))
+    plot_with_markers(ax, transformed[labels == 0, 0], transformed[labels == 0, 1], cell_ids[labels == 0],
+                      cell_type_dict, edgecolor='b', theta_cells=theta_cells, DAP_cells=DAP_cells, legend=False)
+    handles = plot_with_markers(ax, transformed[labels == 1, 0], transformed[labels == 1, 1], cell_ids[labels == 1],
+                      cell_type_dict, edgecolor='r', theta_cells=theta_cells, DAP_cells=DAP_cells, legend=False)
+    handles_bursty = [Patch(color='r', label='Bursty'), Patch(color='b', label='Non-bursty')]
+    legend1 = ax.legend(handles=handles+handles_bursty, bbox_to_anchor=(1.05, 1.0), loc=2, borderaxespad=0.)
+    ax.add_artist(legend1)
+    ax.set_xlabel('PC1')
+    ax.set_ylabel('PC2')
+
+    for i in range(len(cell_ids)):
+        if cell_ids[i] == 's115_0024':
+            ax.annotate(cell_ids[i], xy=(transformed[i, 0] + 0.001, transformed[i, 1] - 0.001), fontsize=7)
+        else:
+            ax.annotate(cell_ids[i], xy=(transformed[i, 0] + 0.001, transformed[i, 1]), fontsize=7)
+
+    ax.set_ylim([-0.058, 0.17])
+    ax.set_xlim([-0.065, 0.133])
+    pl.tight_layout()
+    pl.subplots_adjust(bottom=0.06, left=0.06, top=0.98, right=0.84)
+    pl.savefig(os.path.join(save_dir_img, 'pca_autocorrelation_with_cell_ids.png'))
 
     pl.show()
