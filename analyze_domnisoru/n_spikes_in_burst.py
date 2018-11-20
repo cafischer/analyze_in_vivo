@@ -27,6 +27,8 @@ def plot_n_spikes_in_burst_all_cells(cell_type_dict, bins, count_spikes):
             ax_twin.set_ylim(10**-4, 10**0)
             if not (cell_idx == 8 or cell_idx == 17 or cell_idx == 25):
                 ax_twin.set_yticklabels([])
+            else:
+                ax_twin.set_ylabel('Rel. log. frequency')
             ax.spines['right'].set_visible(True)
 
         burst_label = np.array([True if cell_id in get_cell_ids_bursty() else False for cell_id in cell_ids])
@@ -36,12 +38,12 @@ def plot_n_spikes_in_burst_all_cells(cell_type_dict, bins, count_spikes):
 
         plot_kwargs = dict(bins=bins, count_spikes=count_spikes)
         plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_fun, plot_kwargs,
-                                xlabel='# Spikes \nin event', ylabel='Rel. Frequency',
+                                xlabel='# Spikes \nin event', ylabel='Rel. frequency',
                                 colors_marker=colors_marker,
                                 save_dir_img=os.path.join(save_dir_img, 'count_spikes.png'))
 
         plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_fun, plot_kwargs,
-                                xlabel='# Spikes \nin event', ylabel='Rel. Frequency',
+                                xlabel='# Spikes \nin event', ylabel='Rel. frequency',
                                 colors_marker=colors_marker,
                                 save_dir_img=os.path.join(save_dir_img2, 'count_spikes.png'))
 
@@ -58,7 +60,7 @@ def plot_n_spikes_in_burst_all_cells(cell_type_dict, bins, count_spikes):
 
         plot_kwargs = dict(bins=bins, count_spikes=count_spikes)
         plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_fun, plot_kwargs,
-                                xlabel='# Spikes \nin event', ylabel='Rel. Frequency',
+                                xlabel='# Spikes \nin event', ylabel='Rel. frequency',
                                 save_dir_img=os.path.join(save_dir_img, 'count_spikes_log_scale.png'))
 
 
@@ -91,6 +93,7 @@ if __name__ == '__main__':
     use_AP_max_idxs_domnisoru = True
 
     count_spikes = np.zeros((len(cell_ids), len(bins)-1))
+    fraction_single = np.zeros(len(cell_ids))
 
     for cell_idx, cell_id in enumerate(cell_ids):
         print cell_id
@@ -122,6 +125,7 @@ if __name__ == '__main__':
                                              AP_max_idxs[~short_ISI_indicator]))
         count_spikes[cell_idx, 0] = len(AP_max_idxs_single)
         assert bins[0] == 1
+        fraction_single[cell_idx] = count_spikes[cell_idx, 0] / np.sum(count_spikes[cell_idx, :])
 
         # pl.close('all')
         # pl.figure()
@@ -133,7 +137,18 @@ if __name__ == '__main__':
         # pl.savefig(os.path.join(save_dir_cell, 'n_spikes_in_burst.png'))
         # pl.show()
 
+    # fraction single between bursty and non-bursty
+    # from scipy.stats import ttest_ind
+    # burst_label = np.array([True if cell_id in get_cell_ids_bursty() else False for cell_id in cell_ids])
+    # _, p_val = ttest_ind(fraction_single[burst_label], fraction_single[~burst_label])
+    # print 'p_val: ', p_val
+    # pl.figure()
+    # pl.plot(np.zeros(sum(burst_label)), fraction_single[burst_label], 'or')
+    # pl.plot(np.ones(sum(~burst_label)), fraction_single[~burst_label], 'ob')
+
     # plot all cells
+    np.save(os.path.join(save_dir_img, 'fraction_single.npy'), fraction_single)
+
     pl.close('all')
     plot_n_spikes_in_burst_all_cells(cell_type_dict, bins, count_spikes)
     pl.show()

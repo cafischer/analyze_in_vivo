@@ -97,7 +97,7 @@ if __name__ == '__main__':
         # STA
         sta_mean_cells[cell_idx], sta_std_cells[cell_idx] = get_sta(v_APs)
         sta_mean, sta_std = get_sta(v_APs_good)
-        sta_diff_cells[cell_idx] = np.diff(sta_mean_cells[cell_idx])  # derivative
+        sta_diff_cells[cell_idx] = np.diff(sta_mean_cells[cell_idx]) / dt  # derivative
         if len(v_APs_good) > 5:
             sta_mean_good_APs_cells[cell_idx] = sta_mean
             sta_std_good_APs_cells[cell_idx] = sta_std
@@ -275,7 +275,7 @@ if __name__ == '__main__':
         plot_kwargs = dict(t_AP=t_AP[:-1],
                            sta_mean_cells=sta_diff_cells,
                            sta_mean_good_APs_cells=sta_diff_good_APs_cells,
-                           ylim=(-0.2, 0.2),
+                           ylim=(-0.2/dt, 0.2/dt),
                            diff_selected_all=diff_selected_all
                            )
         plot_for_all_grid_cells_grid(cell_ids, get_celltype_dict(save_dir), plot_sta_derivative_grid, plot_kwargs,

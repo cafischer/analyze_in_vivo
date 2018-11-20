@@ -10,6 +10,7 @@ from scipy.stats import ks_2samp
 from itertools import combinations
 from analyze_in_vivo.analyze_domnisoru.check_basic.in_out_field import get_starts_ends_group_of_ones
 from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_for_all_grid_cells, plot_for_cell_group
+from sklearn.metrics import silhouette_score
 pl.style.use('paper_subplots')
 
 
@@ -37,7 +38,7 @@ if __name__ == '__main__':
         os.makedirs(save_dir_img)
 
     # parameter
-    bin_width = 1.0
+    bin_width = 1.0  # ms
     bins = np.arange(0, max_ISI+bin_width, bin_width)
 
     # over cells
@@ -111,9 +112,21 @@ if __name__ == '__main__':
                                                    cum_ISI_hist_y_avg_bursty, cum_ISI_hist_x_avg_bursty,
                                                    cum_ISI_hist_y_avg_nonbursty, cum_ISI_hist_x_avg_nonbursty,
                                                    cell_ids, burst_label, max_ISI, os.path.join(save_dir_img2))
-    D, p_val = ks_2samp(ISIs_all_bursty, ISIs_all_nonbursty)
-    print p_val  # p-val small = reject that they come from same distribution
 
+    # # fraction burst between bursty and non-bursty
+    # from scipy.stats import ttest_ind
+    # _, p_val = ttest_ind(fraction_burst[burst_label], fraction_burst[~burst_label])
+
+    # # Kolomogorov-Smirnov test between all bursty and non-bursty ISIs
+    # D, p_val = ks_2samp(ISIs_all_bursty, ISIs_all_nonbursty)
+    # print 'K-S p-value: ', p_val  # p-val small = reject that they come from same distribution
+    # # Silhoutte score
+    # dist_mat = np.zeros((len(cell_ids), len(cell_ids)))
+    # for i1 in range(len(cell_ids)):
+    #     for i2 in range(len(cell_ids)):
+    #         dist_mat[i1, i2], _ = ks_2samp(ISIs_per_cell[i1], ISIs_per_cell[i2])  # use biggest absolute difference as distance measure
+    # silhouette = silhouette_score(dist_mat, burst_label, metric="precomputed")
+    # print 'silhouette: ', silhouette
 
     # # for each pair of cells two sample Kolmogorov Smironov test (Note: ISIs are cut at 200 ms (=max(bins)))
     # p_val_dict = {}
@@ -150,11 +163,14 @@ if __name__ == '__main__':
             ax_twin.plot(cum_ISI_hist_x_with_end, cum_ISI_hist_y_with_end, color='k', drawstyle='steps-post')
             ax_twin.set_xlim(0, max_ISI)
             ax_twin.set_ylim(0, 1)
-            if (cell_idx+1) % 9 == 0:
-                ax_twin.set_yticks([0, 1])
+            ax_twin.set_yticks([0, 0.5, 1])
+            if (cell_idx+1) % 9 == 0 or (cell_idx+1) == 26:
+                ax_twin.set_yticklabels([0, 0.5, 1])
+                ax_twin.set_ylabel('Cum. frequency')
             else:
-                ax_twin.set_yticks([])
+                ax_twin.set_yticklabels([])
             ax.spines['right'].set_visible(True)
+
 
         plot_kwargs = dict(fraction_ISIs_filtered=fraction_ISIs_filtered, ISI_hist=ISI_hist,
                            cum_ISI_hist_x=cum_ISI_hist_x, cum_ISI_hist_y=cum_ISI_hist_y)

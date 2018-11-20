@@ -40,6 +40,7 @@ if __name__ == '__main__':
     median_cells = init_nan((len(cell_ids), len(steps)))
     prob_next_ISI_burst = init_nan((len(cell_ids), len(steps)))
     area_under_curve_cum_prob_next_ISI_burst = np.zeros(len(cell_ids))
+    fraction_ISI_or_ISI_next_burst = np.zeros(len(cell_ids))
 
     for cell_idx, cell_id in enumerate(cell_ids):
         print cell_id
@@ -59,6 +60,10 @@ if __name__ == '__main__':
             ISIs = ISIs[ISIs <= max_ISI]
         n_ISIs[cell_idx] = len(ISIs)
         ISIs_per_cell[cell_idx] = ISIs
+
+        fraction_ISI_or_ISI_next_burst[cell_idx] = float(sum(np.logical_or(ISIs_per_cell[cell_idx][:-1] < ISI_burst,
+                                                                           ISIs_per_cell[cell_idx][1:] < ISI_burst))) \
+                                                   / len(ISIs_per_cell[cell_idx][1:])
 
         # running median
         window_size = 5.0  # ms
@@ -125,7 +130,18 @@ if __name__ == '__main__':
         #pl.show()
         pl.close('all')
 
+    # # fraction single between bursty and non-bursty
+    # from scipy.stats import ttest_ind
+    # burst_label = np.array([True if cell_id in get_cell_ids_bursty() else False for cell_id in cell_ids])
+    # _, p_val = ttest_ind(fraction_ISI_or_ISI_next_burst[burst_label], fraction_ISI_or_ISI_next_burst[~burst_label])
+    # print 'p_val: ', p_val
+    # pl.figure()
+    # pl.plot(np.zeros(sum(burst_label)), fraction_ISI_or_ISI_next_burst[burst_label], 'or')
+    # pl.plot(np.ones(sum(~burst_label)), fraction_ISI_or_ISI_next_burst[~burst_label], 'ob')
+
     # save and plot
+    np.save(os.path.join(save_dir_img, 'fraction_ISI_or_ISI_next_burst.npy'), fraction_ISI_or_ISI_next_burst)
+
     def plot_ISI_return_map(ax, cell_idx, ISIs_per_cell, max_ISI, median_cells=None, log_scale=False):
         if log_scale:
             ax.loglog(ISIs_per_cell[cell_idx][:-1], ISIs_per_cell[cell_idx][1:], color='0.5',

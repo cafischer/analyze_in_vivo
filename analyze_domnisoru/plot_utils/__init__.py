@@ -143,8 +143,8 @@ def plot_for_cell_group(cell_ids, cell_type_dict, plot_fun, plot_kwargs, xlabel,
             if cell_idx < len(cell_ids):
                 #axes[i1, i2].set_title(get_cell_id_with_marker(cell_ids[cell_idx], cell_type_dict))
                 handle = get_handles_for_cell_id(cell_ids[cell_idx], cell_type_dict, colors_marker[cell_idx])
-                leg = axes[i1, i2].legend(handles=[handle], bbox_to_anchor=(0, 1.01, 1, 0.1), loc="lower left", frameon=False,
-                                    handletextpad=0.1, mode='expand')
+                leg = axes[i1, i2].legend(handles=[handle], bbox_to_anchor=(0, 1.01, 1, 0.1), loc="lower left",
+                                          frameon=False, handletextpad=0.1, mode='expand')
                 leg.legendHandles[0].set_edgecolor(
                     colors_marker[cell_idx])  # fixes bug that hatch is not in same edgecolor
 
@@ -258,6 +258,26 @@ def find_most_equal_divisors(x):
     divisors = get_divisors(x)
     diff = [np.abs(divisor_pair[1] - divisor_pair[0]) for divisor_pair in divisors]
     return divisors[np.argmin(diff)]
+
+
+def horizontal_square_bracket(ax, star, x1, x2, y1, y2, dtext):
+    ax.plot([x1, x1, x2, x2], [y1, y2, y2, y1], lw=1.5, c='k')
+    if star == 'n.s.':
+        fontsize = 10
+    else:
+        fontsize = 12
+    ax.text((x1 + x2) * 0.5, y2 + dtext, star, ha='center', color='k', fontsize=fontsize)
+
+
+def get_star_from_p_val(p):
+    star_idx = np.where([p < 0.01, p < 0.001, p < 0.0001])[0]
+    if len(star_idx) == 0:
+        star_idx = 0
+    else:
+        star_idx = star_idx[-1] + 1
+    stars = ['n.s.', '*', '**', '***']
+    star = stars[star_idx]
+    return star
 
 
 if __name__ == '__main__':
