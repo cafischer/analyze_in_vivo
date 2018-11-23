@@ -249,6 +249,7 @@ if __name__ == '__main__':
         print 'DAP time', DAP_times[~np.isnan(DAP_times)]
         pl.legend(handles=handles, loc='upper left')
         pl.savefig(os.path.join(save_dir_img2, 'dap_characteristics_selected_APs.png'))
+        np.save(os.path.join(save_dir_img, 'DAP_times.npy'), DAP_times)
 
         t_AP = np.arange(-before_AP_idx, after_AP_idx + 1) * dt
 
