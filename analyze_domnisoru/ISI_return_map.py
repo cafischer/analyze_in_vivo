@@ -8,7 +8,7 @@ from grid_cell_stimuli.ISI_hist import get_ISIs
 from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data, get_celltype_dict, get_cell_ids_bursty
 from cell_fitting.util import init_nan
 from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_for_all_grid_cells
-pl.style.use('paper')
+pl.style.use('paper_subplots')
 
 
 if __name__ == '__main__':
@@ -164,6 +164,9 @@ if __name__ == '__main__':
         colors_marker[burst_label] = 'r'
         colors_marker[~burst_label] = 'b'
 
+        params = {'legend.fontsize': 9}
+        pl.rcParams.update(params)
+
         # plot return maps
         plot_kwargs = dict(ISIs_per_cell=ISIs_per_cell, max_ISI=max_ISI)
         plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_ISI_return_map, plot_kwargs,
@@ -171,7 +174,7 @@ if __name__ == '__main__':
                                 save_dir_img=os.path.join(save_dir_img, 'return_map.png'))
         plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_ISI_return_map, plot_kwargs,
                                 xlabel='ISI[n] (ms)', ylabel='ISI[n+1] (ms)', colors_marker=colors_marker,
-                                save_dir_img=os.path.join(save_dir_img2, 'ISI_return_map.png'))
+                                wspace=0.18, save_dir_img=os.path.join(save_dir_img2, 'ISI_return_map.png'))
 
         plot_kwargs = dict(ISIs_per_cell=ISIs_per_cell, max_ISI=max_ISI, log_scale=True)
         plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_ISI_return_map, plot_kwargs,

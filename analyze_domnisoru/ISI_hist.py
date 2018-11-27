@@ -164,7 +164,7 @@ if __name__ == '__main__':
             ax_twin.set_xlim(0, max_ISI)
             ax_twin.set_ylim(0, 1)
             ax_twin.set_yticks([0, 0.5, 1])
-            if (cell_idx+1) % 9 == 0 or (cell_idx+1) == 26:
+            if (cell_idx+1) % 9 == 0: # or (cell_idx+1) == 26:
                 ax_twin.set_yticklabels([0, 0.5, 1])
                 ax_twin.set_ylabel('Cum. frequency')
             else:
@@ -172,14 +172,16 @@ if __name__ == '__main__':
             ax.spines['right'].set_visible(True)
 
 
+        params = {'legend.fontsize': 9}
+        pl.rcParams.update(params)
         plot_kwargs = dict(fraction_ISIs_filtered=fraction_ISIs_filtered, ISI_hist=ISI_hist,
                            cum_ISI_hist_x=cum_ISI_hist_x, cum_ISI_hist_y=cum_ISI_hist_y)
         plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_ISI_hist, plot_kwargs,
-                                xlabel='ISI (ms)', ylabel='Rel. frequency',
+                                wspace=0.18, xlabel='ISI (ms)', ylabel='Rel. frequency',
                                 save_dir_img=os.path.join(save_dir_img, 'ISI_hist'+str(bin_width)+'.png'))
         plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_ISI_hist, plot_kwargs,
                                 xlabel='ISI (ms)', ylabel='Rel. frequency', colors_marker=colors_marker,
-                                save_dir_img=os.path.join(save_dir_img2, 'ISI_hist.png'))
+                                wspace=0.18, save_dir_img=os.path.join(save_dir_img2, 'ISI_hist.png'))
     else:
         def plot_ISI_hist(ax, cell_idx, fraction_ISIs_filtered, ISI_hist, cum_ISI_hist_x, cum_ISI_hist_y):
             if filter_long_ISIs:

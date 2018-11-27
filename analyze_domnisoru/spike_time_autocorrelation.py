@@ -8,7 +8,7 @@ from grid_cell_stimuli import get_AP_max_idxs
 from cell_characteristics import to_idx
 from analyze_in_vivo.analyze_domnisoru.position_vs_firing_rate import get_spike_train, smooth_firing_rate
 import warnings
-pl.style.use('paper')
+pl.style.use('paper_subplots')
 
 
 def cross_correlate(x, y, max_lag=0):
@@ -152,6 +152,9 @@ if __name__ == '__main__':
         colors_marker[burst_label] = 'r'
         colors_marker[~burst_label] = 'b'
 
+        params = {'legend.fontsize': 9}
+        pl.rcParams.update(params)
+
         def plot_auto_corr(ax, cell_idx, t_auto_corr, auto_corr_cells, bin_size, max_lag):
             ax.bar(t_auto_corr, auto_corr_cells[cell_idx], bin_size, color='0.5', align='center')
             ax.set_xlim(-max_lag, max_lag)
@@ -162,6 +165,7 @@ if __name__ == '__main__':
 
         plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_auto_corr, plot_kwargs,
                                 xlabel='Time (ms)', ylabel='Spike-time \nautocorrelation', colors_marker=colors_marker,
+                                wspace=0.18,
                                 save_dir_img=os.path.join(save_dir_img2, 'auto_corr_' + str(max_lag) + '.png'))
 
         # plot theta power

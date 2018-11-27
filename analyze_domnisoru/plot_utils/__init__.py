@@ -116,14 +116,14 @@ def get_handles_for_cell_id(cell_id, cell_type_dict, color='k'):
 
 
 def plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_fun, plot_kwargs, xlabel, ylabel, fig_title=None,
-                            sharey='all', sharex='all', colors_marker=None, save_dir_img=None):
+                            sharey='all', sharex='all', colors_marker=None, wspace=None, save_dir_img=None):
     plot_for_cell_group(cell_ids, cell_type_dict, plot_fun, plot_kwargs, xlabel, ylabel, (15, 8.5), (3, 9),
                         fig_title=fig_title, sharey=sharey, sharex=sharex, colors_marker=colors_marker,
-                        save_dir_img=save_dir_img)
+                        wspace=wspace, save_dir_img=save_dir_img)
 
 
 def plot_for_cell_group(cell_ids, cell_type_dict, plot_fun, plot_kwargs, xlabel, ylabel, figsize, n_rows_n_columns=None,
-                        fig_title=None, sharey='all', sharex='all', colors_marker=None, save_dir_img=None):
+                        fig_title=None, sharey='all', sharex='all', colors_marker=None, wspace=None, save_dir_img=None):
     if n_rows_n_columns is not None:
         n_rows, n_columns = n_rows_n_columns
     else:
@@ -145,6 +145,12 @@ def plot_for_cell_group(cell_ids, cell_type_dict, plot_fun, plot_kwargs, xlabel,
                 handle = get_handles_for_cell_id(cell_ids[cell_idx], cell_type_dict, colors_marker[cell_idx])
                 leg = axes[i1, i2].legend(handles=[handle], bbox_to_anchor=(0, 1.01, 1, 0.1), loc="lower left",
                                           frameon=False, handletextpad=0.1, mode='expand')
+                # if colors_marker[0] == 'k':
+                #     leg = axes[i1, i2].legend(handles=[handle], bbox_to_anchor=(0, 1.01, 1, 0.1), loc="lower left",
+                #                               frameon=False, handletextpad=0.1, mode='expand')
+                # else:
+                #     leg = axes[i1, i2].legend(handles=[handle], bbox_to_anchor=(-0.27, 1.01, 1, 0.1), loc="lower left",
+                #                               frameon=False, handletextpad=0.1, mode='expand')
                 leg.legendHandles[0].set_edgecolor(
                     colors_marker[cell_idx])  # fixes bug that hatch is not in same edgecolor
 
@@ -163,9 +169,12 @@ def plot_for_cell_group(cell_ids, cell_type_dict, plot_fun, plot_kwargs, xlabel,
     if colors_marker[0] != 'k':
         handles += [Patch(color='r', label='Bursty'), Patch(color='b', label='Non-bursty')]
     axes[-1, -1].legend(handles=handles, loc="lower left", bbox_to_anchor=(-0.025, -0.025))
+    #axes[-1, -1].legend(handles=handles, loc="lower left", bbox_to_anchor=(0, 0.3))  # for ISI return map
     pl.tight_layout()
     if fig_title is not None:
         pl.subplots_adjust(top=0.92)
+    if wspace is not None:
+        pl.subplots_adjust(wspace=wspace)
     pl.savefig(save_dir_img)
 
 

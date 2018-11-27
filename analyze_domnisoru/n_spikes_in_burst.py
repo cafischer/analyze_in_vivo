@@ -7,9 +7,13 @@ from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_for_all_grid_cells
 from grid_cell_stimuli import get_AP_max_idxs
 from grid_cell_stimuli.ISI_hist import get_ISIs
 from analyze_in_vivo.analyze_domnisoru.check_basic.in_out_field import get_starts_ends_group_of_ones
+pl.style.use('paper_subplots')
 
 
 def plot_n_spikes_in_burst_all_cells(cell_type_dict, bins, count_spikes):
+    params = {'legend.fontsize': 9}
+    pl.rcParams.update(params)
+
     if cell_type == 'grid_cells':
         def plot_fun(ax, cell_idx, bins, count_spikes):
             count_spikes_normed = count_spikes[cell_idx, :] / (np.sum(count_spikes[cell_idx, :]) * (bins[1] - bins[0]))
@@ -25,7 +29,7 @@ def plot_n_spikes_in_burst_all_cells(cell_type_dict, bins, count_spikes):
             ax_twin.plot(bins[:-1], count_spikes_normed, marker='o', linestyle='-', color='k', markersize=3)
             ax_twin.set_yscale('log')
             ax_twin.set_ylim(10**-4, 10**0)
-            if not (cell_idx == 8 or cell_idx == 17 or cell_idx == 25):
+            if not (cell_idx == 8 or cell_idx == 17):  #  or cell_idx == 25
                 ax_twin.set_yticklabels([])
             else:
                 ax_twin.set_ylabel('Rel. log. frequency')
@@ -39,12 +43,12 @@ def plot_n_spikes_in_burst_all_cells(cell_type_dict, bins, count_spikes):
         plot_kwargs = dict(bins=bins, count_spikes=count_spikes)
         plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_fun, plot_kwargs,
                                 xlabel='# Spikes \nin event', ylabel='Rel. frequency',
-                                colors_marker=colors_marker,
+                                colors_marker=colors_marker, wspace=0.18,
                                 save_dir_img=os.path.join(save_dir_img, 'count_spikes.png'))
 
         plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_fun, plot_kwargs,
                                 xlabel='# Spikes \nin event', ylabel='Rel. frequency',
-                                colors_marker=colors_marker,
+                                colors_marker=colors_marker, wspace=0.18,
                                 save_dir_img=os.path.join(save_dir_img2, 'count_spikes.png'))
 
         def plot_fun(ax, cell_idx, bins, count_spikes):
