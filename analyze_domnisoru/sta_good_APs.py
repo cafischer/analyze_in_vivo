@@ -38,6 +38,7 @@ if __name__ == '__main__':
     folder_field = {(True, False): 'in_field', (False, True): 'out_field', (False, False): 'all'}
     save_dir_img = os.path.join(save_dir_img, folder_detrend[do_detrend], folder_field[(in_field, out_field)],
                                 cell_type)
+    time_for_max = 3.5
 
     # main
     sta_mean_good_APs_cells = np.zeros(len(cell_ids), dtype=object)
@@ -135,7 +136,7 @@ if __name__ == '__main__':
                 if DAP_deflections[cell_idx] > sem_at_DAP:
                     print ' DAP deflection > sem: ', cell_id
 
-            sta_diff_good_APs_cells[cell_idx] = np.diff(sta_mean_good_APs_cells[cell_idx])  # derivative
+            sta_diff_good_APs_cells[cell_idx] = np.diff(sta_mean_good_APs_cells[cell_idx]) / dt  # derivative
         else:
             sta_mean_good_APs_cells[cell_idx] = init_nan(len(sta_mean))
             sta_std_good_APs_cells[cell_idx] = init_nan(len(sta_mean))
@@ -181,7 +182,7 @@ if __name__ == '__main__':
 
         if subplot_idx == 0:
             if ~np.any(np.isnan(sta_mean_good_APs_cells[cell_idx])):
-                ax.fill_between((0, 3.5), ylim[0], ylim[1], color='0.8')
+                ax.fill_between((0, time_for_max), ylim[0], ylim[1], color='0.8')
             ax.plot(t_AP, sta_mean_good_APs_cells[cell_idx], 'k')
             ax.set_xticks([])
             ax.set_xlabel('')
@@ -203,7 +204,7 @@ if __name__ == '__main__':
 
         elif subplot_idx == 1:
             if ~np.any(np.isnan(sta_mean_cells[cell_idx])):
-                ax.fill_between((0, 3.5), ylim[0], ylim[1], color='0.8')
+                ax.fill_between((0, time_for_max), ylim[0], ylim[1], color='0.8')
             ax.plot(t_AP, sta_mean_cells[cell_idx], 'k')
             ax.set_ylim(ylim)
             ax.annotate('all APs', xy=(25, ylim[0]), textcoords='data',
@@ -220,13 +221,15 @@ if __name__ == '__main__':
             # ax.plot(t_AP, smoothed, 'r')
 
 
-    max_after_0 = np.array([np.max(sta[before_AP_idx:before_AP_idx+to_idx(3.5, dt)]) for sta in sta_diff_cells])
-    max_after_0_good =  np.array([np.max(sta[before_AP_idx:before_AP_idx+to_idx(3.5, dt)]) for sta in sta_diff_good_APs_cells])
-    comp_max = (max_after_0_good > max_after_0).astype(float)
-    comp_max[np.isnan(max_after_0)] = np.nan
-    diff_selected_all = max_after_0_good - max_after_0
-    print comp_max
-    print diff_selected_all
+    max_after_0 = np.array([np.max(sta[before_AP_idx:before_AP_idx+to_idx(time_for_max, dt)]) for sta in sta_diff_cells])
+    max_after_0_good = np.array([np.max(sta[before_AP_idx:before_AP_idx+to_idx(time_for_max, dt)]) for sta in sta_diff_good_APs_cells])
+    # comp_max = (max_after_0_good > max_after_0).astype(float)
+    # comp_max[np.isnan(max_after_0)] = np.nan
+    # diff_selected_all2 = max_after_0_good - max_after_0  # TODO
+    sign = (max_after_0_good > max_after_0).astype(float)
+    sign[sign == 0] = -1
+    diff_selected_all = sign * np.abs(max_after_0_good - max_after_0)
+    print 'Max. selected > all', diff_selected_all
     # cell_ids_DAP_idx = np.array([np.where(id==np.array(cell_ids))[0][0] for id in cell_ids_DAP])
 
     if cell_type == 'grid_cells':

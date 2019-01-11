@@ -63,7 +63,7 @@ if __name__ == '__main__':
     handles += [Patch(color='r', label='Bursty'), Patch(color='b', label='Non-bursty')]
     ax2.legend(handles=handles, loc='lower right')
     ax2.set_ylabel('Peak of ISI hist. (ms)')
-    ax2.set_xlabel('DAP time (ms)')
+    ax2.set_xlabel('Time$_{AP-DAP}$ (ms)')
 
     # zoom-in / limit the view to different portions of the data
     ax.set_ylim(33.5, 36.5)  # outliers only
