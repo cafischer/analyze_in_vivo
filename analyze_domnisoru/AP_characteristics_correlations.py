@@ -8,7 +8,7 @@ from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_with_markers
 from sklearn.cluster import KMeans
 from sklearn import svm
 from sklearn.linear_model import Perceptron
-pl.style.use('paper')
+pl.style.use('paper_subplots')
 
 
 if __name__ == '__main__':

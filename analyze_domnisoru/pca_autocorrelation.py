@@ -183,28 +183,44 @@ if __name__ == '__main__':
     pl.savefig(os.path.join(save_dir_img, 'pca_autocorrelation.png'))
 
 
-    # plot for Andreas
+    # # plot for Andreas
+    # fig, ax = pl.subplots(figsize=(8, 5.5))
+    # plot_with_markers(ax, transformed[labels == 0, 0], transformed[labels == 0, 1], cell_ids[labels == 0],
+    #                   cell_type_dict, edgecolor='b', theta_cells=theta_cells, DAP_cells=DAP_cells, legend=False)
+    # handles = plot_with_markers(ax, transformed[labels == 1, 0], transformed[labels == 1, 1], cell_ids[labels == 1],
+    #                   cell_type_dict, edgecolor='r', theta_cells=theta_cells, DAP_cells=DAP_cells, legend=False)
+    # handles_bursty = [Patch(color='r', label='Bursty'), Patch(color='b', label='Non-bursty')]
+    # legend1 = ax.legend(handles=handles+handles_bursty, bbox_to_anchor=(1.05, 1.0), loc=2, borderaxespad=0.)
+    # ax.add_artist(legend1)
+    # ax.set_xlabel('PC1')
+    # ax.set_ylabel('PC2')
+    #
+    # for i in range(len(cell_ids)):
+    #     if cell_ids[i] == 's115_0024':
+    #         ax.annotate(cell_ids[i], xy=(transformed[i, 0] + 0.001, transformed[i, 1] - 0.001), fontsize=7)
+    #     else:
+    #         ax.annotate(cell_ids[i], xy=(transformed[i, 0] + 0.001, transformed[i, 1]), fontsize=7)
+    #
+    # ax.set_ylim([-0.058, 0.17])
+    # ax.set_xlim([-0.065, 0.133])
+    # pl.tight_layout()
+    # pl.subplots_adjust(bottom=0.06, left=0.06, top=0.98, right=0.84)
+    # pl.savefig(os.path.join(save_dir_img, 'pca_autocorrelation_with_cell_ids.png'))
+
+    # plot for slides
     fig, ax = pl.subplots(figsize=(8, 5.5))
     plot_with_markers(ax, transformed[labels == 0, 0], transformed[labels == 0, 1], cell_ids[labels == 0],
                       cell_type_dict, edgecolor='b', theta_cells=theta_cells, DAP_cells=DAP_cells, legend=False)
     handles = plot_with_markers(ax, transformed[labels == 1, 0], transformed[labels == 1, 1], cell_ids[labels == 1],
                       cell_type_dict, edgecolor='r', theta_cells=theta_cells, DAP_cells=DAP_cells, legend=False)
     handles_bursty = [Patch(color='r', label='Bursty'), Patch(color='b', label='Non-bursty')]
-    legend1 = ax.legend(handles=handles+handles_bursty, bbox_to_anchor=(1.05, 1.0), loc=2, borderaxespad=0.)
-    ax.add_artist(legend1)
+    legend1 = ax.legend(handles=handles+handles_bursty, loc='upper right')
     ax.set_xlabel('PC1')
     ax.set_ylabel('PC2')
 
-    for i in range(len(cell_ids)):
-        if cell_ids[i] == 's115_0024':
-            ax.annotate(cell_ids[i], xy=(transformed[i, 0] + 0.001, transformed[i, 1] - 0.001), fontsize=7)
-        else:
-            ax.annotate(cell_ids[i], xy=(transformed[i, 0] + 0.001, transformed[i, 1]), fontsize=7)
-
-    ax.set_ylim([-0.058, 0.17])
-    ax.set_xlim([-0.065, 0.133])
+    # ax.set_ylim([-0.058, 0.17])
+    # ax.set_xlim([-0.065, 0.133])
     pl.tight_layout()
-    pl.subplots_adjust(bottom=0.06, left=0.06, top=0.98, right=0.84)
-    pl.savefig(os.path.join(save_dir_img, 'pca_autocorrelation_with_cell_ids.png'))
+    pl.savefig(os.path.join(save_dir_img, 'pca_autocorrelation_no_examples.png'))
 
     pl.show()
