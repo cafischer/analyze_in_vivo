@@ -65,6 +65,7 @@ if __name__ == '__main__':
     pl.legend(handles=handles_bursty, loc='upper left')
     ax.set_ylabel('Mem. pot. (mV)')
     ax.set_xlabel('Time (ms)')
+    ax.set_xlim(0, 35)
     axins = inset_axes(ax, width='50%', height='50%', loc='upper right') # bbox_to_anchor=(0.7, 0.7, 1.0, 1.0)
     axins.fill_between(t_AP, sta_bursty - std_bursty, sta_bursty + std_bursty, color='r', alpha=0.5)
     axins.plot(t_AP, sta_bursty, 'r', label='Bursty')

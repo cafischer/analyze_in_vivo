@@ -7,7 +7,7 @@ from analyze_in_vivo.load.load_domnisoru import get_cell_ids_DAP_cells, load_cel
 
 
 def plot_with_markers(ax, x, y, cell_ids, cell_type_dict, z=None, edgecolor='k', theta_cells=None, DAP_cells=None,
-                      legend=True):
+                      DAP_cells_additional=None, legend=True):
     for cell_idx in range(len(cell_ids)):
         hatch = ''
         facecolor = 'None'
@@ -17,9 +17,15 @@ def plot_with_markers(ax, x, y, cell_ids, cell_type_dict, z=None, edgecolor='k',
         if DAP_cells is not None:
             if cell_ids[cell_idx] in DAP_cells:
                 hatch = '-----'
+        if DAP_cells_additional is not None:
+            if cell_ids[cell_idx] in DAP_cells_additional:
+                hatch = '/////'
         if theta_cells is not None and DAP_cells is not None:
             if cell_ids[cell_idx] in theta_cells and cell_ids[cell_idx] in DAP_cells:
                 hatch = '+++++'
+        if theta_cells is not None and DAP_cells_additional is not None:
+            if cell_ids[cell_idx] in theta_cells and cell_ids[cell_idx] in DAP_cells_additional:
+                hatch = '|||||/////'
 
         if cell_type_dict[cell_ids[cell_idx]] == 'stellate':
             if z is not None:
@@ -53,10 +59,13 @@ def plot_with_markers(ax, x, y, cell_ids, cell_type_dict, z=None, edgecolor='k',
                                edgecolor='k', facecolor='None', label='Non-identified')]
     if theta_cells is not None:
         handles += [ax_fake.scatter(0, 0, marker='s', hatch='|||||', s=100, linewidths=0.8,
-                         edgecolor='w', facecolor='None', label='Large theta')]
+                    edgecolor='w', facecolor='None', label='Large-theta')]
     if DAP_cells is not None:
         handles += [ax_fake.scatter(0, 0, marker='s', hatch='-----', s=100, linewidths=0.8,
-                         edgecolor='w', facecolor='None', label='DAP')]
+                    edgecolor='w', facecolor='None', label='DAP')]
+    if DAP_cells_additional is not None:
+        handles += [ax_fake.scatter(0, 0, marker='s', hatch='/////', s=100, linewidths=0.8,
+                    edgecolor='w', facecolor='None', label='DAP (add.)')]
     if legend:
         legend = ax.legend(handles=handles, loc='best')
         ax.add_artist(legend)
@@ -66,8 +75,6 @@ def plot_with_markers(ax, x, y, cell_ids, cell_type_dict, z=None, edgecolor='k',
 
 def get_handles_all_markers():
     save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
-    theta_cells = load_cell_ids(save_dir, 'giant_theta')
-    DAP_cells = get_cell_ids_DAP_cells()
 
     fig_fake, ax_fake = pl.subplots()
     handles = [ax_fake.scatter(0, 0, marker='*', s=150, linewidths=0.8,
@@ -76,12 +83,13 @@ def get_handles_all_markers():
                                edgecolor='k', facecolor='None', label='Pyramidal'),
                ax_fake.scatter(0, 0, marker='o', s=100, linewidths=0.8,
                                edgecolor='k', facecolor='None', label='Non-identified')]
-    if theta_cells is not None:
-        handles += [ax_fake.scatter(0, 0, marker='s', hatch='|||||', s=100, linewidths=0.8,
+
+    handles += [ax_fake.scatter(0, 0, marker='s', hatch='|||||', s=100, linewidths=0.8,
                                     edgecolor='w', facecolor='None', label='Large theta')]
-    if DAP_cells is not None:
-        handles += [ax_fake.scatter(0, 0, marker='s', hatch='-----', s=100, linewidths=0.8,
+    handles += [ax_fake.scatter(0, 0, marker='s', hatch='-----', s=100, linewidths=0.8,
                                     edgecolor='w', facecolor='None', label='DAP')]
+    handles += [ax_fake.scatter(0, 0, marker='s', hatch='/////', s=100, linewidths=0.8,
+                    edgecolor='w', facecolor='None', label='DAP (add.)')]
     pl.close(fig_fake)
     return handles
 
@@ -89,7 +97,7 @@ def get_handles_all_markers():
 def get_handles_for_cell_id(cell_id, cell_type_dict, color='k'):
     save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
     theta_cells = load_cell_ids(save_dir, 'giant_theta')
-    DAP_cells = get_cell_ids_DAP_cells()
+    DAP_cells, DAP_cells_additional = get_cell_ids_DAP_cells()
 
     hatch = None
     if theta_cells is not None:
@@ -98,9 +106,16 @@ def get_handles_for_cell_id(cell_id, cell_type_dict, color='k'):
     if DAP_cells is not None:
         if cell_id in DAP_cells:
             hatch = '-----'
+    if DAP_cells_additional is not None:
+        if cell_id in DAP_cells_additional:
+            hatch = '/////'
     if theta_cells is not None and DAP_cells is not None:
         if cell_id in theta_cells and cell_id in DAP_cells:
             hatch = '+++++'
+    if theta_cells is not None and DAP_cells_additional is not None:
+        if cell_id in theta_cells and cell_id in DAP_cells_additional:
+            hatch = '|||||/////'
+
     fig_fake, ax_fake = pl.subplots()
     if cell_type_dict[cell_id] == 'stellate':
         handle = ax_fake.scatter(0, 0, marker='*', s=150, linewidths=0.8, hatch=hatch,
@@ -141,6 +156,9 @@ def plot_for_cell_group(cell_ids, cell_type_dict, plot_fun, plot_kwargs, xlabel,
     for i1 in range(n_rows):
         for i2 in range(n_columns):
             if cell_idx < len(cell_ids):
+                plot_fun(axes[i1, i2], cell_idx, **plot_kwargs)
+
+                # title (given as legend)
                 #axes[i1, i2].set_title(get_cell_id_with_marker(cell_ids[cell_idx], cell_type_dict))
                 handle = get_handles_for_cell_id(cell_ids[cell_idx], cell_type_dict, colors_marker[cell_idx])
                 leg = axes[i1, i2].legend(handles=[handle], bbox_to_anchor=(0, 1.01, 1, 0.1), loc="lower left",
@@ -153,8 +171,6 @@ def plot_for_cell_group(cell_ids, cell_type_dict, plot_fun, plot_kwargs, xlabel,
                 #                               frameon=False, handletextpad=0.1, mode='expand')
                 leg.legendHandles[0].set_edgecolor(
                     colors_marker[cell_idx])  # fixes bug that hatch is not in same edgecolor
-
-                plot_fun(axes[i1, i2], cell_idx, **plot_kwargs)
 
                 if i1 == (n_rows - 1):
                     axes[i1, i2].set_xlabel(xlabel)
@@ -233,7 +249,7 @@ def plot_for_cell_group_grid(cell_ids, cell_type_dict, plot_fun, plot_kwargs, xl
     handles = get_handles_all_markers()
     if colors_marker[0] != 'k':
         handles += [Patch(color='b', label='Non-bursty'), Patch(color='r', label='Bursty')]
-    ax.legend(handles=handles, loc="lower left")
+    ax.legend(handles=handles, loc="lower right")
     ax.spines['bottom'].set_visible(False)
     ax.spines['left'].set_visible(False)
     ax.set_xticks([])

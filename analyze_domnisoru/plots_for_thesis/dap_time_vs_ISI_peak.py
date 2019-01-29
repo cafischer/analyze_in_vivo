@@ -18,7 +18,7 @@ if __name__ == '__main__':
     # load stuff
     grid_cells = np.array(load_cell_ids(save_dir, 'grid_cells'))
     theta_cells = load_cell_ids(save_dir, 'giant_theta')
-    DAP_cells = get_cell_ids_DAP_cells()
+    DAP_cells, DAP_cells_additional = get_cell_ids_DAP_cells()
     cell_ids_bursty = get_cell_ids_bursty()
     burst_label = np.array([True if cell_id in cell_ids_bursty else False for cell_id in grid_cells])
     # DAP_time = np.load(os.path.join(save_dir_characteristics, 'grid_cells', 'DAP_time.npy')) TODO
@@ -51,15 +51,19 @@ if __name__ == '__main__':
     # plot the same data on both axes
     ax.plot(np.arange(0, 10), np.arange(0, 10), '0.5', linestyle='--')
     plot_with_markers(ax, DAP_time[burst_label], peak_ISI_hist[burst_label], grid_cells[burst_label], cell_type_dict,
-                      theta_cells=theta_cells, DAP_cells=DAP_cells, edgecolor='r', legend=False)
+                      theta_cells=theta_cells, DAP_cells=DAP_cells, DAP_cells_additional=DAP_cells_additional,
+                      edgecolor='r', legend=False)
     plot_with_markers(ax, DAP_time[~burst_label], peak_ISI_hist[~burst_label], grid_cells[~burst_label], cell_type_dict,
-                      theta_cells=theta_cells, DAP_cells=DAP_cells, edgecolor='b', legend=False)
+                      theta_cells=theta_cells, DAP_cells=DAP_cells, DAP_cells_additional=DAP_cells_additional,
+                      edgecolor='b', legend=False)
 
     ax2.plot(np.arange(0, 10), np.arange(0, 10), '0.5', linestyle='--')
     handles = plot_with_markers(ax2, DAP_time[burst_label], peak_ISI_hist[burst_label], grid_cells[burst_label],
-                                cell_type_dict, theta_cells=theta_cells, DAP_cells=DAP_cells, edgecolor='r', legend=False)
+                                cell_type_dict, theta_cells=theta_cells, DAP_cells=DAP_cells,
+                                DAP_cells_additional=DAP_cells_additional, edgecolor='r', legend=False)
     plot_with_markers(ax2, DAP_time[~burst_label], peak_ISI_hist[~burst_label], grid_cells[~burst_label], cell_type_dict,
-                      theta_cells=theta_cells, DAP_cells=DAP_cells, edgecolor='b', legend=False)
+                      theta_cells=theta_cells, DAP_cells=DAP_cells, DAP_cells_additional=DAP_cells_additional,
+                      edgecolor='b', legend=False)
     handles += [Patch(color='r', label='Bursty'), Patch(color='b', label='Non-bursty')]
     ax2.legend(handles=handles, loc='lower right')
     ax2.set_ylabel('Peak of ISI hist. (ms)')

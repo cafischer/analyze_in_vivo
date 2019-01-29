@@ -174,6 +174,7 @@ if __name__ == '__main__':
             ax.fill_between(t_AP, sta_mean_cells[cell_idx] - sta_std_cells[cell_idx],
                             sta_mean_cells[cell_idx] + sta_std_cells[cell_idx], color='0.6')
             ax.set_ylim(ylim)
+            ax.set_xticks([-10, 0, 10, 20])
             ax.annotate('all APs', xy=(25, ylim[0]), textcoords='data',
                         horizontalalignment='right', verticalalignment='bottom', fontsize=8)
 
@@ -207,6 +208,7 @@ if __name__ == '__main__':
                 ax.fill_between((0, time_for_max), ylim[0], ylim[1], color='0.8')
             ax.plot(t_AP, sta_mean_cells[cell_idx], 'k')
             ax.set_ylim(ylim)
+            ax.set_xticks([-10, 0, 10, 20])
             ax.annotate('all APs', xy=(25, ylim[0]), textcoords='data',
                         horizontalalignment='right', verticalalignment='bottom', fontsize=8)
 
@@ -240,8 +242,10 @@ if __name__ == '__main__':
         # ax.set_ylabel('DAP deflection (mV)')
 
         fig, ax = pl.subplots()
+        DAP_cells, DAP_cells_additional = get_cell_ids_DAP_cells()
         handles = plot_with_markers(ax, DAP_times, DAP_deflections, np.array(cell_ids), get_celltype_dict(save_dir),
                                  theta_cells=load_cell_ids(save_dir, 'giant_theta'), DAP_cells=get_cell_ids_DAP_cells(),
+                                 DAP_cells_additional=DAP_cells_additional,
                                  legend=False)
         ax.set_xlabel('Time$_{AP-DAP}$ (ms)')
         ax.set_ylabel('DAP deflection (mV)')

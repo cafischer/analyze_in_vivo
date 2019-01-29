@@ -9,23 +9,27 @@ from grid_cell_stimuli import find_all_AP_traces
 from cell_characteristics.analyze_APs import get_spike_characteristics
 from cell_fitting.optimization.evaluation import get_spike_characteristics_dict
 from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_for_all_grid_cells
+from analyze_in_vivo.analyze_domnisoru.sta import plot_sta
 pl.style.use('paper')
 
 
 if __name__ == '__main__':
-    save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/STA'
+    save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/STA/conditioned_on_voltage'
     save_dir_in_out_field = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/in_out_field'
     save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
     cell_type = 'grid_cells'
     cell_ids = load_cell_ids(save_dir, cell_type)
     param_list = ['Vm_ljpc', 'spiketimes']
+    save_dir_img = os.path.join(save_dir_img, cell_type)
+    if not os.path.exists(save_dir_img):
+        os.makedirs(save_dir_img)
 
     # parameters
     use_mean_or_std = 'mean'
-    before_AP_times = np.logspace(1, 10, 10, base=2)
+    before_AP_times = [25]  #np.logspace(1, 10, 10, base=2)
+    cut_off = 5
     after_AP = 25
-
-    save_dir_img = os.path.join(save_dir_img, cell_type)
+    percentile = 10  # [0, 100]
 
     # main
     sta_mean_greater_cells = np.zeros((len(cell_ids), len(before_AP_times)), dtype=object)
@@ -55,8 +59,9 @@ if __name__ == '__main__':
 
         for con_idx, before_AP in enumerate(before_AP_times):
             before_AP_idx = to_idx(before_AP, dt)
-            v_APs = find_all_AP_traces(v, before_AP_idx+to_idx(2, dt), after_AP_idx, AP_max_idxs, AP_max_idxs)
-                # extend before_AP_idx to later cut out AP leftovers in the beginning and end
+            v_APs = find_all_AP_traces(v, before_AP_idx+to_idx(cut_off, dt), after_AP_idx, AP_max_idxs, AP_max_idxs)
+                # extend before_AP_idx to cut out AP leftovers in the beginning
+            v_APs = v_APs[:, to_idx(cut_off, dt):]
             t_AP[con_idx] = np.arange(np.size(v_APs, 1)) * dt
 
             # mean voltage before AP
@@ -64,31 +69,34 @@ if __name__ == '__main__':
             for i, v_AP in enumerate(v_APs):
                 if use_mean_or_std == 'mean':
                     v_condition[i] = np.mean(v_AP[to_idx(1, dt):to_idx(1, dt) + before_AP_idx])
-                elif use_mean_or_std == 'std':
-                    v_condition[i] = np.std(v_AP[to_idx(1, dt):to_idx(1, dt) + before_AP_idx])
 
-                    # to test cutting the right region
+                    # # to test cutting the right region
                     # pl.figure()
                     # t_AP = np.arange(len(v_AP)) * dt
                     # pl.plot(t_AP, v_AP, 'k')
                     # pl.plot(t_AP[to_idx(1, dt):to_idx(1, dt) + before_AP_idx],
                     #         v_AP[to_idx(1, dt):to_idx(1, dt) + before_AP_idx], 'r')
                     # pl.show()
-            half = np.percentile(v_condition, 50)
-            v_APs_greater = v_APs[v_condition > half]
-            v_APs_lower = v_APs[v_condition <= half]
+                elif use_mean_or_std == 'std':
+                    v_condition[i] = np.std(v_AP[to_idx(1, dt):to_idx(1, dt) + before_AP_idx])
+            percentile_lower = np.percentile(v_condition, percentile)
+            percentile_greater = np.percentile(v_condition, 100 - percentile)
+            v_APs_greater = v_APs[v_condition > percentile_greater]
+            v_APs_lower = v_APs[v_condition < percentile_lower]
 
             # STA
             sta_mean_greater_cells[cell_idx, con_idx], sta_std_greater_cells[cell_idx, con_idx] = get_sta(v_APs_greater)
             sta_mean_lower_cells[cell_idx, con_idx], sta_std_lower_cells[cell_idx, con_idx] = get_sta(v_APs_lower)
-
-            # plot_APs(v_APs_lower, t_AP[con_idx], None)
-            # plot_APs(v_APs_greater, t_AP[con_idx], None)
+            # pl.figure()
+            # pl.plot(t_AP[0], np.mean(v_APs_lower, 0), 'b')
+            # pl.plot(t_AP[0], np.mean(v_APs_greater, 0), 'r')
+            # # plot_APs(v_APs_lower, t_AP[con_idx], None)
+            # # plot_APs(v_APs_greater, t_AP[con_idx], None)
             # pl.show()
 
             # get DAP characteristics
             spike_characteristics_dict = get_spike_characteristics_dict()
-            spike_characteristics_dict['AP_max_idx'] = before_AP_idx + to_idx(2, dt)
+            spike_characteristics_dict['AP_max_idx'] = before_AP_idx
             spike_characteristics_dict['AP_onset'] = before_AP_idx + to_idx(1, dt)
             DAP_time_greater_per_cell[cell_idx, con_idx], DAP_deflection_greater_per_cell[cell_idx, con_idx], \
             DAP_width_greater_per_cell[cell_idx, con_idx] = get_spike_characteristics(sta_mean_greater_cells[cell_idx, con_idx],
@@ -102,11 +110,12 @@ if __name__ == '__main__':
                                                                                     ['fAHP2DAP_time', 'DAP_deflection', 'DAP_width'],
                                                                                     sta_mean_lower_cells[cell_idx, con_idx][0],
                                                                                     check=False, **spike_characteristics_dict)
+
     # plots
     if use_mean_or_std == 'mean':
-        labels = ['$\mu$ > 50th percentile', '$\mu$ <= 50th percentile']
+        labels = ['$\mu$ > '+str(100-percentile)+'th percentile', '$\mu$ < '+str(percentile)+'th percentile']
     elif use_mean_or_std == 'std':
-        labels = ['$\sigma$ > 50th percentile', '$\sigma$ <= 50th percentile']
+        labels = ['$\sigma$ > '+str(100-percentile)+'th percentile', '$\sigma$ < '+str(percentile)+'th percentile']
 
     if use_mean_or_std == 'mean':
         save_dir_img = os.path.join(save_dir_img, 'conditioned_on_mean')
@@ -133,7 +142,8 @@ if __name__ == '__main__':
                             sta_mean_lower_cells[cell_idx] + sta_std_lower_cells[cell_idx],
                             color='b', alpha=0.5)
             if cell_idx == 8:
-                ax.legend(fontsize=10)
+                legend = ax.legend(fontsize=10)
+                ax.add_artist(legend)
 
         plot_kwargs = dict(t_AP=t_AP[con_idx], sta_mean_greater_cells=sta_mean_greater_cells[:, con_idx],
                            sta_std_greater_cells=sta_std_greater_cells[:, con_idx],
@@ -141,9 +151,9 @@ if __name__ == '__main__':
                            sta_std_lower_cells=sta_std_lower_cells[:, con_idx])
 
         plot_for_all_grid_cells(cell_ids, get_celltype_dict(save_dir), plot_sta, plot_kwargs,
-                                xlabel='Time (ms)', ylabel='Mem. pot. (mV)',
+                                xlabel='Time (ms)', ylabel='Mem. pot. (mV)', wspace=0.1,
                                 save_dir_img=os.path.join(save_dir_con, 'sta.png'))
-
+        pl.show()
 
         # pl.figure()
         # lim_max = max(np.nanmax(DAP_deflection_lower_per_cell), np.nanmax(DAP_deflection_greater_per_cell)) + 0.1

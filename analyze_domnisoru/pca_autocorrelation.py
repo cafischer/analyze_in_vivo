@@ -25,7 +25,7 @@ if __name__ == '__main__':
     max_lag_idx = to_idx(max_lag, bin_size)
     t_auto_corr = np.concatenate((np.arange(-max_lag_idx, 0, 1), np.arange(0, max_lag_idx + 1, 1))) * bin_size
     theta_cells = load_cell_ids(save_dir, 'giant_theta')
-    DAP_cells = get_cell_ids_DAP_cells()
+    DAP_cells, DAP_cells_additional = get_cell_ids_DAP_cells()
 
     # PCA
     auto_corr_cells_centered = auto_corr_cells - np.mean(auto_corr_cells, 0)
@@ -167,9 +167,11 @@ if __name__ == '__main__':
     axins.set_ylabel('Spike-time \nautocorrelation', fontsize=10)
 
     plot_with_markers(ax, transformed[labels == 0, 0], transformed[labels == 0, 1], cell_ids[labels == 0],
-                      cell_type_dict, edgecolor='b', theta_cells=theta_cells, DAP_cells=DAP_cells, legend=False)
+                      cell_type_dict, edgecolor='b', theta_cells=theta_cells, DAP_cells=DAP_cells,
+                      DAP_cells_additional=DAP_cells_additional, legend=False)
     handles = plot_with_markers(ax, transformed[labels == 1, 0], transformed[labels == 1, 1], cell_ids[labels == 1],
-                      cell_type_dict, edgecolor='r', theta_cells=theta_cells, DAP_cells=DAP_cells, legend=False)
+                      cell_type_dict, edgecolor='r', theta_cells=theta_cells, DAP_cells=DAP_cells,
+                                DAP_cells_additional=DAP_cells_additional, legend=False)
     handles_bursty = [Patch(color='r', label='Bursty'), Patch(color='b', label='Non-bursty')]
     legend1 = ax.legend(handles=handles+handles_bursty, bbox_to_anchor=(1.05, 1.0), loc=2, borderaxespad=0.)
     ax.add_artist(legend1)
@@ -210,9 +212,11 @@ if __name__ == '__main__':
     # plot for slides
     fig, ax = pl.subplots(figsize=(8, 5.5))
     plot_with_markers(ax, transformed[labels == 0, 0], transformed[labels == 0, 1], cell_ids[labels == 0],
-                      cell_type_dict, edgecolor='b', theta_cells=theta_cells, DAP_cells=DAP_cells, legend=False)
+                      cell_type_dict, edgecolor='b', theta_cells=theta_cells, DAP_cells=DAP_cells,
+                      DAP_cells_additional=DAP_cells_additional, legend=False)
     handles = plot_with_markers(ax, transformed[labels == 1, 0], transformed[labels == 1, 1], cell_ids[labels == 1],
-                      cell_type_dict, edgecolor='r', theta_cells=theta_cells, DAP_cells=DAP_cells, legend=False)
+                                cell_type_dict, edgecolor='r', theta_cells=theta_cells, DAP_cells=DAP_cells,
+                                DAP_cells_additional=DAP_cells_additional, legend=False)
     handles_bursty = [Patch(color='r', label='Bursty'), Patch(color='b', label='Non-bursty')]
     legend1 = ax.legend(handles=handles+handles_bursty, loc='upper right')
     ax.set_xlabel('PC1')

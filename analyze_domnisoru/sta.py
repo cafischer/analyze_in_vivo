@@ -57,12 +57,16 @@ def plot_sta(ax, cell_idx, t_AP, sta_mean_cells, sta_std_cells):
     ax.plot(t_AP, sta_mean_cells[cell_idx], 'k')
     ax.fill_between(t_AP, sta_mean_cells[cell_idx] - sta_std_cells[cell_idx],
                     sta_mean_cells[cell_idx] + sta_std_cells[cell_idx], color='0.6')
+    ax.set_ylim(-90, 30)
+    ax.set_xticks([-10, 0, 10, 20])
 
 
 def plot_v_hist(ax, cell_idx, t_AP, bins_v, v_hist_cells):
     x, y = np.meshgrid(t_AP, bins_v[:-1])
     ax.pcolor(x, y, v_hist_cells[cell_idx], cmap='gray_r')
     ax.set_xlim(t_AP[0], t_AP[-1])
+    ax.set_ylim(-90, 30)
+    ax.set_xticks([-10, 0, 10, 20])
 
 
 if __name__ == '__main__':
@@ -72,6 +76,7 @@ if __name__ == '__main__':
     save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
     cell_type = 'grid_cells'
     cell_ids = load_cell_ids(save_dir, cell_type)
+   # cell_ids = ['s82_0002']
 
     # parameters
     use_AP_max_idxs_domnisoru = True
@@ -79,7 +84,7 @@ if __name__ == '__main__':
     kind = 'all'
     before_AP = 10
     after_AP = 25
-    bins_v = np.arange(-75, 40+0.5, 0.5)
+    bins_v = np.arange(-90, 30+0.5, 0.5)
     AP_thresholds = {'s73_0004': -50, 's90_0006': -45, 's82_0002': -38,
                      's117_0002': -60, 's119_0004': -50, 's104_0007': -55,
                      's79_0003': -50, 's76_0002': -50, 's101_0009': -45}
@@ -111,7 +116,7 @@ if __name__ == '__main__':
         # pl.title(cell_id)
         # pl.plot(t, v)
         # #pl.xlim(1000, 11000)
-        # pl.ylim(-90, 20)
+        # #pl.ylim(-90, 20)
         # pl.show()
 
         # get APs
@@ -172,9 +177,9 @@ if __name__ == '__main__':
         plot_for_all_grid_cells(cell_ids, get_celltype_dict(save_dir), plot_sta, plot_kwargs,
                                 xlabel='Time (ms)', ylabel='Mem. pot. (mV)',
                                 save_dir_img=os.path.join(save_dir_img, 'sta_'+str(before_AP)+'_'+str(after_AP)+'.png'))
-        # plot_for_all_grid_cells(cell_ids, get_celltype_dict(save_dir), plot_sta, plot_kwargs,
-        #                         xlabel='Time (ms)', ylabel='Mem. pot. (mV)',
-        #                         save_dir_img=os.path.join(save_dir_img2, 'sta.png'))
+        plot_for_all_grid_cells(cell_ids, get_celltype_dict(save_dir), plot_sta, plot_kwargs,
+                                xlabel='Time (ms)', ylabel='Mem. pot. (mV)',
+                                save_dir_img=os.path.join(save_dir_img2, 'sta.png'))
 
         # voltage histogram over time
         plot_kwargs = dict(t_AP=t_AP, bins_v=bins_v, v_hist_cells=v_hist_cells)
@@ -182,9 +187,9 @@ if __name__ == '__main__':
         plot_for_all_grid_cells(cell_ids, get_celltype_dict(save_dir), plot_v_hist, plot_kwargs,
                                 xlabel='Time (ms)', ylabel='Mem. pot. distr. (mV)',
                                 save_dir_img=os.path.join(save_dir_img, 'v_hist_'+str(before_AP)+'_'+str(after_AP)+'.png'))
-        # plot_for_all_grid_cells(cell_ids, get_celltype_dict(save_dir), plot_v_hist, plot_kwargs,
-        #                         xlabel='Time (ms)', ylabel='Mem. pot. distr. (mV)',
-        #                         save_dir_img=os.path.join(save_dir_img2, 'v_hist.png'))
+        plot_for_all_grid_cells(cell_ids, get_celltype_dict(save_dir), plot_v_hist, plot_kwargs,
+                                xlabel='Time (ms)', ylabel='Mem. pot. distr. (mV)',
+                                save_dir_img=os.path.join(save_dir_img2, 'v_hist.png'))
     else:
         plot_kwargs = dict(t_AP=t_AP, sta_mean_cells=sta_mean_cells, sta_std_cells=sta_std_cells)
         plot_for_cell_group(cell_ids, get_celltype_dict(save_dir), plot_sta, plot_kwargs,

@@ -13,7 +13,7 @@ pl.style.use('paper_subplots')
 if __name__ == '__main__':
     save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/STA'
     #save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/STA/good_AP'
-    save_dir_img2 = '/home/cf/Dropbox/thesis/figures_results'
+    #save_dir_img2 = '/home/cf/Dropbox/thesis/figures_results'
     save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
     cell_type = 'grid_cells'
     cell_ids = load_cell_ids(save_dir, cell_type)
@@ -88,14 +88,21 @@ if __name__ == '__main__':
 
     # plot
     theta_cells = load_cell_ids(save_dir, 'giant_theta')
-    DAP_cells = get_cell_ids_DAP_cells()
+    DAP_cells, DAP_cells_additional = get_cell_ids_DAP_cells()
     cell_type_dict = get_celltype_dict(save_dir)
 
     fig, ax = pl.subplots()
-    #pl.title('from STA with selection')
+    pl.title('From STA with selection' if save_dir_img.count('good_AP') == 1 else 'From STA without selection',
+             fontsize=12)
     plot_with_markers(ax, v_rest_fAHP, v_DAP_fAHP, cell_ids, cell_type_dict,
-                      theta_cells=theta_cells, DAP_cells=DAP_cells)
-    ax.set_ylabel('$\Delta$ DAP')
-    ax.set_xlabel('$\Delta$ fAHP')
-    #pl.savefig(os.path.join(save_dir_img, 'delta_fAHP_delta_DAP.png'))
+                      theta_cells=theta_cells, DAP_cells=DAP_cells, DAP_cells_additional=DAP_cells_additional)
+    ax.set_ylabel('$\Delta$ DAP', horizontalalignment='left', y=0.0)
+    ax.set_xlabel('$\Delta$ fAHP', horizontalalignment='right', x=1.0)
+    ax.spines['left'].set_position('zero')
+    ax.spines['bottom'].set_position('zero')
+    # ax.set_xlim(-9, 9)
+    ax.set_ylim(-4.75, 2.4)
+    pl.tight_layout()
+    name_add = 'with_selection' if save_dir_img.count('good_AP') == 1 else 'without_selection'
+    pl.savefig(os.path.join(save_dir_img, 'delta_fAHP_delta_DAP_'+name_add+'.png'))
     pl.show()
