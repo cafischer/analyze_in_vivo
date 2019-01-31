@@ -153,6 +153,8 @@ if __name__ == '__main__':
                     marker='o', linestyle='', markersize=1, alpha=0.5)
             ax.set_xlim(0, max_ISI)
             ax.set_ylim(0, max_ISI)
+            ax.set_xticks(np.arange(0, max_ISI + 50, 50))
+            ax.set_yticks(np.arange(0, max_ISI + 50, 50))
         ax.set_aspect('equal', adjustable='box-forced')
         if median_cells is not None:
             ax.plot(steps, median_cells[cell_idx, :], 'k', label='median')

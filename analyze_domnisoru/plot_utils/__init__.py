@@ -185,7 +185,7 @@ def plot_for_cell_group(cell_ids, cell_type_dict, plot_fun, plot_kwargs, xlabel,
     if colors_marker[0] != 'k':
         handles += [Patch(color='r', label='Bursty'), Patch(color='b', label='Non-bursty')]
     axes[-1, -1].legend(handles=handles, loc="lower left", bbox_to_anchor=(-0.025, -0.025))
-    #axes[-1, -1].legend(handles=handles, loc="lower left", bbox_to_anchor=(0, 0.3))  # for ISI return map
+    #axes[-1, -1].legend(handles=handles, loc="lower left", bbox_to_anchor=(0, 0.25))  # for ISI return map
     pl.tight_layout()
     if fig_title is not None:
         pl.subplots_adjust(top=0.92)

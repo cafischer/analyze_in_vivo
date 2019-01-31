@@ -9,8 +9,9 @@ from grid_cell_stimuli import find_all_AP_traces
 from cell_characteristics.analyze_APs import get_spike_characteristics
 from cell_fitting.optimization.evaluation import get_spike_characteristics_dict
 from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_for_all_grid_cells
+from analyze_in_vivo.analyze_schmidt_hieber import detrend
 from analyze_in_vivo.analyze_domnisoru.sta import plot_sta
-pl.style.use('paper')
+pl.style.use('paper_subplots')
 
 
 if __name__ == '__main__':
@@ -25,11 +26,16 @@ if __name__ == '__main__':
         os.makedirs(save_dir_img)
 
     # parameters
+    do_detrend = True
     use_mean_or_std = 'mean'
     before_AP_times = [25]  #np.logspace(1, 10, 10, base=2)
     cut_off = 5
     after_AP = 25
     percentile = 10  # [0, 100]
+    folder_detrend = {True: 'detrended', False: 'not_detrended'}
+    save_dir_img = os.path.join(save_dir_img, folder_detrend[do_detrend], cell_type)
+    if not os.path.exists(save_dir_img):
+        os.makedirs(save_dir_img)
 
     # main
     sta_mean_greater_cells = np.zeros((len(cell_ids), len(before_AP_times)), dtype=object)
@@ -53,6 +59,15 @@ if __name__ == '__main__':
         t = np.arange(0, len(v)) * data['dt']
         dt = t[1] - t[0]
 
+        if do_detrend:
+            # # test detrend
+            # pl.figure()
+            # pl.plot(t, v, 'k')
+            # pl.plot(t, detrend(v, t, cutoff_freq=5), 'r')
+            # pl.show()
+
+            v = detrend(v, t, cutoff_freq=5)
+
         # get APs
         AP_max_idxs = data['spiketimes']
         after_AP_idx = to_idx(after_AP, dt)
@@ -68,14 +83,14 @@ if __name__ == '__main__':
             v_condition = np.zeros(len(v_APs))
             for i, v_AP in enumerate(v_APs):
                 if use_mean_or_std == 'mean':
-                    v_condition[i] = np.mean(v_AP[to_idx(1, dt):to_idx(1, dt) + before_AP_idx])
+                    v_condition[i] = np.mean(v_AP[to_idx(1, dt):before_AP_idx - to_idx(1, dt)])
 
                     # # to test cutting the right region
                     # pl.figure()
                     # t_AP = np.arange(len(v_AP)) * dt
                     # pl.plot(t_AP, v_AP, 'k')
-                    # pl.plot(t_AP[to_idx(1, dt):to_idx(1, dt) + before_AP_idx],
-                    #         v_AP[to_idx(1, dt):to_idx(1, dt) + before_AP_idx], 'r')
+                    # pl.plot(t_AP[to_idx(1, dt):before_AP_idx - to_idx(1, dt)],
+                    #         v_AP[to_idx(1, dt):before_AP_idx - to_idx(1, dt)], 'r')
                     # pl.show()
                 elif use_mean_or_std == 'std':
                     v_condition[i] = np.std(v_AP[to_idx(1, dt):to_idx(1, dt) + before_AP_idx])

@@ -53,19 +53,21 @@ def get_in_or_out_field_AP_max_idxs(kind, AP_max_idxs, velocity, cell_id, save_d
     return AP_max_idxs_selected
 
 
-def plot_sta(ax, cell_idx, t_AP, sta_mean_cells, sta_std_cells):
+def plot_sta(ax, cell_idx, t_AP, sta_mean_cells, sta_std_cells, before_AP=5, after_AP=25):
     ax.plot(t_AP, sta_mean_cells[cell_idx], 'k')
     ax.fill_between(t_AP, sta_mean_cells[cell_idx] - sta_std_cells[cell_idx],
                     sta_mean_cells[cell_idx] + sta_std_cells[cell_idx], color='0.6')
     ax.set_ylim(-90, 30)
+    ax.set_xlim(-before_AP, after_AP)
     ax.set_xticks([-10, 0, 10, 20])
 
 
-def plot_v_hist(ax, cell_idx, t_AP, bins_v, v_hist_cells):
+def plot_v_hist(ax, cell_idx, t_AP, bins_v, v_hist_cells, before_AP=5, after_AP=25):
     x, y = np.meshgrid(t_AP, bins_v[:-1])
     ax.pcolor(x, y, v_hist_cells[cell_idx], cmap='gray_r')
     ax.set_xlim(t_AP[0], t_AP[-1])
     ax.set_ylim(-90, 30)
+    ax.set_xlim(-before_AP, after_AP)
     ax.set_xticks([-10, 0, 10, 20])
 
 

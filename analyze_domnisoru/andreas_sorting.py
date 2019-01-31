@@ -28,14 +28,13 @@ if __name__ == '__main__':
     cell_ids = load_cell_ids(save_dir, cell_type)
 
     # parameters
-    do_detrend = False
-    kind = 'all'
+    do_detrend = True
     before_AP = 10
     after_AP = 25
     n_plot = 10
     param_list = ['Vm_ljpc', 'spiketimes', 'vel_100ms', 'fY_cm', 'fvel_100ms']
     folder_detrend = {True: 'detrended', False: 'not_detrended'}
-    save_dir_img = os.path.join(save_dir_img, folder_detrend[do_detrend], kind, cell_type)
+    save_dir_img = os.path.join(save_dir_img, folder_detrend[do_detrend], cell_type)
     if not os.path.exists(save_dir_img):
         os.makedirs(save_dir_img)
 
@@ -74,6 +73,9 @@ if __name__ == '__main__':
         v_APs_cells[cell_idx] = v_APs[:n_plot, :]
         sta_mean_cells[cell_idx], sta_std_cells[cell_idx] = get_sta(v_APs[:n_plot, :])
 
+        print 'Mean: %.1f' % np.mean(v_APs[:, to_idx(1, dt):before_AP_idx - to_idx(1, dt)])
+        print 'Mean (selected): %.1f' % np.mean(v_APs_cells[cell_idx][:, to_idx(1, dt):before_AP_idx - to_idx(1, dt)])
+
         # pl.figure()
         # for v_AP in v_APs[:n_plot, :]:
         #     pl.plot(t_AP, v_AP)
@@ -84,7 +86,8 @@ if __name__ == '__main__':
         # pl.show()
 
     # plot STA
-    plot_kwargs = dict(t_AP=t_AP, sta_mean_cells=sta_mean_cells, sta_std_cells=sta_std_cells)
+    plot_kwargs = dict(t_AP=t_AP, sta_mean_cells=sta_mean_cells, sta_std_cells=sta_std_cells,
+                       before_AP=before_AP, after_AP=after_AP)
     plot_for_all_grid_cells(cell_ids, get_celltype_dict(save_dir), plot_sta, plot_kwargs,
                             xlabel='Time (ms)', ylabel='Mem. pot. (mV)',
                             save_dir_img=os.path.join(save_dir_img, 'APs_'+str(before_AP)+'_'+str(after_AP)+'.png'))
