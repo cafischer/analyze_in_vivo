@@ -21,9 +21,6 @@ if __name__ == '__main__':
     cell_type = 'grid_cells'
     cell_ids = load_cell_ids(save_dir, cell_type)
     param_list = ['Vm_ljpc', 'spiketimes']
-    save_dir_img = os.path.join(save_dir_img, cell_type)
-    if not os.path.exists(save_dir_img):
-        os.makedirs(save_dir_img)
 
     # parameters
     do_detrend = True

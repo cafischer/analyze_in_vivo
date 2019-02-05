@@ -113,13 +113,13 @@ if __name__ == '__main__':
         before_AP_idx = to_idx(before_AP, dt)
         after_AP_idx = to_idx(after_AP, dt)
 
-        # # for testing
-        # pl.figure()
-        # pl.title(cell_id)
-        # pl.plot(t, v)
-        # #pl.xlim(1000, 11000)
-        # #pl.ylim(-90, 20)
-        # pl.show()
+        # for testing
+        pl.figure()
+        pl.title(cell_id)
+        pl.plot(t, v)
+        #pl.xlim(1000, 11000)
+        #pl.ylim(-90, 20)
+        pl.show()
 
         # get APs
         if use_AP_max_idxs_domnisoru:

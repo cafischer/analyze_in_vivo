@@ -292,7 +292,7 @@ if __name__ == '__main__':
                            diff_selected_all=diff_selected_all
                            )
         plot_for_all_grid_cells_grid(cell_ids, get_celltype_dict(save_dir), plot_sta_derivative_grid, plot_kwargs,
-                                     xlabel='Time (ms)', ylabel=r'$\frac{Mem. pot.}{Time} \left(\frac{mV}{ms}\right)$',
+                                     xlabel='Time (ms)', ylabel=r'$\frac{\Delta\ Mem. pot. (mV)}{\Delta\ Time\ (ms)}$',
                                      n_subplots=2,
                                      save_dir_img=os.path.join(save_dir_img2, 'sta_selected_APs_derivative.png'))
         pl.show()

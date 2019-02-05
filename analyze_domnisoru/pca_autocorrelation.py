@@ -34,6 +34,19 @@ if __name__ == '__main__':
     transformed = pca.transform(auto_corr_cells_centered)
     print('Explained variance: ', pca.explained_variance_)
 
+    fig, ax = pl.subplots(1, 2, figsize=(10, 4))
+    ax[0].bar(t_auto_corr, pca.components_[0, :], bin_size, color='k', align='center')
+    ax[1].bar(t_auto_corr, pca.components_[1, :], bin_size, color='gray', align='center')
+    ax[0].set_xlabel('Lag (ms)')
+    ax[1].set_xlabel('Lag (ms)')
+    ax[0].set_ylabel('PC1')
+    ax[1].set_ylabel('PC2')
+    ax[0].set_xticks([-50, 0, 50])
+    ax[1].set_xticks([-50, 0, 50])
+    pl.tight_layout()
+    pl.savefig(os.path.join(save_dir_img, 'pca_autocorrelation_PCs.png'))
+    pl.show()
+
     # k-means
     n_clusters = 2
     kmeans = KMeans(n_clusters=n_clusters, random_state=0).fit(transformed)
