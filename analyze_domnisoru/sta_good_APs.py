@@ -92,7 +92,7 @@ if __name__ == '__main__':
                                                                  std_idx_times=(0, 1), check=False,
                                                                  **spike_characteristics_dict)
 
-        good_APs = np.logical_and(AP_amps > 51.84, AP_widths < 0.72)
+        good_APs = np.logical_and(AP_amps > 51.8, AP_widths < 0.72)  # np.logical_and(AP_amps > 51.84, AP_widths < 0.72)
         v_APs_good = v_APs[good_APs]
 
         # STA

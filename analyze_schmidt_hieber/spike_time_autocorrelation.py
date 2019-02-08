@@ -50,7 +50,7 @@ if __name__ == '__main__':
         spike_train = get_spike_train(AP_max_idxs, len(v))
 
         # change to bin size
-        bin_change = bin_size / dt
+        bin_change = to_idx(bin_size, dt)
         spike_train_new = np.zeros(int(round(len(spike_train) / bin_change)))
         for i in range(len(spike_train_new)):
             if sum(spike_train[i * int(bin_change):(i + 1) * int(bin_change)] == 1) == 1:

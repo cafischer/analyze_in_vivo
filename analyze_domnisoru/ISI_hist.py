@@ -28,18 +28,16 @@ if __name__ == '__main__':
                      's104_0007': -55, 's79_0003': -50, 's76_0002': -50, 's101_0009': -45}
     use_AP_max_idxs_domnisoru = True
     filter_long_ISIs = True
-    max_ISI = 200
+    max_ISI = 25
     burst_ISI = 8  # ms
+    bin_width = 1.0  # ms
+    bins = np.arange(0, max_ISI+bin_width, bin_width)
     if filter_long_ISIs:
         save_dir_img = os.path.join(save_dir_img, 'cut_ISIs_at_'+str(max_ISI))
     save_dir_img = os.path.join(save_dir_img, cell_type)
 
     if not os.path.exists(save_dir_img):
         os.makedirs(save_dir_img)
-
-    # parameter
-    bin_width = 1.0  # ms
-    bins = np.arange(0, max_ISI+bin_width, bin_width)
 
     # over cells
     ISIs_per_cell = [0] * len(cell_ids)
@@ -101,17 +99,17 @@ if __name__ == '__main__':
     #                                                cell_ids, max_ISI, os.path.join(save_dir_img))
 
 
-    # cumulative ISI histogram for bursty and non-bursty group
+    # # cumulative ISI histogram for bursty and non-bursty group
     cell_ids_bursty = get_cell_ids_bursty()
     burst_label = np.array([True if cell_id in cell_ids_bursty else False for cell_id in cell_ids])
-    ISIs_all_bursty =  np.array([item for sublist in np.array(ISIs_per_cell)[burst_label] for item in sublist])
-    ISIs_all_nonbursty = np.array([item for sublist in np.array(ISIs_per_cell)[~burst_label] for item in sublist])
-    cum_ISI_hist_y_avg_bursty, cum_ISI_hist_x_avg_bursty = get_cumulative_ISI_hist(ISIs_all_bursty)
-    cum_ISI_hist_y_avg_nonbursty, cum_ISI_hist_x_avg_nonbursty = get_cumulative_ISI_hist(ISIs_all_nonbursty)
-    plot_cumulative_ISI_hist_all_cells_with_bursty(cum_ISI_hist_y, cum_ISI_hist_x,
-                                                   cum_ISI_hist_y_avg_bursty, cum_ISI_hist_x_avg_bursty,
-                                                   cum_ISI_hist_y_avg_nonbursty, cum_ISI_hist_x_avg_nonbursty,
-                                                   cell_ids, burst_label, max_ISI, os.path.join(save_dir_img2))
+    # ISIs_all_bursty =  np.array([item for sublist in np.array(ISIs_per_cell)[burst_label] for item in sublist])
+    # ISIs_all_nonbursty = np.array([item for sublist in np.array(ISIs_per_cell)[~burst_label] for item in sublist])
+    # cum_ISI_hist_y_avg_bursty, cum_ISI_hist_x_avg_bursty = get_cumulative_ISI_hist(ISIs_all_bursty)
+    # cum_ISI_hist_y_avg_nonbursty, cum_ISI_hist_x_avg_nonbursty = get_cumulative_ISI_hist(ISIs_all_nonbursty)
+    # plot_cumulative_ISI_hist_all_cells_with_bursty(cum_ISI_hist_y, cum_ISI_hist_x,
+    #                                                cum_ISI_hist_y_avg_bursty, cum_ISI_hist_x_avg_bursty,
+    #                                                cum_ISI_hist_y_avg_nonbursty, cum_ISI_hist_x_avg_nonbursty,
+    #                                                cell_ids, burst_label, max_ISI, os.path.join(save_dir_img2))
 
     # # fraction burst between bursty and non-bursty
     # from scipy.stats import ttest_ind
@@ -141,7 +139,7 @@ if __name__ == '__main__':
 
     # save
     np.save(os.path.join(save_dir_img, 'fraction_burst.npy'), fraction_burst)
-    np.save(os.path.join(save_dir_img, 'peak_ISI_hist.npy'), peak_ISI_hist)
+    np.save(os.path.join(save_dir_img, 'peak_ISI_hist_'+str(max_ISI)+'_'+str(bin_width)+'.npy'), peak_ISI_hist)
 
     # plot all ISI hists
     if cell_type == 'grid_cells':
@@ -178,10 +176,10 @@ if __name__ == '__main__':
                            cum_ISI_hist_x=cum_ISI_hist_x, cum_ISI_hist_y=cum_ISI_hist_y)
         plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_ISI_hist, plot_kwargs,
                                 wspace=0.18, xlabel='ISI (ms)', ylabel='Rel. frequency',
-                                save_dir_img=os.path.join(save_dir_img, 'ISI_hist'+str(bin_width)+'.png'))
-        plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_ISI_hist, plot_kwargs,
-                                xlabel='ISI (ms)', ylabel='Rel. frequency', colors_marker=colors_marker,
-                                wspace=0.18, save_dir_img=os.path.join(save_dir_img2, 'ISI_hist.png'))
+                                save_dir_img=os.path.join(save_dir_img, 'ISI_hist_'+str(max_ISI)+'_'+str(bin_width)+'.png'))
+        # plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_ISI_hist, plot_kwargs,
+        #                         xlabel='ISI (ms)', ylabel='Rel. frequency', colors_marker=colors_marker,
+        #                         wspace=0.18, save_dir_img=os.path.join(save_dir_img2, 'ISI_hist.png'))
     else:
         def plot_ISI_hist(ax, cell_idx, fraction_ISIs_filtered, ISI_hist, cum_ISI_hist_x, cum_ISI_hist_y):
             if filter_long_ISIs:
@@ -210,17 +208,17 @@ if __name__ == '__main__':
                                 xlabel='ISI (ms)', ylabel='Rel. frequency', figsize=(7, 7),
                                 save_dir_img=os.path.join(save_dir_img, 'ISI_hist' + str(bin_width) + '.png'))
 
-    if cell_type == 'grid_cells':
-        def plot_fraction_burst(ax, cell_idx, fraction_burst):
-            ax.bar(0.5, fraction_burst[cell_idx],
-                   0.4, color='0.5')
-            ax.set_xlim(0, 1)
-            ax.set_xticks([])
-
-        plot_kwargs = dict(fraction_burst=fraction_burst)
-        plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_fraction_burst, plot_kwargs,
-                                xlabel='', ylabel='Fraction burst',
-                                save_dir_img=os.path.join(save_dir_img, 'fraction_burst' + str(bin_width) + '.png'))
+    # if cell_type == 'grid_cells':
+    #     def plot_fraction_burst(ax, cell_idx, fraction_burst):
+    #         ax.bar(0.5, fraction_burst[cell_idx],
+    #                0.4, color='0.5')
+    #         ax.set_xlim(0, 1)
+    #         ax.set_xticks([])
+    #
+    #     plot_kwargs = dict(fraction_burst=fraction_burst)
+    #     plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_fraction_burst, plot_kwargs,
+    #                             xlabel='', ylabel='Fraction burst',
+    #                             save_dir_img=os.path.join(save_dir_img, 'fraction_burst' + str(bin_width) + '.png'))
 
     # pl.figure()
     # pl.plot(len_recording / 1000.0, fraction_ISIs_filtered, 'ok')

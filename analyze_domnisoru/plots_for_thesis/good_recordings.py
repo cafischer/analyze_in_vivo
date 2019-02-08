@@ -21,7 +21,7 @@ if __name__ == '__main__':
     save_dir_sta_good_APs = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/STA/good_AP/not_detrended/all/grid_cells'
     save_dir_characteristics = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/AP_characteristics/all'
     cell_type = 'DAP_cells'
-    cell_ids = get_cell_ids_DAP_cells()
+    cell_ids, _ = get_cell_ids_DAP_cells()
     cell_type_dict = get_celltype_dict(save_dir)
 
     # parameters
@@ -117,7 +117,7 @@ if __name__ == '__main__':
     threshold_AP_width = np.round(max_AP_width_DAP + (AP_width_next - max_AP_width_DAP) / 2., 2)
     min_AP_amp_DAP = np.min(AP_amp[has_DAP])
     AP_amp_next = np.max(AP_amp[~has_DAP][AP_amp[~has_DAP] < min_AP_amp_DAP])
-    threshold_AP_amp = np.round(AP_amp_next + (min_AP_amp_DAP - AP_amp_next) / 2., 2)
+    threshold_AP_amp = np.round(AP_amp_next + (min_AP_amp_DAP - AP_amp_next) / 2., 1)
     print 'threshold_AP_width: ', threshold_AP_width
     print 'threshold_AP_amp: ', threshold_AP_amp
     labels_predicted = np.array([w <= threshold_AP_width and a >= threshold_AP_amp for w, a in zip(AP_width, AP_amp)])

@@ -51,7 +51,7 @@ if __name__ == '__main__':
     save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/spike_time_auto_corr'
     save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
     cell_type = 'grid_cells'
-    cell_ids = load_cell_ids(save_dir, cell_type)
+    cell_ids = load_cell_ids(save_dir, cell_type)[:3]
     cell_type_dict = get_celltype_dict(save_dir)
     AP_thresholds = {'s73_0004': -50, 's90_0006': -45, 's82_0002': -38, 's117_0002': -60, 's119_0004': -50,
                      's104_0007': -55, 's79_0003': -50, 's76_0002': -50, 's101_0009': -45}
@@ -59,7 +59,8 @@ if __name__ == '__main__':
 
     # parameters
     bin_size = 1.0  # ms
-    max_lag = 50
+    max_lag = 12
+    sigma_smooth = 50 #50  # ms  None for no smoothing
     use_AP_max_idxs_domnisoru = True
     save_dir_img = os.path.join(save_dir_img, cell_type)
     max_lag_idx = to_idx(max_lag, bin_size)
@@ -97,6 +98,23 @@ if __name__ == '__main__':
         # pl.plot(t[spike_train==1], spike_train[spike_train==1], 'ok')
         # pl.plot((np.arange(len(spike_train_new)) * bin_size)[spike_train_new==1], spike_train_new[spike_train_new==1], 'ob')
         # pl.show()
+
+        # smoothing
+        if sigma_smooth is not None:
+            sigma = float(to_idx(sigma_smooth, bin_size))
+            x = np.arange(-len(spike_train_new), len(spike_train_new), 1)
+            gaussian = np.exp(-(x / sigma) ** 2 / 2)
+            spike_train_new_ = np.convolve(spike_train_new, gaussian, mode="valid")[:len(spike_train_new)]
+
+            # test
+            # pl.figure()
+            # pl.plot(t, v/80.+2, 'k')
+            # pl.plot(np.arange(0, len(spike_train_new))[spike_train_new.astype(bool)] * bin_size,
+            #         spike_train_new_[spike_train_new.astype(bool)], 'or')
+            # pl.plot(np.arange(0, len(spike_train_new))*bin_size, spike_train_new_, 'b')
+            # pl.show()
+
+            spike_train_new = spike_train_new_
 
         # spike-time autocorrelation
         auto_corr = auto_correlate(spike_train_new, max_lag_idx)
@@ -142,9 +160,15 @@ if __name__ == '__main__':
         # pl.xlabel('Frequency (Hz)')
         # pl.ylabel('Power')
         # pl.show()
-
-    np.save(os.path.join(save_dir_img, 'peak_auto_corr_'+str(max_lag)+'.npy'), peak_auto_corr)
-    np.save(os.path.join(save_dir_img, 'auto_corr_'+str(max_lag)+'.npy'), auto_corr_cells)
+    if sigma_smooth is not None:
+        np.save(os.path.join(save_dir_img, 'peak_auto_corr_'+str(max_lag)+'_'+str(bin_size)+'_'+str(sigma_smooth)+'.npy'),
+                peak_auto_corr)
+        np.save(os.path.join(save_dir_img, 'auto_corr_'+str(max_lag)+'_'+str(bin_size)+'_'+str(sigma_smooth)+'.npy'),
+                auto_corr_cells)
+    else:
+        np.save(os.path.join(save_dir_img, 'peak_auto_corr_' + str(max_lag) + '_' + str(bin_size) + '.npy'),
+                peak_auto_corr)
+        np.save(os.path.join(save_dir_img, 'auto_corr_' + str(max_lag) + '_' + str(bin_size) + '.npy'), auto_corr_cells)
 
     if cell_type == 'grid_cells':
         burst_label = np.array([True if cell_id in get_cell_ids_bursty() else False for cell_id in cell_ids])
@@ -159,24 +183,29 @@ if __name__ == '__main__':
             ax.bar(t_auto_corr, auto_corr_cells[cell_idx], bin_size, color='0.5', align='center')
             ax.set_xlim(-max_lag, max_lag)
         plot_kwargs = dict(t_auto_corr=t_auto_corr, auto_corr_cells=auto_corr_cells, bin_size=bin_size, max_lag=max_lag)
-        plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_auto_corr, plot_kwargs,
-                                xlabel='Time (ms)', ylabel='Spike-time \nautocorrelation',
-                                save_dir_img=os.path.join(save_dir_img, 'auto_corr_'+str(max_lag)+'.png'))
+        if sigma_smooth is not None:
+            plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_auto_corr, plot_kwargs,
+                                    xlabel='Time (ms)', ylabel='Spike-time \nautocorrelation',
+                                    save_dir_img=os.path.join(save_dir_img, 'auto_corr_'+str(max_lag)+'_'+str(bin_size)+'_'+str(sigma_smooth)+'.png'))
+        else:
+            plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_auto_corr, plot_kwargs,
+                                    xlabel='Time (ms)', ylabel='Spike-time \nautocorrelation',
+                                    save_dir_img=os.path.join(save_dir_img, 'auto_corr_' + str(max_lag) + '_' + str(
+                                        bin_size) + '.png'))
 
-        plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_auto_corr, plot_kwargs,
-                                xlabel='Time (ms)', ylabel='Spike-time \nautocorrelation', colors_marker=colors_marker,
-                                wspace=0.18,
-                                save_dir_img=os.path.join(save_dir_img2, 'auto_corr_' + str(max_lag) + '.png'))
+        # plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_auto_corr, plot_kwargs,
+        #                         xlabel='Time (ms)', ylabel='Spike-time \nautocorrelation', colors_marker=colors_marker,
+        #                         wspace=0.18,
+        #                         save_dir_img=os.path.join(save_dir_img2, 'auto_corr_' + str(max_lag) + '.png'))
 
-        # plot theta power
-        def plot_theta_power(ax, cell_idx, theta_power):
-            ax.bar(0.5, theta_power[cell_idx], width=0.4, color='0.5')
-            ax.set_xlim(0, 1)
-            ax.set_xticks([])
-
-        plot_kwargs = dict(theta_power=theta_power)
-        plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_theta_power, plot_kwargs,
-                                xlabel='', ylabel='Theta power',
-                                save_dir_img=os.path.join(save_dir_img, 'theta_power.png'))
-
+        # # plot theta power
+        # def plot_theta_power(ax, cell_idx, theta_power):
+        #     ax.bar(0.5, theta_power[cell_idx], width=0.4, color='0.5')
+        #     ax.set_xlim(0, 1)
+        #     ax.set_xticks([])
+        #
+        # plot_kwargs = dict(theta_power=theta_power)
+        # plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_theta_power, plot_kwargs,
+        #                         xlabel='', ylabel='Theta power',
+        #                         save_dir_img=os.path.join(save_dir_img, 'theta_power.png'))
         pl.show()
