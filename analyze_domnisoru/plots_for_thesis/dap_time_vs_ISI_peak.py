@@ -16,7 +16,7 @@ if __name__ == '__main__':
     save_dir_DAP_times = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/STA/good_AP/not_detrended/all/grid_cells'
     save_dir_ISI_hist = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/ISI_hist'
     cell_type_dict = get_celltype_dict(save_dir)
-    max_ISI = 25
+    max_ISI = 200
     bin_width = 2.0  # ms
     save_dir_img = os.path.join(save_dir_img, 'cut_ISIs_at_' + str(max_ISI), 'grid_cells')
     save_dir_ISI_hist = os.path.join(save_dir_ISI_hist, 'cut_ISIs_at_' + str(max_ISI))
@@ -115,8 +115,8 @@ if __name__ == '__main__':
                       edgecolor='b', legend=False)
     ax.set_ylabel('Peak of ISI hist. (ms)')
     ax.set_xlabel('Time$_{AP-DAP}$ (ms)')
-    ax.set_xlim(0, 10)
-    ax.set_ylim(0, 25)
+    ax.set_xlim(0, 20)
+    ax.set_ylim(0, 20)
     for i in range(len(grid_cells)):
         if grid_cells[i] == 's79_0003' or grid_cells[i] == 's109_0002':
             ax.annotate(grid_cells[i], xy=(DAP_time[i] + 0.05, peak_ISI_hist[i] + 1.0), fontsize=7)

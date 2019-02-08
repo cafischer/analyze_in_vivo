@@ -28,9 +28,9 @@ if __name__ == '__main__':
                      's104_0007': -55, 's79_0003': -50, 's76_0002': -50, 's101_0009': -45}
     use_AP_max_idxs_domnisoru = True
     filter_long_ISIs = True
-    max_ISI = 25
+    max_ISI = 200
     burst_ISI = 8  # ms
-    bin_width = 1.0  # ms
+    bin_width = 2.0  # ms
     bins = np.arange(0, max_ISI+bin_width, bin_width)
     if filter_long_ISIs:
         save_dir_img = os.path.join(save_dir_img, 'cut_ISIs_at_'+str(max_ISI))

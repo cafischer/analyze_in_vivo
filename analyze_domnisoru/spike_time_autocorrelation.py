@@ -7,6 +7,8 @@ from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_for_all_grid_cells
 from grid_cell_stimuli import get_AP_max_idxs
 from cell_characteristics import to_idx
 from analyze_in_vivo.analyze_domnisoru.position_vs_firing_rate import get_spike_train, smooth_firing_rate
+from grid_cell_stimuli.ISI_hist import get_ISIs
+import scipy.stats as st
 import warnings
 pl.style.use('paper_subplots')
 
@@ -24,13 +26,38 @@ def cross_correlate(x, y, max_lag=0):
     return cross_corr
 
 
-def auto_correlate(x, max_lag=0):
+def auto_correlate(x, max_lag=50):
     auto_corr_lag = np.zeros(max_lag)
-    for lag in range(1, max_lag, 1):
+    for lag in range(1, max_lag+1, 1):
         auto_corr_lag[lag-1] = np.correlate(x[:-lag], x[lag:], mode='valid')[0]
     auto_corr_no_lag = np.array([np.correlate(x, x, mode='valid')[0]])
     auto_corr = np.concatenate((np.flipud(auto_corr_lag), auto_corr_no_lag, auto_corr_lag))
     return auto_corr
+
+
+def auto_correlate_by_ISIs(ISIs, max_lag=50, bin_size=1):
+    ISIs_cum = np.cumsum(ISIs)
+    SIs = get_all_SIs(ISIs_cum)
+    SIs = SIs[SIs <= max_lag]
+    n_spikes = len(ISIs)+1
+
+    bins = np.arange(-max_lag-bin_size/2., max_lag+bin_size/2.+bin_size, bin_size)  # bins are centered
+    bins_half = bins[int(np.ceil(len(bins)/2.)):]
+    #bins_half = np.arange(bin_size/2., max_lag+bin_size/2.+bin_size, bin_size)  # bins are centered
+    #bins = np.concatenate((np.flipud(bins_half), np.array([0]), bins_half))
+    auto_corr_half = np.histogram(SIs, bins=bins_half)[0]
+    auto_corr = np.concatenate((np.flipud(auto_corr_half), np.array([n_spikes]), auto_corr_half))
+    t_auto_corr = np.arange(-max_lag, max_lag+bin_size, bin_size)
+    return auto_corr, t_auto_corr, bins
+
+
+def get_all_SIs(ISIs_cum):
+    all_SIs = list(ISIs_cum)
+    ISIs_cum_per_spike = ISIs_cum
+    for i in range(len(ISIs_cum)):
+        ISIs_cum_per_spike = ISIs_cum_per_spike[1:] - ISIs_cum_per_spike[0]
+        all_SIs.extend(ISIs_cum_per_spike)
+    return np.array(all_SIs)
 
 
 def change_bin_size_of_spike_train(spike_train, bin_size, dt):
@@ -51,7 +78,8 @@ if __name__ == '__main__':
     save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/spike_time_auto_corr'
     save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
     cell_type = 'grid_cells'
-    cell_ids = load_cell_ids(save_dir, cell_type)[:3]
+    cell_ids = load_cell_ids(save_dir, cell_type)
+
     cell_type_dict = get_celltype_dict(save_dir)
     AP_thresholds = {'s73_0004': -50, 's90_0006': -45, 's82_0002': -38, 's117_0002': -60, 's119_0004': -50,
                      's104_0007': -55, 's79_0003': -50, 's76_0002': -50, 's101_0009': -45}
@@ -59,12 +87,11 @@ if __name__ == '__main__':
 
     # parameters
     bin_size = 1.0  # ms
-    max_lag = 12
-    sigma_smooth = 50 #50  # ms  None for no smoothing
+    max_lag = 50
+    sigma_smooth = 20 #50  # ms  None for no smoothing
     use_AP_max_idxs_domnisoru = True
     save_dir_img = os.path.join(save_dir_img, cell_type)
     max_lag_idx = to_idx(max_lag, bin_size)
-    t_auto_corr = np.concatenate((np.arange(-max_lag_idx, 0, 1), np.arange(0, max_lag_idx + 1, 1))) * bin_size
 
     if not os.path.exists(save_dir_img):
         os.makedirs(save_dir_img)
@@ -88,41 +115,64 @@ if __name__ == '__main__':
         else:
             AP_max_idxs = get_AP_max_idxs(v, AP_thresholds[cell_id], dt)
 
-        # get spike-trains
-        spike_train = get_spike_train(AP_max_idxs, len(v))  # for norm to firing rate: spike_train / len(AP_max_idxs)
+        # get ISIs
+        ISIs = get_ISIs(AP_max_idxs, t)
 
-        # change to bin size
-        spike_train_new = change_bin_size_of_spike_train(spike_train, bin_size, dt)
+        # get spike-trains
+        #spike_train = get_spike_train(AP_max_idxs, len(v))  # for norm to firing rate: spike_train / len(AP_max_idxs)
+
+        # # smoothing or change of bin size
+        # if sigma_smooth is not None:
+        #     sigma = float(to_idx(sigma_smooth, bin_size))
+        #     x = np.arange(-len(spike_train), len(spike_train), 1)
+        #     gaussian = np.exp(-(x / sigma) ** 2 / 2)
+        #     spike_train_new = np.convolve(spike_train, gaussian, mode="valid")[:len(spike_train_new)]
+        #
+        #     # test
+        #     pl.figure()
+        #     pl.plot(t, v/80.+2, 'k')
+        #     pl.plot(np.arange(0, len(spike_train))[spike_train.astype(bool)] * bin_size,
+        #             spike_train_new[spike_train.astype(bool)], 'or')
+        #     pl.plot(np.arange(0, len(spike_train))*bin_size, spike_train_new, 'b')
+        #     pl.show()
+        # else:
+        #     spike_train_new = change_bin_size_of_spike_train(spike_train, bin_size, dt)
 
         # pl.figure()
         # pl.plot(t[spike_train==1], spike_train[spike_train==1], 'ok')
         # pl.plot((np.arange(len(spike_train_new)) * bin_size)[spike_train_new==1], spike_train_new[spike_train_new==1], 'ob')
         # pl.show()
 
-        # smoothing
-        if sigma_smooth is not None:
-            sigma = float(to_idx(sigma_smooth, bin_size))
-            x = np.arange(-len(spike_train_new), len(spike_train_new), 1)
-            gaussian = np.exp(-(x / sigma) ** 2 / 2)
-            spike_train_new_ = np.convolve(spike_train_new, gaussian, mode="valid")[:len(spike_train_new)]
-
-            # test
-            # pl.figure()
-            # pl.plot(t, v/80.+2, 'k')
-            # pl.plot(np.arange(0, len(spike_train_new))[spike_train_new.astype(bool)] * bin_size,
-            #         spike_train_new_[spike_train_new.astype(bool)], 'or')
-            # pl.plot(np.arange(0, len(spike_train_new))*bin_size, spike_train_new_, 'b')
-            # pl.show()
-
-            spike_train_new = spike_train_new_
-
         # spike-time autocorrelation
-        auto_corr = auto_correlate(spike_train_new, max_lag_idx)
+        #auto_corr = auto_correlate(spike_train_new, max_lag_idx)
+        #auto_corr[max_lag_idx] = 0  # for better plotting
+        #auto_corr /= (np.sum(auto_corr) * bin_size)  # normalize
+        #auto_corr_new = auto_correlate_by_ISIs(spike_train_new, np.arange(len(spike_train_new))*bin_size, max_lag=max_lag, bin_size=bin_size)
+        auto_corr, t_auto_corr, bins = auto_correlate_by_ISIs(ISIs, max_lag=max_lag, bin_size=bin_size)
         auto_corr[max_lag_idx] = 0  # for better plotting
-        auto_corr /= (np.sum(auto_corr) * bin_size)  # normalize
+        auto_corr = auto_corr / (np.sum(auto_corr) * bin_size)  # normalize
+
         auto_corr_cells[cell_idx, :] = auto_corr
         peak_auto_corr[cell_idx] = t_auto_corr[max_lag_idx:][np.argmax(auto_corr[max_lag_idx:])]  # start at pos. half
                                                                                                   # as 1st max is taken
+
+        # compute KDE
+        ISIs_cum = np.cumsum(ISIs)
+        SIs = get_all_SIs(ISIs_cum)
+        SIs = SIs[SIs <= max_lag]
+        SIs = np.concatenate((SIs, -SIs))
+        kernel = st.gaussian_kde(SIs, bw_method=sigma_smooth/np.cov(SIs))
+
+        pl.figure()
+        pl.bar(t_auto_corr, auto_corr, bin_size, color='r', align='center', alpha=0.5)
+        t_kernel = np.arange(-50, 50+01, 0.1)
+        pl.plot(t_kernel, kernel.pdf(t_kernel), color='k')
+        pl.xlabel('Time (ms)')
+        pl.ylabel('Spike-time autocorrelation')
+        pl.xlim(-max_lag, max_lag)
+        pl.tight_layout()
+        pl.show()
+
         # compute power in the theta range of FFT(auto_corr)
         smooth_auto_corr = smooth_firing_rate(auto_corr, std=1.0, window_size=3)
         fft_auto_corr = np.fft.fft(smooth_auto_corr)
