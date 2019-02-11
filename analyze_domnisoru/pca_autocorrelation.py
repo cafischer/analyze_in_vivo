@@ -9,29 +9,33 @@ from analyze_in_vivo.load.load_domnisoru import load_cell_ids, get_cell_ids_DAP_
 from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_with_markers
 from matplotlib.pyplot import Line2D
 from matplotlib.patches import Patch
-pl.style.use('paper')
+pl.style.use('paper_subplots')
 
 
 if __name__ == '__main__':
     save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
     save_dir_auto_corr = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/spike_time_auto_corr'
-    # save_dir_img = '/home/cf/Dropbox/thesis/figures_results'
+    #save_dir_img = '/home/cf/Dropbox/thesis/figures_results'
     cell_type = 'grid_cells'
     save_dir_img = os.path.join(save_dir_auto_corr, cell_type)
     cell_ids = np.array(load_cell_ids(save_dir, cell_type))
     cell_type_dict = get_celltype_dict(save_dir)
-    max_lag = 50
-    bin_size = 1.0  # ms
+    max_lag = 50.0
+    bin_width = 1.0  # ms
     sigma_smooth = None
+    dt_kernel = 0.05
     if sigma_smooth is not None:
         auto_corr_cells = np.load(
             os.path.join(save_dir_auto_corr, cell_type,
-                         'auto_corr_' + str(max_lag) + '_' + str(bin_size) + '_' + str(sigma_smooth) + '.npy'))
+                         'auto_corr_' + str(max_lag) + '_' + str(bin_width) + '_' + str(sigma_smooth) + '.npy'))
     else:
         auto_corr_cells = np.load(os.path.join(save_dir_auto_corr, cell_type,
-                                               'auto_corr_'+str(max_lag)+'_'+str(bin_size)+'.npy'))
-    max_lag_idx = to_idx(max_lag, bin_size)
-    t_auto_corr = np.concatenate((np.arange(-max_lag_idx, 0, 1), np.arange(0, max_lag_idx + 1, 1))) * bin_size
+                                               'auto_corr_' + str(max_lag) +'_' + str(bin_width) + '.npy'))
+    max_lag_idx = to_idx(max_lag, bin_width)
+    if sigma_smooth is not None:
+        t_auto_corr = np.arange(-max_lag_idx, max_lag_idx + dt_kernel, dt_kernel)
+    else:
+        t_auto_corr = np.arange(-max_lag_idx, max_lag_idx + bin_width, bin_width)
     theta_cells = load_cell_ids(save_dir, 'giant_theta')
     DAP_cells, DAP_cells_additional = get_cell_ids_DAP_cells()
 
@@ -43,17 +47,25 @@ if __name__ == '__main__':
     print 'Explained variance: %.2f, %.2f' % (pca.explained_variance_ratio_[0], pca.explained_variance_ratio_[1])
 
     fig, ax = pl.subplots(1, 2, figsize=(10, 4))
-    ax[0].bar(t_auto_corr, pca.components_[0, :], bin_size, color='k', align='center')
-    ax[1].bar(t_auto_corr, pca.components_[1, :], bin_size, color='gray', align='center')
+    ax[0].bar(t_auto_corr, pca.components_[0, :], bin_width, color='k', align='center',
+              label='Explained var.: %i' % np.round(pca.explained_variance_ratio_[0]*100)+'%')
+    ax[1].bar(t_auto_corr, pca.components_[1, :], bin_width, color='gray', align='center',
+              label='Explained var.: %i' % np.round(pca.explained_variance_ratio_[1]*100)+'%')
     ax[0].set_xlabel('Lag (ms)')
     ax[1].set_xlabel('Lag (ms)')
     ax[0].set_ylabel('PC1')
     ax[1].set_ylabel('PC2')
     ax[0].set_xticks([-max_lag, 0, max_lag])
     ax[1].set_xticks([-max_lag, 0, max_lag])
+    ax[0].legend()
+    ax[1].legend()
     pl.tight_layout()
-    pl.savefig(os.path.join(save_dir_img, 'pca_autocorrelation_PCs_'+str(max_lag)+'_'+str(bin_size)+'.png'))
-    pl.show()
+    if sigma_smooth is not None:
+        pl.savefig(os.path.join(save_dir_img, 'pca_autocorrelation_PCs_' + str(max_lag) + '_' + str(
+            bin_width) + '_' + str(sigma_smooth) + '.png'))
+    else:
+        pl.savefig(os.path.join(save_dir_img, 'pca_autocorrelation_PCs_' + str(max_lag) +'_' + str(bin_width) + '.png'))
+    # pl.show()
 
     # k-means
     n_clusters = 2
@@ -62,28 +74,6 @@ if __name__ == '__main__':
 
     print('Bursty: ', cell_ids[labels.astype(bool)])
     print('Non-bursty: ', cell_ids[~labels.astype(bool)])
-
-    # pl.figure()
-    # ax = pl.subplot(projection='3d')
-    # ax.plot(transformed[labels==0, 0], transformed[labels==0, 1], transformed[labels==0, 2], 'or')
-    # ax.plot(transformed[labels==1, 0], transformed[labels==1, 1], transformed[labels==1, 2], 'ob')
-    # ax.set_xlabel('PC1')
-    # ax.set_ylabel('PC2')
-    # ax.set_zlabel('PC3')
-
-    # pl.figure()
-    # ax = pl.subplot()
-    # ax.plot(transformed[labels==1, 0], transformed[labels==1, 1], 'ob')
-    # plot_with_markers(ax, transformed[labels == 0, 0], transformed[labels == 0, 1], cell_ids[labels == 0],
-    #                   cell_type_dict, edgecolor='b', theta_cells=theta_cells, DAP_cells=DAP_cells, legend=False)
-    # handles = plot_with_markers(ax, transformed[labels == 1, 0], transformed[labels == 1, 1], cell_ids[labels == 1],
-    #                   cell_type_dict, edgecolor='r', theta_cells=theta_cells, DAP_cells=DAP_cells, legend=False)
-    # handles_bursty = [Patch(color='r', label='Bursty'), Patch(color='b', label='Non-bursty')]
-    # legend1 = ax.legend(handles=handles+handles_bursty, bbox_to_anchor=(1.05, 1.0), loc=2, borderaxespad=0.)
-    # for i in range(len(cell_ids)):
-    #     ax.annotate(cell_ids[i], xy=(transformed[i, 0], transformed[i, 1]))
-    # ax.set_xlabel('PC1')
-    # ax.set_ylabel('PC2')
 
     # pl.figure()
     # for i in np.where(labels)[0]:
@@ -97,136 +87,87 @@ if __name__ == '__main__':
     # pl.ylabel('Spike-time auto-correlation')
 
 
-    # # plot for thesis
-    # theta_cells = load_cell_ids(save_dir, 'giant_theta')
-    # DAP_cells = get_cell_ids_DAP_cells()
-    # fig, ax = pl.subplots(figsize=(8, 5.5))
-    # plot_with_markers(ax, transformed[labels == 0, 0], transformed[labels == 0, 1], cell_ids[labels == 0],
-    #                   cell_type_dict, edgecolor='b', theta_cells=theta_cells, DAP_cells=DAP_cells, legend=False)
-    # handles = plot_with_markers(ax, transformed[labels == 1, 0], transformed[labels == 1, 1], cell_ids[labels == 1],
-    #                   cell_type_dict, edgecolor='r', theta_cells=theta_cells, DAP_cells=DAP_cells, legend=False)
-    # legend1 = ax.legend(handles=handles, bbox_to_anchor=(1.05, 1.0), loc=2, borderaxespad=0.)
-    # handles = [Line2D([0], [0], color='b', label='Non-bursty'),
-    #            Line2D([0], [0], color='r', label='Bursty')]
-    # legend2 = ax.legend(handles=handles, bbox_to_anchor=(1.05, 0.135), loc=2, borderaxespad=0.)
-    # ax.add_artist(legend1)
-    # ax.add_artist(legend2)
-    # ax.set_xlabel('PC1')
-    # ax.set_ylabel('PC2')
-    #
-    #
-    # left, bottom, width, height = [0.5, 0.7, 0.2, 0.2]
-    # axins = fig.add_axes([left, bottom, width, height])
-    # i = np.where(cell_ids == 's79_0003')[0][0]
-    # axins.bar(t_auto_corr, auto_corr_cells[i], bin_size, color='r', align='center')
-    # ax.annotate('', xy=(transformed[i, 0], transformed[i, 1]), xytext=(left, 0.7),
-    #                xycoords='data', textcoords='figure fraction',
-    #                arrowprops=dict(arrowstyle="-", color='0.5', alpha=0.5))
-    # ax.annotate('', xy=(transformed[i, 0], transformed[i, 1]), xytext=(left+width, 0.7),
-    #                xycoords='data', textcoords='figure fraction',
-    #                arrowprops=dict(arrowstyle="-", color='0.5', alpha=0.5))
-    # axins.set_yticks([])
-    # axins.set_xticks([-50, 0, 50])
-    # axins.set_xticklabels([-50, 0, 50], fontsize=10)
-    # axins.set_xlabel('Lag (ms)', fontsize=10)
-    # axins.set_ylabel('Spike-time \nautocorrelation', fontsize=10)
-    #
-    # left, bottom, width, height = [0.2, 0.7, 0.2, 0.2]
-    # axins = fig.add_axes([left, bottom, width, height])
-    # i = np.where(cell_ids == 's85_0007')[0][0]
-    # axins.bar(t_auto_corr, auto_corr_cells[i], bin_size, color='b', align='center')
-    # ax.annotate('', xy=(transformed[i, 0], transformed[i, 1]), xytext=(left, 0.7),
-    #                xycoords='data', textcoords='figure fraction',
-    #                arrowprops=dict(arrowstyle="-", color='0.5', alpha=0.5))
-    # ax.annotate('', xy=(transformed[i, 0], transformed[i, 1]), xytext=(left+width, 0.7),
-    #                xycoords='data', textcoords='figure fraction',
-    #                arrowprops=dict(arrowstyle="-", color='0.5', alpha=0.5))
-    # axins.set_yticks([])
-    # axins.set_xticks([-50, 0, 50])
-    # axins.set_xticklabels([-50, 0, 50], fontsize=10)
-    # axins.set_xlabel('Lag (ms)', fontsize=10)
-    # axins.set_ylabel('Spike-time \nautocorrelation', fontsize=10)
-    #
-    # ax.set_ylim([-0.08, 0.18])
-    # pl.tight_layout()
-    # pl.savefig(os.path.join(save_dir_img, 'pca_autocorrelation.png'))
+    # plot for thesis
+    fig, ax = pl.subplots(figsize=(8, 5.5))
 
+    left, bottom, width, height = [0.5, 0.75, 0.2, 0.2]
+    axins = fig.add_axes([left, bottom, width, height])
+    i = np.where(cell_ids == 's79_0003')[0][0]
+    axins.bar(t_auto_corr, auto_corr_cells[i], bin_width, color='r', align='center')
+    ax.annotate('', xy=(transformed[i, 0], transformed[i, 1]), xytext=(left, bottom),
+                   xycoords='data', textcoords='figure fraction',
+                   arrowprops=dict(arrowstyle="-", color='0.5', linewidth=0.75))
+    ax.annotate('', xy=(transformed[i, 0], transformed[i, 1]), xytext=(left+width, bottom),
+                   xycoords='data', textcoords='figure fraction',
+                   arrowprops=dict(arrowstyle="-", color='0.5', linewidth=0.75))
+    axins.set_yticks([])
+    axins.set_xticks([-50, 0, 50])
+    axins.set_xticklabels([-50, 0, 50], fontsize=10)
+    axins.set_xlabel('Lag (ms)', fontsize=10)
+    axins.set_ylabel('Spike-time \nautocorrelation', fontsize=10)
 
-    # # plot for thesis
-    # fig, ax = pl.subplots(figsize=(8, 5.5))
-    #
-    # left, bottom, width, height = [0.5, 0.75, 0.2, 0.2]
-    # axins = fig.add_axes([left, bottom, width, height])
-    # i = np.where(cell_ids == 's79_0003')[0][0]
-    # axins.bar(t_auto_corr, auto_corr_cells[i], bin_size, color='r', align='center')
-    # ax.annotate('', xy=(transformed[i, 0], transformed[i, 1]), xytext=(left, bottom),
-    #                xycoords='data', textcoords='figure fraction',
-    #                arrowprops=dict(arrowstyle="-", color='0.5', linewidth=0.75))
-    # ax.annotate('', xy=(transformed[i, 0], transformed[i, 1]), xytext=(left+width, bottom),
-    #                xycoords='data', textcoords='figure fraction',
-    #                arrowprops=dict(arrowstyle="-", color='0.5', linewidth=0.75))
-    # axins.set_yticks([])
-    # axins.set_xticks([-50, 0, 50])
-    # axins.set_xticklabels([-50, 0, 50], fontsize=10)
-    # axins.set_xlabel('Lag (ms)', fontsize=10)
-    # axins.set_ylabel('Spike-time \nautocorrelation', fontsize=10)
-    #
-    # left, bottom, width, height = [0.2, 0.75, 0.2, 0.2]
-    # axins = fig.add_axes([left, bottom, width, height])
-    # i = np.where(cell_ids == 's85_0007')[0][0]
-    # axins.bar(t_auto_corr, auto_corr_cells[i], bin_size, color='b', align='center')
-    # ax.annotate('', xy=(transformed[i, 0], transformed[i, 1]), xytext=(left, bottom),
-    #                xycoords='data', textcoords='figure fraction',
-    #                arrowprops=dict(arrowstyle="-", color='0.5', linewidth=0.75))
-    # ax.annotate('', xy=(transformed[i, 0], transformed[i, 1]), xytext=(left+width, bottom),
-    #                xycoords='data', textcoords='figure fraction',
-    #                arrowprops=dict(arrowstyle="-", color='0.5', linewidth=0.75))
-    # axins.set_yticks([])
-    # axins.set_xticks([-50, 0, 50])
-    # axins.set_xticklabels([-50, 0, 50], fontsize=10)
-    # axins.set_xlabel('Lag (ms)', fontsize=10)
-    # axins.set_ylabel('Spike-time \nautocorrelation', fontsize=10)
-    #
-    # plot_with_markers(ax, transformed[labels == 0, 0], transformed[labels == 0, 1], cell_ids[labels == 0],
-    #                   cell_type_dict, edgecolor='b', theta_cells=theta_cells, DAP_cells=DAP_cells,
-    #                   DAP_cells_additional=DAP_cells_additional, legend=False)
-    # handles = plot_with_markers(ax, transformed[labels == 1, 0], transformed[labels == 1, 1], cell_ids[labels == 1],
-    #                   cell_type_dict, edgecolor='r', theta_cells=theta_cells, DAP_cells=DAP_cells,
-    #                             DAP_cells_additional=DAP_cells_additional, legend=False)
-    # handles_bursty = [Patch(color='r', label='Bursty'), Patch(color='b', label='Non-bursty')]
-    # legend1 = ax.legend(handles=handles+handles_bursty, bbox_to_anchor=(1.05, 1.0), loc=2, borderaxespad=0.)
-    # ax.add_artist(legend1)
-    # ax.set_xlabel('PC1')
-    # ax.set_ylabel('PC2')
-    #
-    # ax.set_ylim([-0.07, 0.19])
-    # ax.set_xlim([-0.07, 0.135])
-    # pl.tight_layout()
-    # pl.subplots_adjust(top=0.7)
-    # pl.savefig(os.path.join(save_dir_img, 'pca_autocorrelation.png'))
+    left, bottom, width, height = [0.2, 0.75, 0.2, 0.2]
+    axins = fig.add_axes([left, bottom, width, height])
+    i = np.where(cell_ids == 's85_0007')[0][0]
+    axins.bar(t_auto_corr, auto_corr_cells[i], bin_width, color='b', align='center')
+    ax.annotate('', xy=(transformed[i, 0], transformed[i, 1]), xytext=(left, bottom),
+                   xycoords='data', textcoords='figure fraction',
+                   arrowprops=dict(arrowstyle="-", color='0.5', linewidth=0.75))
+    ax.annotate('', xy=(transformed[i, 0], transformed[i, 1]), xytext=(left+width, bottom),
+                   xycoords='data', textcoords='figure fraction',
+                   arrowprops=dict(arrowstyle="-", color='0.5', linewidth=0.75))
+    axins.set_yticks([])
+    axins.set_xticks([-50, 0, 50])
+    axins.set_xticklabels([-50, 0, 50], fontsize=10)
+    axins.set_xlabel('Lag (ms)', fontsize=10)
+    axins.set_ylabel('Spike-time \nautocorrelation', fontsize=10)
 
-
-    # plot for Andreas
-    fig, ax = pl.subplots(figsize=(12., 8.))
     plot_with_markers(ax, transformed[labels == 0, 0], transformed[labels == 0, 1], cell_ids[labels == 0],
-                      cell_type_dict, edgecolor='b', theta_cells=theta_cells, DAP_cells=DAP_cells, legend=False)
+                      cell_type_dict, edgecolor='b', theta_cells=theta_cells, DAP_cells=DAP_cells,
+                      DAP_cells_additional=DAP_cells_additional, legend=False)
     handles = plot_with_markers(ax, transformed[labels == 1, 0], transformed[labels == 1, 1], cell_ids[labels == 1],
-                      cell_type_dict, edgecolor='r', theta_cells=theta_cells, DAP_cells=DAP_cells, legend=False)
+                      cell_type_dict, edgecolor='r', theta_cells=theta_cells, DAP_cells=DAP_cells,
+                                DAP_cells_additional=DAP_cells_additional, legend=False)
     handles_bursty = [Patch(color='r', label='Bursty'), Patch(color='b', label='Non-bursty')]
-    #legend1 = ax.legend(handles=handles+handles_bursty, bbox_to_anchor=(1.05, 1.0), loc=2, borderaxespad=0.)
-    legend1 = ax.legend(handles=handles + handles_bursty)
+    legend1 = ax.legend(handles=handles+handles_bursty, bbox_to_anchor=(1.05, 1.0), loc=2, borderaxespad=0.)
     ax.add_artist(legend1)
     ax.set_xlabel('PC1')
     ax.set_ylabel('PC2')
 
-    for i in range(len(cell_ids)):
-        ax.annotate(cell_ids[i], xy=(transformed[i, 0] + 0.002, transformed[i, 1] + 0.002), fontsize=7)
-
-    #ax.set_ylim([-0.058, 0.17])
-    #ax.set_xlim([-0.065, 0.133])
+    ax.set_ylim([-0.07, 0.19])
+    ax.set_xlim([-0.07, 0.135])
     pl.tight_layout()
-    #pl.subplots_adjust(bottom=0.06, left=0.06, top=0.98, right=0.84)
-    pl.savefig(os.path.join(save_dir_img, 'pca_autocorrelation_with_cell_ids_'+str(max_lag)+'_'+str(bin_size)+'.png'))
+    pl.subplots_adjust(top=0.7, bottom=0.08, left=0.1, right=0.77)
+    pl.savefig(os.path.join(save_dir_img, 'pca_autocorrelation.png'))
+
+
+    # # plot for Andreas
+    # fig, ax = pl.subplots(figsize=(12., 8.))
+    # plot_with_markers(ax, transformed[labels == 0, 0], transformed[labels == 0, 1], cell_ids[labels == 0],
+    #                   cell_type_dict, edgecolor='b', theta_cells=theta_cells, DAP_cells=DAP_cells, legend=False)
+    # handles = plot_with_markers(ax, transformed[labels == 1, 0], transformed[labels == 1, 1], cell_ids[labels == 1],
+    #                   cell_type_dict, edgecolor='r', theta_cells=theta_cells, DAP_cells=DAP_cells, legend=False)
+    # handles_bursty = [Patch(color='r', label='Bursty'), Patch(color='b', label='Non-bursty')]
+    # #legend1 = ax.legend(handles=handles+handles_bursty, bbox_to_anchor=(1.05, 1.0), loc=2, borderaxespad=0.)
+    # legend1 = ax.legend(handles=handles + handles_bursty)
+    # ax.add_artist(legend1)
+    # ax.set_xlabel('PC1')
+    # ax.set_ylabel('PC2')
+    #
+    # for i in range(len(cell_ids)):
+    #     ax.annotate(cell_ids[i], xy=(transformed[i, 0] + 0.002, transformed[i, 1] + 0.002), fontsize=7)
+    #
+    # #ax.set_ylim([-0.058, 0.17])
+    # #ax.set_xlim([-0.065, 0.133])
+    # pl.tight_layout()
+    # #pl.subplots_adjust(bottom=0.06, left=0.06, top=0.98, right=0.84)
+    # if sigma_smooth is not None:
+    #     pl.savefig(os.path.join(save_dir_img,
+    #                             'pca_autocorrelation_with_cell_ids_' + str(max_lag) + '_' + str(
+    #                                 bin_width) + '_' + str(sigma_smooth) + '.png'))
+    # else:
+    #     pl.savefig(os.path.join(save_dir_img, 'pca_autocorrelation_with_cell_ids_' + str(max_lag) +'_' + str(
+    #         bin_width) + '.png'))
 
     # # plot for slides
     # fig, ax = pl.subplots(figsize=(8, 5.5))

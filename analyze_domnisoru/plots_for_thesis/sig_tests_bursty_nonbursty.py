@@ -19,8 +19,10 @@ cell_type_dict = get_celltype_dict(save_dir)
 theta_cells = load_cell_ids(save_dir, 'giant_theta')
 DAP_cells, DAP_cells_additional = get_cell_ids_DAP_cells()
 
+ISI_burst = 8  # ms
+
 fraction_burst = np.load(os.path.join(save_dir_ISI_hist, 'fraction_burst.npy'))
-fraction_single = np.load(os.path.join(save_dir_n_spikes_in_burst, 'fraction_single.npy'))
+fraction_single = np.load(os.path.join(save_dir_n_spikes_in_burst, 'fraction_single_' + str(ISI_burst) + '.npy'))
 fraction_ISI_or_ISI_next_burst = np.load(os.path.join(save_dir_ISI_return_map, 'fraction_ISI_or_ISI_next_burst.npy'))
 
 cell_ids = np.array(load_cell_ids(save_dir, 'grid_cells'))

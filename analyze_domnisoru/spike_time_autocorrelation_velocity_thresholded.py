@@ -6,7 +6,7 @@ from grid_cell_stimuli.ISI_hist import get_ISIs, get_cumulative_ISI_hist
 from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data, get_celltype_dict
 from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_for_all_grid_cells_grid
 from analyze_in_vivo.analyze_domnisoru.check_basic.in_out_field import get_starts_ends_group_of_ones
-from analyze_in_vivo.analyze_domnisoru.spike_time_autocorrelation import auto_correlate, change_bin_size_of_spike_train
+from analyze_in_vivo.analyze_domnisoru.spike_time_autocorrelation import get_autocorrelation, change_bin_size_of_spike_train
 from analyze_in_vivo.analyze_domnisoru.position_vs_firing_rate import get_spike_train
 from cell_characteristics import to_idx
 import warnings
@@ -32,7 +32,7 @@ def get_auto_corr_for_group(group_indicator, spike_train, max_lag_idx, bin_size,
     for group_idx, (start, end) in enumerate(zip(starts, ends)):
         spike_train_inside = spike_train[start:end + 1]
         spike_train_new = change_bin_size_of_spike_train(spike_train_inside, bin_size, dt)
-        auto_corrs[group_idx] = auto_correlate(spike_train_new, max_lag_idx)
+        auto_corrs[group_idx] = get_autocorrelation(spike_train_new, max_lag_idx)
     # sum over auto-correlations and normalize
     auto_corr = np.sum(auto_corrs, 0)
     auto_corr[max_lag_idx] = 0  # for better plotting

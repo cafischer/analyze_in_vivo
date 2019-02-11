@@ -7,7 +7,7 @@ from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_for_all_grid_cells
 from grid_cell_stimuli import get_AP_max_idxs
 from cell_characteristics import to_idx
 import warnings
-from analyze_in_vivo.analyze_domnisoru.spike_time_autocorrelation import auto_correlate
+from analyze_in_vivo.analyze_domnisoru.spike_time_autocorrelation import get_autocorrelation
 from analyze_in_vivo.analyze_domnisoru.position_vs_firing_rate import get_spike_train
 pl.style.use('paper')
 
@@ -66,7 +66,7 @@ if __name__ == '__main__':
         # pl.show()
 
         # spike-time autocorrelation
-        auto_corr = auto_correlate(spike_train_new, max_lag_idx)
+        auto_corr = get_autocorrelation(spike_train_new, max_lag_idx)
         auto_corr[max_lag_idx] = 0  # for better plotting
         auto_corr /= (np.sum(auto_corr) * bin_size)  # normalize
         auto_corr_cells.append(auto_corr)

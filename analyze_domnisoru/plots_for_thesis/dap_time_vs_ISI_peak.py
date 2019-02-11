@@ -17,7 +17,8 @@ if __name__ == '__main__':
     save_dir_ISI_hist = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/ISI_hist'
     cell_type_dict = get_celltype_dict(save_dir)
     max_ISI = 200
-    bin_width = 2.0  # ms
+    bin_width = 1.0  # ms
+    sigma_smooth = None
     save_dir_img = os.path.join(save_dir_img, 'cut_ISIs_at_' + str(max_ISI), 'grid_cells')
     save_dir_ISI_hist = os.path.join(save_dir_ISI_hist, 'cut_ISIs_at_' + str(max_ISI))
 
@@ -29,8 +30,12 @@ if __name__ == '__main__':
     burst_label = np.array([True if cell_id in cell_ids_bursty else False for cell_id in grid_cells])
     # DAP_time = np.load(os.path.join(save_dir_characteristics, 'grid_cells', 'DAP_time.npy')) TODO
     DAP_time = np.load(os.path.join(save_dir_DAP_times, 'DAP_times.npy'))
-    peak_ISI_hist = np.load(os.path.join(save_dir_ISI_hist, 'grid_cells', 'peak_ISI_hist_'+str(max_ISI)+'_'+str(bin_width)+'.npy'))
-    peak_ISI_hist = np.array([(p[0] + p[1]) / 2. for p in peak_ISI_hist])  # set middle of bin as peak
+    if sigma_smooth is not None:
+        peak_ISI_hist = np.load(os.path.join(save_dir_ISI_hist, 'grid_cells', 'peak_ISI_hist_'+str(max_ISI)+'_'+str(
+            bin_width)+ '_' + str(sigma_smooth)+'.npy'))
+    else:
+        peak_ISI_hist = np.load(os.path.join(save_dir_ISI_hist, 'grid_cells', 'peak_ISI_hist_'+str(max_ISI)+'_'+str(bin_width)+'.npy'))
+        peak_ISI_hist = np.array([(p[0] + p[1]) / 2. for p in peak_ISI_hist])  # set middle of bin as peak
 
     # # plot correlation DAP-time and peak ISI-hist
     # fig, ax = pl.subplots()
@@ -106,7 +111,11 @@ if __name__ == '__main__':
 
     # plot the same data on both axes
     ax.plot(np.arange(0, 20), np.arange(0, 20), '0.5', linestyle='--')
-    ax.fill_between(np.arange(0, 20), np.arange(0, 20)-bin_width, np.arange(0, 20)+bin_width, color='0.5', alpha=0.15)
+    if sigma_smooth is not None:
+        ax.fill_between(np.arange(0, 20), np.arange(0, 20) - 0.05, np.arange(0, 20) + 0.05, color='0.5',
+                        alpha=0.15)
+    else:
+        ax.fill_between(np.arange(0, 20), np.arange(0, 20)-bin_width, np.arange(0, 20)+bin_width, color='0.5', alpha=0.15)
     plot_with_markers(ax, DAP_time[burst_label], peak_ISI_hist[burst_label], grid_cells[burst_label], cell_type_dict,
                       theta_cells=theta_cells, DAP_cells=DAP_cells, DAP_cells_additional=DAP_cells_additional,
                       edgecolor='r', legend=False)
@@ -123,5 +132,9 @@ if __name__ == '__main__':
         else:
             ax.annotate(grid_cells[i], xy=(DAP_time[i]+0.15, peak_ISI_hist[i]+0.2), fontsize=7)
     pl.tight_layout()
-    pl.savefig(os.path.join(save_dir_img, 'dap_time_vs_ISI_peak_'+str(max_ISI)+'_'+str(bin_width)+'.png'))
+    if sigma_smooth is not None:
+        pl.savefig(os.path.join(save_dir_img, 'dap_time_vs_ISI_peak_' + str(max_ISI) + '_' + str(
+            bin_width) + '_' + str(sigma_smooth) + '.png'))
+    else:
+        pl.savefig(os.path.join(save_dir_img, 'dap_time_vs_ISI_peak_'+str(max_ISI)+'_'+str(bin_width)+'.png'))
     pl.show()

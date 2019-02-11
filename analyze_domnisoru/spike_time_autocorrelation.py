@@ -10,10 +10,23 @@ from analyze_in_vivo.analyze_domnisoru.position_vs_firing_rate import get_spike_
 from grid_cell_stimuli.ISI_hist import get_ISIs
 import scipy.stats as st
 import warnings
+import time
 pl.style.use('paper_subplots')
 
 
-def cross_correlate(x, y, max_lag=0):
+def plot_autocorrelation(ax, cell_idx, t_auto_corr, auto_corr_cells, bin_size, max_lag):
+    ax.bar(t_auto_corr, auto_corr_cells[cell_idx], bin_size, color='0.5', align='center')
+    ax.set_xlim(-max_lag, max_lag)
+
+
+def plot_autocorrelation_with_kde(ax, cell_idx, t_auto_corr, auto_corr_cells, bin_size, max_lag, kernel_cells, dt_kernel=0.01):
+    ax.bar(t_auto_corr, auto_corr_cells[cell_idx], bin_size, color='0.5', align='center')
+    t_kernel = np.arange(-max_lag, max_lag+dt_kernel, dt_kernel)
+    ax.plot(t_kernel, kernel_cells[cell_idx].pdf(t_kernel), color='k')
+    ax.set_xlim(-max_lag, max_lag)
+
+
+def get_crosscorrelation(x, y, max_lag=0):
     assert len(x) == len(y)
     cross_corr = np.zeros(2 * max_lag + 1)
     for lag in range(max_lag, 0, -1):
@@ -26,7 +39,7 @@ def cross_correlate(x, y, max_lag=0):
     return cross_corr
 
 
-def auto_correlate(x, max_lag=50):
+def get_autocorrelation(x, max_lag=50):
     auto_corr_lag = np.zeros(max_lag)
     for lag in range(1, max_lag+1, 1):
         auto_corr_lag[lag-1] = np.correlate(x[:-lag], x[lag:], mode='valid')[0]
@@ -35,42 +48,54 @@ def auto_correlate(x, max_lag=50):
     return auto_corr
 
 
-def auto_correlate_by_ISIs(ISIs, max_lag=50, bin_size=1):
+def get_autocorrelation_by_ISIs(ISIs, max_lag=50, bin_width=1, remove_zero=True, normalize=True):
+    """
+    Computes the autocorrelation of some spike train by means of the ISIs.
+    :param ISIs: All ISIs obtained from the spike train. They need to be kept in the same order!
+    :type ISIs: array
+    :param max_lag: Up to which time the auto-correlation should be computed.
+    :type max_lag: float
+    :param bin_width: Width of the bins for the auto-correlation.
+    :type bin_width: float
+    :return: Spike-time autocorrelation, center of the bins, bins.
+    """
     ISIs_cum = np.cumsum(ISIs)
     SIs = get_all_SIs(ISIs_cum)
-    SIs = SIs[SIs <= max_lag]
-    n_spikes = len(ISIs)+1
+    SIs = SIs[np.abs(SIs) <= max_lag]
 
-    bins = np.arange(-max_lag-bin_size/2., max_lag+bin_size/2.+bin_size, bin_size)  # bins are centered
-    bins_half = bins[int(np.ceil(len(bins)/2.)):]
-    #bins_half = np.arange(bin_size/2., max_lag+bin_size/2.+bin_size, bin_size)  # bins are centered
-    #bins = np.concatenate((np.flipud(bins_half), np.array([0]), bins_half))
-    auto_corr_half = np.histogram(SIs, bins=bins_half)[0]
-    auto_corr = np.concatenate((np.flipud(auto_corr_half), np.array([n_spikes]), auto_corr_half))
-    t_auto_corr = np.arange(-max_lag, max_lag+bin_size, bin_size)
-    return auto_corr, t_auto_corr, bins
+    bins_half = np.arange(bin_width / 2., max_lag + bin_width / 2. + bin_width, bin_width)  # bins are centered
+    bins_half += np.spacing(bins_half)  # without spacing the histogram would not be symmetric as comparison operation is different for both sides of the bin edges
+    bins = np.concatenate((-bins_half[::-1], bins_half))
+    autocorr = np.histogram(SIs, bins=bins)[0]
+    t_autocorr = np.arange(-max_lag, max_lag + bin_width, bin_width)
+
+    # half_len = int((len(autocorr) - 1) / 2)
+    # assert np.all(autocorr[half_len+1:] == autocorr[:half_len][::-1])  # control: autocorr must be symmetric
+
+    if remove_zero:
+        autocorr[max_lag_idx] = 0
+    if normalize:
+        autocorr = autocorr / (np.sum(autocorr) * bin_width)
+    return autocorr, t_autocorr, bins
 
 
 def get_all_SIs(ISIs_cum):
-    all_SIs = list(ISIs_cum)
-    ISIs_cum_per_spike = ISIs_cum
-    for i in range(len(ISIs_cum)):
-        ISIs_cum_per_spike = ISIs_cum_per_spike[1:] - ISIs_cum_per_spike[0]
-        all_SIs.extend(ISIs_cum_per_spike)
-    return np.array(all_SIs)
+    ISIs_cum = np.insert(ISIs_cum, 0, 0)  # add distance to 1st spike
+    SI_mat = np.tile(ISIs_cum, (len(ISIs_cum), 1)) - np.array([ISIs_cum]).T
+    return SI_mat.flatten()  #np.array(all_SIs)bins[:int(len(bins/2.))]
 
 
-def change_bin_size_of_spike_train(spike_train, bin_size, dt):
-    bin_change = bin_size / dt
-    spike_train_new = np.zeros(int(round(len(spike_train) / bin_change)))
-    for i in range(len(spike_train_new)):
-        if sum(spike_train[i * int(bin_change):(i + 1) * int(bin_change)] == 1) == 1:
-            spike_train_new[i] = 1
-        elif sum(spike_train[i * int(bin_change):(i + 1) * int(bin_change)] == 1) == 0:
-            spike_train_new[i] = 0
-        else:
-            warnings.warn('More than one spike in bin!')
-    return spike_train_new
+# def change_bin_size_of_spike_train(spike_train, bin_size, dt):
+#     bin_change = bin_size / dt
+#     spike_train_new = np.zeros(int(round(len(spike_train) / bin_change)))
+#     for i in range(len(spike_train_new)):
+#         if sum(spike_train[i * int(bin_change):(i + 1) * int(bin_change)] == 1) == 1:
+#             spike_train_new[i] = 1
+#         elif sum(spike_train[i * int(bin_change):(i + 1) * int(bin_change)] == 1) == 0:
+#             spike_train_new[i] = 0
+#         else:
+#             warnings.warn('More than one spike in bin!')
+#     return spike_train_new
 
 
 if __name__ == '__main__':
@@ -86,19 +111,22 @@ if __name__ == '__main__':
     param_list = ['Vm_ljpc', 'spiketimes']
 
     # parameters
-    bin_size = 1.0  # ms
-    max_lag = 50
-    sigma_smooth = 20 #50  # ms  None for no smoothing
+    bin_width = 1.0  # ms
+    max_lag = 50.0
+    sigma_smooth = 1.0  # ms  None for no smoothing
+    dt_kernel = 0.05
     use_AP_max_idxs_domnisoru = True
     save_dir_img = os.path.join(save_dir_img, cell_type)
-    max_lag_idx = to_idx(max_lag, bin_size)
+    max_lag_idx = to_idx(max_lag, bin_width)
 
     if not os.path.exists(save_dir_img):
         os.makedirs(save_dir_img)
 
     # main
-    auto_corr_cells = np.zeros((len(cell_ids), int(2*max_lag/bin_size+1)))
-    peak_auto_corr = np.zeros(len(cell_ids))
+    autocorr_cells = np.zeros((len(cell_ids), int(2 * max_lag / bin_width + 1)))
+    autocorr_kernel_cells = np.zeros((len(cell_ids), int(2 * max_lag / dt_kernel + 1)))
+    kernel_cells = np.zeros(len(cell_ids), dtype=object)
+    peak_autocorr = np.zeros(len(cell_ids))
     theta_power = np.zeros(len(cell_ids))
     for cell_idx, cell_id in enumerate(cell_ids):
         print cell_id
@@ -118,60 +146,31 @@ if __name__ == '__main__':
         # get ISIs
         ISIs = get_ISIs(AP_max_idxs, t)
 
-        # get spike-trains
-        #spike_train = get_spike_train(AP_max_idxs, len(v))  # for norm to firing rate: spike_train / len(AP_max_idxs)
-
-        # # smoothing or change of bin size
-        # if sigma_smooth is not None:
-        #     sigma = float(to_idx(sigma_smooth, bin_size))
-        #     x = np.arange(-len(spike_train), len(spike_train), 1)
-        #     gaussian = np.exp(-(x / sigma) ** 2 / 2)
-        #     spike_train_new = np.convolve(spike_train, gaussian, mode="valid")[:len(spike_train_new)]
-        #
-        #     # test
-        #     pl.figure()
-        #     pl.plot(t, v/80.+2, 'k')
-        #     pl.plot(np.arange(0, len(spike_train))[spike_train.astype(bool)] * bin_size,
-        #             spike_train_new[spike_train.astype(bool)], 'or')
-        #     pl.plot(np.arange(0, len(spike_train))*bin_size, spike_train_new, 'b')
-        #     pl.show()
-        # else:
-        #     spike_train_new = change_bin_size_of_spike_train(spike_train, bin_size, dt)
-
-        # pl.figure()
-        # pl.plot(t[spike_train==1], spike_train[spike_train==1], 'ok')
-        # pl.plot((np.arange(len(spike_train_new)) * bin_size)[spike_train_new==1], spike_train_new[spike_train_new==1], 'ob')
-        # pl.show()
-
-        # spike-time autocorrelation
-        #auto_corr = auto_correlate(spike_train_new, max_lag_idx)
-        #auto_corr[max_lag_idx] = 0  # for better plotting
-        #auto_corr /= (np.sum(auto_corr) * bin_size)  # normalize
-        #auto_corr_new = auto_correlate_by_ISIs(spike_train_new, np.arange(len(spike_train_new))*bin_size, max_lag=max_lag, bin_size=bin_size)
-        auto_corr, t_auto_corr, bins = auto_correlate_by_ISIs(ISIs, max_lag=max_lag, bin_size=bin_size)
-        auto_corr[max_lag_idx] = 0  # for better plotting
-        auto_corr = auto_corr / (np.sum(auto_corr) * bin_size)  # normalize
-
-        auto_corr_cells[cell_idx, :] = auto_corr
-        peak_auto_corr[cell_idx] = t_auto_corr[max_lag_idx:][np.argmax(auto_corr[max_lag_idx:])]  # start at pos. half
+        # get autocorrelation
+        auto_corr, t_auto_corr, bins = get_autocorrelation_by_ISIs(ISIs, max_lag=max_lag, bin_width=bin_width)
+        autocorr_cells[cell_idx, :] = auto_corr
+        peak_autocorr[cell_idx] = t_auto_corr[max_lag_idx:][np.argmax(auto_corr[max_lag_idx:])]  # start at pos. half
                                                                                                   # as 1st max is taken
 
         # compute KDE
         ISIs_cum = np.cumsum(ISIs)
         SIs = get_all_SIs(ISIs_cum)
-        SIs = SIs[SIs <= max_lag]
-        SIs = np.concatenate((SIs, -SIs))
-        kernel = st.gaussian_kde(SIs, bw_method=sigma_smooth/np.cov(SIs))
+        SIs = SIs[np.abs(SIs) <= max_lag]
+        SIs = SIs[SIs != 0]
+        kernel = st.gaussian_kde(SIs, bw_method=np.sqrt(sigma_smooth/np.cov(SIs)))
+        kernel_cells[cell_idx] = kernel
+        t_kernel = np.arange(-max_lag, max_lag + dt_kernel, dt_kernel)
+        autocorr_kernel_cells[cell_idx, :] = kernel_cells[cell_idx].pdf(t_kernel)
 
-        pl.figure()
-        pl.bar(t_auto_corr, auto_corr, bin_size, color='r', align='center', alpha=0.5)
-        t_kernel = np.arange(-50, 50+01, 0.1)
-        pl.plot(t_kernel, kernel.pdf(t_kernel), color='k')
-        pl.xlabel('Time (ms)')
-        pl.ylabel('Spike-time autocorrelation')
-        pl.xlim(-max_lag, max_lag)
-        pl.tight_layout()
-        pl.show()
+        # pl.figure()
+        # pl.bar(t_auto_corr, auto_corr, bin_size, color='r', align='center', alpha=0.5)
+        # t_kernel = np.arange(-50, 50+01, 0.1)
+        # pl.plot(t_kernel, kernel.pdf(t_kernel), color='k')
+        # pl.xlabel('Time (ms)')
+        # pl.ylabel('Spike-time autocorrelation')
+        # pl.xlim(-max_lag, max_lag)
+        # pl.tight_layout()
+        # pl.show()
 
         # compute power in the theta range of FFT(auto_corr)
         smooth_auto_corr = smooth_firing_rate(auto_corr, std=1.0, window_size=3)
@@ -210,52 +209,53 @@ if __name__ == '__main__':
         # pl.xlabel('Frequency (Hz)')
         # pl.ylabel('Power')
         # pl.show()
+
+    # save autocorrelation
     if sigma_smooth is not None:
-        np.save(os.path.join(save_dir_img, 'peak_auto_corr_'+str(max_lag)+'_'+str(bin_size)+'_'+str(sigma_smooth)+'.npy'),
-                peak_auto_corr)
-        np.save(os.path.join(save_dir_img, 'auto_corr_'+str(max_lag)+'_'+str(bin_size)+'_'+str(sigma_smooth)+'.npy'),
-                auto_corr_cells)
+        np.save(os.path.join(save_dir_img, 'auto_corr_' + str(max_lag) + '_' + str(bin_width) + '_'+str(
+            sigma_smooth) + '.npy'), autocorr_kernel_cells)
     else:
-        np.save(os.path.join(save_dir_img, 'peak_auto_corr_' + str(max_lag) + '_' + str(bin_size) + '.npy'),
-                peak_auto_corr)
-        np.save(os.path.join(save_dir_img, 'auto_corr_' + str(max_lag) + '_' + str(bin_size) + '.npy'), auto_corr_cells)
+        np.save(os.path.join(save_dir_img, 'peak_auto_corr_' + str(max_lag) + '_' + str(bin_width) + '.npy'),
+                peak_autocorr)
+        np.save(os.path.join(save_dir_img, 'auto_corr_' + str(max_lag) + '_' + str(bin_width) + '.npy'), autocorr_cells)
 
-    if cell_type == 'grid_cells':
-        burst_label = np.array([True if cell_id in get_cell_ids_bursty() else False for cell_id in cell_ids])
-        colors_marker = np.zeros(len(burst_label), dtype=str)
-        colors_marker[burst_label] = 'r'
-        colors_marker[~burst_label] = 'b'
+    # plots
+    burst_label = np.array([True if cell_id in get_cell_ids_bursty() else False for cell_id in cell_ids])
+    colors_marker = np.zeros(len(burst_label), dtype=str)
+    colors_marker[burst_label] = 'r'
+    colors_marker[~burst_label] = 'b'
 
-        params = {'legend.fontsize': 9}
-        pl.rcParams.update(params)
+    params = {'legend.fontsize': 9}
+    pl.rcParams.update(params)
 
-        def plot_auto_corr(ax, cell_idx, t_auto_corr, auto_corr_cells, bin_size, max_lag):
-            ax.bar(t_auto_corr, auto_corr_cells[cell_idx], bin_size, color='0.5', align='center')
-            ax.set_xlim(-max_lag, max_lag)
-        plot_kwargs = dict(t_auto_corr=t_auto_corr, auto_corr_cells=auto_corr_cells, bin_size=bin_size, max_lag=max_lag)
-        if sigma_smooth is not None:
-            plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_auto_corr, plot_kwargs,
-                                    xlabel='Time (ms)', ylabel='Spike-time \nautocorrelation',
-                                    save_dir_img=os.path.join(save_dir_img, 'auto_corr_'+str(max_lag)+'_'+str(bin_size)+'_'+str(sigma_smooth)+'.png'))
-        else:
-            plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_auto_corr, plot_kwargs,
-                                    xlabel='Time (ms)', ylabel='Spike-time \nautocorrelation',
-                                    save_dir_img=os.path.join(save_dir_img, 'auto_corr_' + str(max_lag) + '_' + str(
-                                        bin_size) + '.png'))
+    if sigma_smooth is not None:
+        plot_kwargs = dict(t_auto_corr=t_auto_corr, auto_corr_cells=autocorr_cells, bin_size=bin_width,
+                           max_lag=max_lag, kernel_cells=kernel_cells)
+        plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_autocorrelation_with_kde, plot_kwargs,
+                                xlabel='Time (ms)', ylabel='Spike-time \nautocorrelation',
+                                save_dir_img=os.path.join(save_dir_img, 'auto_corr_' + str(max_lag) +'_' + str(
+                                    bin_width) + '_' + str(sigma_smooth) + '.png'))
+    else:
+        plot_kwargs = dict(t_auto_corr=t_auto_corr, auto_corr_cells=autocorr_cells, bin_size=bin_width,
+                           max_lag=max_lag)
+        plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_autocorrelation, plot_kwargs,
+                                xlabel='Time (ms)', ylabel='Spike-time \nautocorrelation',
+                                save_dir_img=os.path.join(save_dir_img, 'auto_corr_' + str(max_lag) + '_' + str(
+                                    bin_width) + '.png'))
 
-        # plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_auto_corr, plot_kwargs,
-        #                         xlabel='Time (ms)', ylabel='Spike-time \nautocorrelation', colors_marker=colors_marker,
-        #                         wspace=0.18,
-        #                         save_dir_img=os.path.join(save_dir_img2, 'auto_corr_' + str(max_lag) + '.png'))
+    # plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_autocorrelation, plot_kwargs,
+    #                         xlabel='Time (ms)', ylabel='Spike-time \nautocorrelation', colors_marker=colors_marker,
+    #                         wspace=0.18,
+    #                         save_dir_img=os.path.join(save_dir_img2, 'auto_corr_' + str(max_lag) + '.png'))
 
-        # # plot theta power
-        # def plot_theta_power(ax, cell_idx, theta_power):
-        #     ax.bar(0.5, theta_power[cell_idx], width=0.4, color='0.5')
-        #     ax.set_xlim(0, 1)
-        #     ax.set_xticks([])
-        #
-        # plot_kwargs = dict(theta_power=theta_power)
-        # plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_theta_power, plot_kwargs,
-        #                         xlabel='', ylabel='Theta power',
-        #                         save_dir_img=os.path.join(save_dir_img, 'theta_power.png'))
-        pl.show()
+    # # plot theta power
+    # def plot_theta_power(ax, cell_idx, theta_power):
+    #     ax.bar(0.5, theta_power[cell_idx], width=0.4, color='0.5')
+    #     ax.set_xlim(0, 1)
+    #     ax.set_xticks([])
+    #
+    # plot_kwargs = dict(theta_power=theta_power)
+    # plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_theta_power, plot_kwargs,
+    #                         xlabel='', ylabel='Theta power',
+    #                         save_dir_img=os.path.join(save_dir_img, 'theta_power.png'))
+    pl.show()

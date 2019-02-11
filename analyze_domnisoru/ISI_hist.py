@@ -11,11 +11,60 @@ from itertools import combinations
 from analyze_in_vivo.analyze_domnisoru.check_basic.in_out_field import get_starts_ends_group_of_ones
 from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_for_all_grid_cells, plot_for_cell_group
 from sklearn.metrics import silhouette_score
+import scipy.stats as st
 pl.style.use('paper_subplots')
 
 
+def plot_ISI_hist_on_ax(ax, cell_idx, fraction_ISIs_filtered, ISI_hist, cum_ISI_hist_x, cum_ISI_hist_y):
+    # annotate how many ISIs were filtered:
+    #     ax.annotate('%i%%<200 ms' % int(round(fraction_ISIs_filtered[cell_idx] * 100)),
+    #                           xy=(0.07, 0.98), xycoords='axes fraction', fontsize=8, ha='left', va='top',
+    #                           bbox=dict(boxstyle='round', fc='w', edgecolor='0.8', alpha=0.8))
+
+    ax.bar(bins[:-1], ISI_hist[cell_idx, :] / (np.sum(ISI_hist[cell_idx, :]) * bin_width),
+           bins[1] - bins[0], color='0.5', align='edge')
+    cum_ISI_hist_x_with_end = np.insert(cum_ISI_hist_x[cell_idx], len(cum_ISI_hist_x[cell_idx]), max_ISI)
+    cum_ISI_hist_y_with_end = np.insert(cum_ISI_hist_y[cell_idx], len(cum_ISI_hist_y[cell_idx]), 1.0)
+    ax_twin = ax.twinx()
+    ax_twin.plot(cum_ISI_hist_x_with_end, cum_ISI_hist_y_with_end, color='k', drawstyle='steps-post')
+    ax_twin.set_xlim(0, max_ISI)
+    ax_twin.set_ylim(0, 1)
+    ax_twin.set_yticks([0, 0.5, 1])
+    if (cell_idx + 1) % 9 == 0:  # or (cell_idx+1) == 26:
+        ax_twin.set_yticklabels([0, 0.5, 1])
+        ax_twin.set_ylabel('Cum. frequency')
+    else:
+        ax_twin.set_yticklabels([])
+    ax.spines['right'].set_visible(True)
+
+
+def plot_ISI_hist_on_ax_with_kde(ax, cell_idx, fraction_ISIs_filtered, ISI_hist, cum_ISI_hist_x, cum_ISI_hist_y, kernel_cells, dt_kernel=0.01):
+    # annotate how many ISIs were filtered:
+    #     ax.annotate('%i%%<200 ms' % int(round(fraction_ISIs_filtered[cell_idx] * 100)),
+    #                           xy=(0.07, 0.98), xycoords='axes fraction', fontsize=8, ha='left', va='top',
+    #                           bbox=dict(boxstyle='round', fc='w', edgecolor='0.8', alpha=0.8))
+
+    ax.bar(bins[:-1], ISI_hist[cell_idx, :] / (np.sum(ISI_hist[cell_idx, :]) * bin_width),
+           bins[1] - bins[0], color='0.5', align='edge')
+    t_kernel = np.arange(0, max_ISI+dt_kernel, dt_kernel)
+    ax.plot(t_kernel, kernel_cells[cell_idx].pdf(t_kernel), color='k')
+    # cum_ISI_hist_x_with_end = np.insert(cum_ISI_hist_x[cell_idx], len(cum_ISI_hist_x[cell_idx]), max_ISI)
+    # cum_ISI_hist_y_with_end = np.insert(cum_ISI_hist_y[cell_idx], len(cum_ISI_hist_y[cell_idx]), 1.0)
+    # ax_twin = ax.twinx()
+    # ax_twin.plot(cum_ISI_hist_x_with_end, cum_ISI_hist_y_with_end, color='k', drawstyle='steps-post')
+    # ax_twin.set_xlim(0, max_ISI)
+    # ax_twin.set_ylim(0, 1)
+    # ax_twin.set_yticks([0, 0.5, 1])
+    # if (cell_idx + 1) % 9 == 0:  # or (cell_idx+1) == 26:
+    #     ax_twin.set_yticklabels([0, 0.5, 1])
+    #     ax_twin.set_ylabel('Cum. frequency')
+    # else:
+    #     ax_twin.set_yticklabels([])
+    # ax.spines['right'].set_visible(True)
+
+
 if __name__ == '__main__':
-    # Note: no all APs are captured as the spikes are so small and noise is high and depth of hyperpolarization
+    # Note: not all APs are captured as the spikes are so small and noise is high and depth of hyperpolarization
     # between successive spikes varies
     save_dir_img2 = '/home/cf/Dropbox/thesis/figures_results'
     save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/ISI_hist'
@@ -30,8 +79,10 @@ if __name__ == '__main__':
     filter_long_ISIs = True
     max_ISI = 200
     burst_ISI = 8  # ms
-    bin_width = 2.0  # ms
+    bin_width = 1.0  # ms
     bins = np.arange(0, max_ISI+bin_width, bin_width)
+    sigma_smooth = None  # ms  None for no smoothing
+    dt_kernel = 0.05
     if filter_long_ISIs:
         save_dir_img = os.path.join(save_dir_img, 'cut_ISIs_at_'+str(max_ISI))
     save_dir_img = os.path.join(save_dir_img, cell_type)
@@ -50,6 +101,7 @@ if __name__ == '__main__':
     firing_rate = np.zeros(len(cell_ids))
     fraction_burst = np.zeros(len(cell_ids))
     peak_ISI_hist = np.zeros(len(cell_ids), dtype=object)
+    kernel_cells = np.zeros(len(cell_ids), dtype=object)
 
     for cell_idx, cell_id in enumerate(cell_ids):
         print cell_id
@@ -74,11 +126,21 @@ if __name__ == '__main__':
         ISIs_per_cell[cell_idx] = ISIs
         fraction_burst[cell_idx] = np.sum(ISIs < burst_ISI) / float(len(ISIs))
 
+        # compute KDE
+        if sigma_smooth is not None:
+            kernel = st.gaussian_kde(ISIs, bw_method=np.sqrt(sigma_smooth / np.cov(ISIs)))
+            kernel_cells[cell_idx] = kernel
+
         # ISI histograms
         ISI_hist[cell_idx, :] = get_ISI_hist(ISIs, bins)
         cum_ISI_hist_y[cell_idx], cum_ISI_hist_x[cell_idx] = get_cumulative_ISI_hist(ISIs)
-        peak_ISI_hist[cell_idx] = (bins[:-1][np.argmax(ISI_hist[cell_idx, :])],
-                                   bins[1:][np.argmax(ISI_hist[cell_idx, :])])
+
+        if sigma_smooth is not None:
+            t_kernel = np.arange(0, max_ISI + dt_kernel, dt_kernel)
+            peak_ISI_hist[cell_idx] = t_kernel[np.argmax(kernel.pdf(t_kernel))]
+        else:
+            peak_ISI_hist[cell_idx] = (bins[:-1][np.argmax(ISI_hist[cell_idx, :])],
+                                       bins[1:][np.argmax(ISI_hist[cell_idx, :])])
 
         # save and plot
         # save_dir_cell = os.path.join(save_dir_img, cell_id)
@@ -138,8 +200,13 @@ if __name__ == '__main__':
     #                                      os.path.join(save_dir_img, 'comparison_cum_ISI.png'))
 
     # save
-    np.save(os.path.join(save_dir_img, 'fraction_burst.npy'), fraction_burst)
-    np.save(os.path.join(save_dir_img, 'peak_ISI_hist_'+str(max_ISI)+'_'+str(bin_width)+'.npy'), peak_ISI_hist)
+    if sigma_smooth is not None:
+        np.save(os.path.join(save_dir_img, 'peak_ISI_hist_' + str(max_ISI) + '_' + str(bin_width) + '_' + str(
+            sigma_smooth) + '.npy'),
+                peak_ISI_hist)
+    else:
+        np.save(os.path.join(save_dir_img, 'fraction_burst.npy'), fraction_burst)
+        np.save(os.path.join(save_dir_img, 'peak_ISI_hist_'+str(max_ISI)+'_'+str(bin_width)+'.npy'), peak_ISI_hist)
 
     # plot all ISI hists
     if cell_type == 'grid_cells':
@@ -147,68 +214,27 @@ if __name__ == '__main__':
         colors_marker[burst_label] = 'r'
         colors_marker[~burst_label] = 'b'
 
-        def plot_ISI_hist(ax, cell_idx, fraction_ISIs_filtered, ISI_hist, cum_ISI_hist_x, cum_ISI_hist_y):
-            # if filter_long_ISIs:
-            #     ax.annotate('%i%%<200 ms' % int(round(fraction_ISIs_filtered[cell_idx] * 100)),
-            #                           xy=(0.07, 0.98), xycoords='axes fraction', fontsize=8, ha='left', va='top',
-            #                           bbox=dict(boxstyle='round', fc='w', edgecolor='0.8', alpha=0.8))
-
-            ax.bar(bins[:-1], ISI_hist[cell_idx, :] / (np.sum(ISI_hist[cell_idx, :]) * bin_width),
-                             bins[1] - bins[0], color='0.5', align='edge')
-            cum_ISI_hist_x_with_end = np.insert(cum_ISI_hist_x[cell_idx], len(cum_ISI_hist_x[cell_idx]), max_ISI)
-            cum_ISI_hist_y_with_end = np.insert(cum_ISI_hist_y[cell_idx], len(cum_ISI_hist_y[cell_idx]), 1.0)
-            ax_twin = ax.twinx()
-            ax_twin.plot(cum_ISI_hist_x_with_end, cum_ISI_hist_y_with_end, color='k', drawstyle='steps-post')
-            ax_twin.set_xlim(0, max_ISI)
-            ax_twin.set_ylim(0, 1)
-            ax_twin.set_yticks([0, 0.5, 1])
-            if (cell_idx+1) % 9 == 0: # or (cell_idx+1) == 26:
-                ax_twin.set_yticklabels([0, 0.5, 1])
-                ax_twin.set_ylabel('Cum. frequency')
-            else:
-                ax_twin.set_yticklabels([])
-            ax.spines['right'].set_visible(True)
-
-
         params = {'legend.fontsize': 9}
         pl.rcParams.update(params)
-        plot_kwargs = dict(fraction_ISIs_filtered=fraction_ISIs_filtered, ISI_hist=ISI_hist,
-                           cum_ISI_hist_x=cum_ISI_hist_x, cum_ISI_hist_y=cum_ISI_hist_y)
-        plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_ISI_hist, plot_kwargs,
-                                wspace=0.18, xlabel='ISI (ms)', ylabel='Rel. frequency',
-                                save_dir_img=os.path.join(save_dir_img, 'ISI_hist_'+str(max_ISI)+'_'+str(bin_width)+'.png'))
-        # plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_ISI_hist, plot_kwargs,
-        #                         xlabel='ISI (ms)', ylabel='Rel. frequency', colors_marker=colors_marker,
-        #                         wspace=0.18, save_dir_img=os.path.join(save_dir_img2, 'ISI_hist.png'))
-    else:
-        def plot_ISI_hist(ax, cell_idx, fraction_ISIs_filtered, ISI_hist, cum_ISI_hist_x, cum_ISI_hist_y):
-            if filter_long_ISIs:
-                ax.annotate('%i%%<200 ms' % int(round(fraction_ISIs_filtered[cell_idx] * 100)),
-                            xy=(0.07, 0.98), xycoords='axes fraction', fontsize=8, ha='left', va='top',
-                            bbox=dict(boxstyle='round', fc='w', edgecolor='0.8', alpha=0.8))
 
-            ax.bar(bins[:-1], ISI_hist[cell_idx, :] / (np.sum(ISI_hist[cell_idx, :]) * bin_width),
-                   bins[1] - bins[0], color='0.5', align='edge')
-            cum_ISI_hist_x_with_end = np.insert(cum_ISI_hist_x[cell_idx], len(cum_ISI_hist_x[cell_idx]), max_ISI)
-            cum_ISI_hist_y_with_end = np.insert(cum_ISI_hist_y[cell_idx], len(cum_ISI_hist_y[cell_idx]), 1.0)
-            ax_twin = ax.twinx()
-            ax_twin.plot(cum_ISI_hist_x_with_end, cum_ISI_hist_y_with_end, color='k', drawstyle='steps-post')
-            ax_twin.set_xlim(0, max_ISI)
-            ax_twin.set_ylim(0, 1)
-            if (cell_idx + 1) % 9 == 0:
-                ax_twin.set_yticks([0, 1])
-            else:
-                ax_twin.set_yticks([])
-            ax.spines['right'].set_visible(True)
+        if sigma_smooth is not None:
+            plot_kwargs = dict(fraction_ISIs_filtered=fraction_ISIs_filtered, ISI_hist=ISI_hist,
+                               cum_ISI_hist_x=cum_ISI_hist_x, cum_ISI_hist_y=cum_ISI_hist_y, kernel_cells=kernel_cells)
+            plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_ISI_hist_on_ax_with_kde, plot_kwargs,
+                                    wspace=0.18, xlabel='ISI (ms)', ylabel='Rel. frequency',
+                                    save_dir_img=os.path.join(save_dir_img, 'ISI_hist_' + str(max_ISI) + '_' + str(
+                                        bin_width) + '_' + str(sigma_smooth) +'.png'))
+        else:
+            plot_kwargs = dict(fraction_ISIs_filtered=fraction_ISIs_filtered, ISI_hist=ISI_hist,
+                               cum_ISI_hist_x=cum_ISI_hist_x, cum_ISI_hist_y=cum_ISI_hist_y)
+            plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_ISI_hist_on_ax, plot_kwargs,
+                                    wspace=0.18, xlabel='ISI (ms)', ylabel='Rel. frequency',
+                                    save_dir_img=os.path.join(save_dir_img, 'ISI_hist_'+str(max_ISI)+'_'+str(bin_width)+'.png'))
+            # plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_ISI_hist_on_ax, plot_kwargs,
+            #                         xlabel='ISI (ms)', ylabel='Rel. frequency', colors_marker=colors_marker,
+            #                         wspace=0.18, save_dir_img=os.path.join(save_dir_img2, 'ISI_hist.png'))
 
 
-        plot_kwargs = dict(fraction_ISIs_filtered=fraction_ISIs_filtered, ISI_hist=ISI_hist,
-                           cum_ISI_hist_x=cum_ISI_hist_x, cum_ISI_hist_y=cum_ISI_hist_y)
-        plot_for_cell_group(cell_ids, cell_type_dict, plot_ISI_hist, plot_kwargs,
-                                xlabel='ISI (ms)', ylabel='Rel. frequency', figsize=(7, 7),
-                                save_dir_img=os.path.join(save_dir_img, 'ISI_hist' + str(bin_width) + '.png'))
-
-    # if cell_type == 'grid_cells':
     #     def plot_fraction_burst(ax, cell_idx, fraction_burst):
     #         ax.bar(0.5, fraction_burst[cell_idx],
     #                0.4, color='0.5')
