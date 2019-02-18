@@ -489,4 +489,4 @@ if __name__ == '__main__':
     # pl.figure()
     # pl.plot(range(len(cell_ids)), [p_opt_cells[c][3] for c in range(len(cell_ids))])
     # pl.xticks(range(len(cell_ids)), cell_ids)
-    # pl.show()
+    pl.show()

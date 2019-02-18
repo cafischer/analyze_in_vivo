@@ -260,7 +260,7 @@ if __name__ == '__main__':
         print 'DAP_deflections', DAP_deflections[~np.isnan(DAP_deflections)]
         print 'DAP time', DAP_times[~np.isnan(DAP_times)]
         pl.legend(handles=handles, loc='upper left')
-        pl.savefig(os.path.join(save_dir_img2, 'dap_characteristics_selected_APs.png'))
+        # pl.savefig(os.path.join(save_dir_img2, 'dap_characteristics_selected_APs.png'))
         np.save(os.path.join(save_dir_img, 'DAP_times.npy'), DAP_times)
 
         t_AP = np.arange(-before_AP_idx, after_AP_idx + 1) * dt
@@ -281,9 +281,9 @@ if __name__ == '__main__':
                                 xlabel='Time (ms)', ylabel='Mem. pot. \n(mV)', n_subplots=2,
                                 save_dir_img=os.path.join(save_dir_img, 'sta_selected_and_all_APs.png'))
 
-        plot_for_all_grid_cells_grid(cell_ids, get_celltype_dict(save_dir), plot_sta_grid, plot_kwargs,
-                                xlabel='Time (ms)', ylabel='Mem. pot. \n(mV)', n_subplots=2,
-                                save_dir_img=os.path.join(save_dir_img2, 'sta_selected_APs.png'))
+        # plot_for_all_grid_cells_grid(cell_ids, get_celltype_dict(save_dir), plot_sta_grid, plot_kwargs,
+        #                         xlabel='Time (ms)', ylabel='Mem. pot. \n(mV)', n_subplots=2,
+        #                         save_dir_img=os.path.join(save_dir_img2, 'sta_selected_APs.png'))
 
         plot_kwargs = dict(t_AP=t_AP[:-1],
                            sta_mean_cells=sta_diff_cells,
@@ -291,8 +291,8 @@ if __name__ == '__main__':
                            ylim=(-0.2/dt, 0.2/dt),
                            diff_selected_all=diff_selected_all
                            )
-        plot_for_all_grid_cells_grid(cell_ids, get_celltype_dict(save_dir), plot_sta_derivative_grid, plot_kwargs,
-                                     xlabel='Time (ms)', ylabel=r'$\frac{\Delta\ Mem. pot. (mV)}{\Delta\ Time\ (ms)}$',
-                                     n_subplots=2,
-                                     save_dir_img=os.path.join(save_dir_img2, 'sta_selected_APs_derivative.png'))
+        # plot_for_all_grid_cells_grid(cell_ids, get_celltype_dict(save_dir), plot_sta_derivative_grid, plot_kwargs,
+        #                              xlabel='Time (ms)', ylabel=r'$\frac{\Delta\ Mem. pot. (mV)}{\Delta\ Time\ (ms)}$',
+        #                              n_subplots=2,
+        #                              save_dir_img=os.path.join(save_dir_img2, 'sta_selected_APs_derivative.png'))
         pl.show()

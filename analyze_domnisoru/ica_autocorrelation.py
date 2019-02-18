@@ -1,8 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as pl
-from mpl_toolkits.mplot3d import Axes3D
 import os
-from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
 from cell_characteristics import to_idx
 from analyze_in_vivo.load.load_domnisoru import load_cell_ids, get_cell_ids_DAP_cells, get_celltype_dict
@@ -11,6 +9,7 @@ from matplotlib.pyplot import Line2D
 from matplotlib.patches import Patch
 from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_for_all_grid_cells
 from analyze_in_vivo.analyze_domnisoru.spike_time_autocorrelation import plot_autocorrelation
+from sklearn.decomposition import FastICA
 pl.style.use('paper_subplots')
 
 
@@ -41,38 +40,32 @@ if __name__ == '__main__':
     theta_cells = load_cell_ids(save_dir, 'giant_theta')
     DAP_cells, DAP_cells_additional = get_cell_ids_DAP_cells()
 
-    # PCA
+    # ICA
     auto_corr_cells_centered = auto_corr_cells - np.mean(auto_corr_cells, 0)
-    pca = PCA(n_components=2)
-    pca.fit(auto_corr_cells_centered)
-    transformed = pca.transform(auto_corr_cells_centered)
+    ica = FastICA(n_components=2, random_state=11)
+    transformed = ica.fit_transform(auto_corr_cells_centered)  # Reconstruct signals
 
-    print 'Explained variance: %.2f, %.2f' % (pca.explained_variance_ratio_[0], pca.explained_variance_ratio_[1])
-
+    # plot components
     fig, ax = pl.subplots(1, 2, figsize=(10, 4))
-    ax[0].bar(t_auto_corr, pca.components_[0, :], bin_width, color='k', align='center',
-              label='Explained var.: %i' % np.round(pca.explained_variance_ratio_[0]*100)+'%')
-    ax[1].bar(t_auto_corr, pca.components_[1, :], bin_width, color='gray', align='center',
-              label='Explained var.: %i' % np.round(pca.explained_variance_ratio_[1]*100)+'%')
+    ax[0].bar(t_auto_corr, ica.components_[0, :], bin_width, color='k', align='center')
+    ax[1].bar(t_auto_corr, ica.components_[1, :], bin_width, color='gray', align='center')
     ax[0].set_xlabel('Lag (ms)')
     ax[1].set_xlabel('Lag (ms)')
-    ax[0].set_ylabel('PC1')
-    ax[1].set_ylabel('PC2')
+    ax[0].set_ylabel('IC1')
+    ax[1].set_ylabel('IC2')
     ax[0].set_xticks([-max_lag, 0, max_lag])
     ax[1].set_xticks([-max_lag, 0, max_lag])
-    ax[0].legend()
-    ax[1].legend()
     pl.tight_layout()
     if sigma_smooth is not None:
-        pl.savefig(os.path.join(save_dir_img, 'pca_autocorrelation_PCs_' + str(max_lag) + '_' + str(
+        pl.savefig(os.path.join(save_dir_img, 'ica_autocorrelation_PCs_' + str(max_lag) + '_' + str(
             bin_width) + '_' + str(sigma_smooth) + '.png'))
     else:
-        pl.savefig(os.path.join(save_dir_img, 'pca_autocorrelation_PCs_' + str(max_lag) +'_' + str(bin_width) + '.png'))
-    # pl.show()
+        pl.savefig(
+            os.path.join(save_dir_img, 'ica_autocorrelation_PCs_' + str(max_lag) + '_' + str(bin_width) + '.png'))
 
-    # pca backtransform
+    # ica backtransform
     from analyze_in_vivo.load.load_domnisoru import get_cell_ids_bursty
-    back_transformed = np.dot(transformed, pca.components_[:2, :])
+    back_transformed = ica.inverse_transform(transformed)  #np.dot(transformed, ica.components_[:2, :])
     back_transformed += np.mean(auto_corr_cells, axis=0)
     plot_kwargs = dict(t_auto_corr=t_auto_corr, auto_corr_cells=back_transformed, bin_size=bin_width,
                        max_lag=max_lag)
@@ -82,7 +75,7 @@ if __name__ == '__main__':
     colors_marker[~burst_label] = 'b'
     plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_autocorrelation, plot_kwargs,
                             xlabel='Time (ms)', ylabel='Spike-time \nautocorrelation', colors_marker=colors_marker,
-                            save_dir_img=os.path.join(save_dir_img, 'backtransformed_autocorr_' + str(max_lag) + '_' + str(
+                            save_dir_img=os.path.join(save_dir_img, 'ica_backtransformed_autocorr_' + str(max_lag) + '_' + str(
                                 bin_width) + '_' + str(sigma_smooth) + '.png'))
 
     # k-means
@@ -169,8 +162,8 @@ if __name__ == '__main__':
     #legend1 = ax.legend(handles=handles+handles_bursty, bbox_to_anchor=(1.05, 1.0), loc=2, borderaxespad=0.)
     legend1 = ax.legend(handles=handles + handles_bursty)
     ax.add_artist(legend1)
-    ax.set_xlabel('PC1')
-    ax.set_ylabel('PC2')
+    ax.set_xlabel('IC1')
+    ax.set_ylabel('IC2')
 
     for i in range(len(cell_ids)):
         ax.annotate(cell_ids[i], xy=(transformed[i, 0] + 0.002, transformed[i, 1] + 0.002), fontsize=7)
@@ -181,10 +174,10 @@ if __name__ == '__main__':
     #pl.subplots_adjust(bottom=0.06, left=0.06, top=0.98, right=0.84)
     if sigma_smooth is not None:
         pl.savefig(os.path.join(save_dir_img,
-                                'pca_autocorrelation_with_cell_ids_' + str(max_lag) + '_' + str(
+                                'ica_autocorrelation_with_cell_ids_' + str(max_lag) + '_' + str(
                                     bin_width) + '_' + str(sigma_smooth) + '.png'))
     else:
-        pl.savefig(os.path.join(save_dir_img, 'pca_autocorrelation_with_cell_ids_' + str(max_lag) +'_' + str(
+        pl.savefig(os.path.join(save_dir_img, 'ica_autocorrelation_with_cell_ids_' + str(max_lag) +'_' + str(
             bin_width) + '.png'))
 
     # # plot for slides

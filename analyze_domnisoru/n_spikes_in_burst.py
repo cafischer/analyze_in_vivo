@@ -29,7 +29,7 @@ def plot_n_spikes_in_burst_all_cells(cell_type_dict, bins, count_spikes):
             ax_twin.plot(bins[:-1], count_spikes_normed, marker='o', linestyle='-', color='k', markersize=3)
             ax_twin.set_yscale('log')
             ax_twin.set_ylim(10**-4, 10**0)
-            if not (cell_idx == 8 or cell_idx == 17):  #  or cell_idx == 25
+            if not (cell_idx == 8 or cell_idx == 17 or cell_idx == 25):
                 ax_twin.set_yticklabels([])
             else:
                 ax_twin.set_ylabel('Rel. log. frequency')
@@ -44,28 +44,12 @@ def plot_n_spikes_in_burst_all_cells(cell_type_dict, bins, count_spikes):
         plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_fun, plot_kwargs,
                                 xlabel='# Spikes \nin event', ylabel='Rel. frequency',
                                 colors_marker=colors_marker, wspace=0.18,
-                                save_dir_img=os.path.join(save_dir_img, 'count_spikes.png'))
+                                save_dir_img=os.path.join(save_dir_img, 'count_spikes_'+ str(ISI_burst) +'.png'))
 
-        plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_fun, plot_kwargs,
-                                xlabel='# Spikes \nin event', ylabel='Rel. frequency',
-                                colors_marker=colors_marker, wspace=0.18,
-                                save_dir_img=os.path.join(save_dir_img2, 'count_spikes.png'))
-
-        def plot_fun(ax, cell_idx, bins, count_spikes):
-            count_spikes_normed = count_spikes[cell_idx, :] / float(np.sum(count_spikes[cell_idx, :]))
-            ax.plot(bins[:-1], count_spikes_normed, marker='o', linestyle='-', color='0.5', markersize=5)
-            ax.set_yscale('log')
-            ax.set_xlim(bins[0] - 0.5, bins[-1])
-            ax.set_xticks(bins)
-            ax.set_ylim(10**-3, 10**0)
-            labels = [''] * len(bins)
-            labels[::4] = bins[::4]
-            ax.set_xticklabels(labels)
-
-        plot_kwargs = dict(bins=bins, count_spikes=count_spikes)
-        plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_fun, plot_kwargs,
-                                xlabel='# Spikes \nin event', ylabel='Rel. frequency',
-                                save_dir_img=os.path.join(save_dir_img, 'count_spikes_log_scale.png'))
+        # plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_fun, plot_kwargs,
+        #                         xlabel='# Spikes \nin event', ylabel='Rel. frequency',
+        #                         colors_marker=colors_marker, wspace=0.18,
+        #                         save_dir_img=os.path.join(save_dir_img2, 'count_spikes.png'))
 
 
 def get_n_spikes_in_burst(burst_ISI_indicator):
@@ -91,7 +75,7 @@ if __name__ == '__main__':
         os.makedirs(save_dir_img)
 
     bins = np.arange(1, 15 + 1, 1)
-    ISI_burst = 8  # ms
+    ISI_burst = 20  # ms
 
     count_spikes = np.zeros((len(cell_ids), len(bins)-1))
     fraction_single = np.zeros(len(cell_ids))

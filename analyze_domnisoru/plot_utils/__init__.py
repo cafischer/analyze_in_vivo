@@ -185,13 +185,15 @@ def plot_for_cell_group(cell_ids, cell_type_dict, plot_fun, plot_kwargs, xlabel,
     if colors_marker[0] != 'k':
         handles += [Patch(color='r', label='Bursty'), Patch(color='b', label='Non-bursty')]
     axes[-1, -1].legend(handles=handles, loc="lower left", bbox_to_anchor=(-0.025, -0.025))
+    #axes[-1, -1].legend(handles=handles, loc="lower left", bbox_to_anchor=(0.35, -0.025))  # for double sided ISIhist: (0.25, -0.025)
     #axes[-1, -1].legend(handles=handles, loc="lower left", bbox_to_anchor=(0, 0.25))  # for ISI return map
     pl.tight_layout()
     if fig_title is not None:
         pl.subplots_adjust(top=0.92)
     if wspace is not None:
         pl.subplots_adjust(wspace=wspace)
-    pl.savefig(save_dir_img)
+    if save_dir_img is not None:
+        pl.savefig(save_dir_img)
 
 
 def plot_for_all_grid_cells_grid(cell_ids, cell_type_dict, plot_fun, plot_kwargs, xlabel, ylabel, n_subplots,
@@ -249,7 +251,7 @@ def plot_for_cell_group_grid(cell_ids, cell_type_dict, plot_fun, plot_kwargs, xl
     handles = get_handles_all_markers()
     if colors_marker[0] != 'k':
         handles += [Patch(color='b', label='Non-bursty'), Patch(color='r', label='Bursty')]
-    ax.legend(handles=handles, loc="lower right")
+    ax.legend(handles=handles, loc="lower left", bbox_to_anchor=(-0.5, -0.025))
     ax.spines['bottom'].set_visible(False)
     ax.spines['left'].set_visible(False)
     ax.set_xticks([])
