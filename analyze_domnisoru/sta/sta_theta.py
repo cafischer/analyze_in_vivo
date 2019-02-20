@@ -2,14 +2,12 @@ from __future__ import division
 import numpy as np
 import matplotlib.pyplot as pl
 import os
-from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data, load_field_indices, get_celltype_dict
-from analyze_in_vivo.analyze_schmidt_hieber import detrend
+from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data, get_celltype_dict
 from cell_characteristics import to_idx
 from cell_characteristics.sta_stc import get_sta
 from grid_cell_stimuli import get_AP_max_idxs, find_all_AP_traces
-from cell_fitting.util import init_nan
-from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_for_all_grid_cells, plot_for_all_grid_cells_grid
-from analyze_in_vivo.analyze_domnisoru.sta_velocity_thresholded import plot_sta
+from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_for_all_grid_cells_grid
+from analyze_in_vivo.analyze_domnisoru.STA.sta_velocity_thresholded import plot_sta
 pl.style.use('paper_subplots')
 
 

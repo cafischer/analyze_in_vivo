@@ -5,7 +5,7 @@ import os
 from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data
 from grid_cell_stimuli import get_AP_max_idxs
 from analyze_in_vivo.analyze_domnisoru.check_basic.in_out_field import get_starts_ends_group_of_ones
-from analyze_in_vivo.analyze_domnisoru.sta import find_all_APs_in_v_trace
+from analyze_in_vivo.analyze_domnisoru.STA.sta import find_all_APs_in_v_trace
 from cell_characteristics import to_idx
 from grid_cell_stimuli.ISI_hist import get_ISIs
 

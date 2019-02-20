@@ -4,6 +4,7 @@ import matplotlib.pyplot as pl
 import os
 from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data, get_celltype_dict, get_cell_ids_DAP_cells
 from analyze_in_vivo.analyze_schmidt_hieber import detrend
+from analyze_in_vivo.analyze_domnisoru.sta import plot_sta_on_ax, plot_sta_grid_on_ax, plot_sta_derivative_grid_on_ax
 from cell_characteristics import to_idx
 from cell_characteristics.sta_stc import get_sta
 from grid_cell_stimuli import find_all_AP_traces
@@ -152,82 +153,6 @@ if __name__ == '__main__':
 
     print 'Cells with DAP deflection: ', np.array(cell_ids)[DAP_deflections > 0]
 
-
-    def plot_sta(ax, cell_idx, t_AP, sta_mean_cells, sta_std_cells):
-        ax.plot(t_AP, sta_mean_cells[cell_idx], 'k')
-        ax.fill_between(t_AP, sta_mean_cells[cell_idx] - sta_std_cells[cell_idx],
-                        sta_mean_cells[cell_idx] + sta_std_cells[cell_idx], color='0.6')
-
-    def plot_sta_grid(ax, cell_idx, subplot_idx, t_AP, sta_mean_cells, sta_std_cells, sta_mean_good_APs_cells,
-                      sta_std_good_APs_cells, ylim=(-75, -50)):
-        if subplot_idx == 0:
-            ax.plot(t_AP, sta_mean_good_APs_cells[cell_idx], 'k')
-            ax.fill_between(t_AP, sta_mean_good_APs_cells[cell_idx] - sta_std_good_APs_cells[cell_idx],
-                            sta_mean_good_APs_cells[cell_idx] + sta_std_good_APs_cells[cell_idx], color='0.6')
-            ax.set_xticks([])
-            ax.set_xlabel('')
-            ax.set_ylim(ylim)
-            ax.set_xlim(-before_AP, after_AP)
-            ax.annotate('selected APs', xy=(25, ylim[0]), textcoords='data',
-                        horizontalalignment='right', verticalalignment='bottom', fontsize=8)
-        elif subplot_idx == 1:
-            ax.plot(t_AP, sta_mean_cells[cell_idx], 'k')
-            ax.fill_between(t_AP, sta_mean_cells[cell_idx] - sta_std_cells[cell_idx],
-                            sta_mean_cells[cell_idx] + sta_std_cells[cell_idx], color='0.6')
-            ax.set_ylim(ylim)
-            ax.set_xlim(-before_AP, after_AP)
-            ax.set_xticks([-10, 0, 10, 20])
-            ax.annotate('all APs', xy=(25, ylim[0]), textcoords='data',
-                        horizontalalignment='right', verticalalignment='bottom', fontsize=8)
-
-    def plot_sta_derivative_grid(ax, cell_idx, subplot_idx, t_AP, sta_mean_cells, sta_mean_good_APs_cells,
-                                 ylim=(-0.2, -0.2), diff_selected_all=None):
-
-        if subplot_idx == 0:
-            if ~np.any(np.isnan(sta_mean_good_APs_cells[cell_idx])):
-                ax.fill_between((0, time_for_max), ylim[0], ylim[1], color='0.8')
-            ax.plot(t_AP, sta_mean_good_APs_cells[cell_idx], 'k')
-            ax.set_xticks([])
-            ax.set_xlabel('')
-            ax.set_ylim(ylim)
-            ax.set_xlim(-before_AP, after_AP)
-            ax.annotate('selected APs', xy=(25, ylim[0]), textcoords='data',
-                        horizontalalignment='right', verticalalignment='bottom', fontsize=8)
-            if ~np.isnan(diff_selected_all[cell_idx]):
-                ax.annotate('%.1f' % diff_selected_all[cell_idx], xy=(25, ylim[1]), textcoords='data',
-                            horizontalalignment='right', verticalalignment='top', fontsize=8)
-
-            # # smooth
-            # std = np.std(sta_mean_good_APs_cells[cell_idx][to_idx(2, dt):to_idx(3, dt)])
-            # #std = sta_std_cells[cell_idx][:-1]
-            # w = np.ones(len(sta_mean_good_APs_cells[cell_idx])) / std
-            # print 'w1', w[0]
-            # splines = UnivariateSpline(t_AP, sta_mean_good_APs_cells[cell_idx], w=w, s=None, k=3)
-            # smoothed = splines(t_AP)
-            #
-            # ax.plot(t_AP, smoothed, 'r')
-
-        elif subplot_idx == 1:
-            if ~np.any(np.isnan(sta_mean_cells[cell_idx])):
-                ax.fill_between((0, time_for_max), ylim[0], ylim[1], color='0.8')
-            ax.plot(t_AP, sta_mean_cells[cell_idx], 'k')
-            ax.set_ylim(ylim)
-            ax.set_xlim(-before_AP, after_AP)
-            ax.set_xticks([-10, 0, 10, 20])
-            ax.annotate('all APs', xy=(25, ylim[0]), textcoords='data',
-                        horizontalalignment='right', verticalalignment='bottom', fontsize=8)
-
-            # # smooth
-            # std = np.std(sta_mean_cells[cell_idx][to_idx(2, dt):to_idx(3, dt)])
-            # #std = sta_std_good_APs_cells[cell_idx][:-1]
-            # w = np.ones(len(sta_mean_cells[cell_idx])) / std
-            # print 'w2', w[0]
-            # splines = UnivariateSpline(t_AP, sta_mean_cells[cell_idx], w=w, s=None, k=3)
-            # smoothed = splines(t_AP)
-            #
-            # ax.plot(t_AP, smoothed, 'r')
-
-
     max_after_0 = np.array([np.max(sta[before_AP_idx:before_AP_idx+to_idx(time_for_max, dt)]) for sta in sta_diff_cells])
     max_after_0_good = np.array([np.max(sta[before_AP_idx:before_AP_idx+to_idx(time_for_max, dt)]) for sta in sta_diff_good_APs_cells])
     # comp_max = (max_after_0_good > max_after_0).astype(float)
@@ -265,8 +190,9 @@ if __name__ == '__main__':
 
         t_AP = np.arange(-before_AP_idx, after_AP_idx + 1) * dt
 
-        plot_kwargs = dict(t_AP=t_AP, sta_mean_cells=sta_mean_good_APs_cells, sta_std_cells=sta_std_good_APs_cells)
-        plot_for_all_grid_cells(cell_ids, get_celltype_dict(save_dir), plot_sta, plot_kwargs,
+        plot_kwargs = dict(t_AP=t_AP, sta_mean_cells=sta_mean_good_APs_cells, sta_std_cells=sta_std_good_APs_cells,
+                           ylims=(-75, -45))
+        plot_for_all_grid_cells(cell_ids, get_celltype_dict(save_dir), plot_sta_on_ax, plot_kwargs,
                                 xlabel='Time (ms)', ylabel='Mem. pot. (mV)',
                                 save_dir_img=os.path.join(save_dir_img, 'sta_selected_APs.png'))
 
@@ -275,9 +201,11 @@ if __name__ == '__main__':
                            sta_std_cells=sta_std_cells,
                            sta_mean_good_APs_cells=sta_mean_good_APs_cells,
                            sta_std_good_APs_cells=sta_std_good_APs_cells,
-                           ylim=(-75, -45)  #(-75, -50)
+                           before_AP=before_AP,
+                           after_AP=after_AP,
+                           ylims=(-75, -45)  #(-75, -50)
                            )
-        plot_for_all_grid_cells_grid(cell_ids, get_celltype_dict(save_dir), plot_sta_grid, plot_kwargs,
+        plot_for_all_grid_cells_grid(cell_ids, get_celltype_dict(save_dir), plot_sta_grid_on_ax, plot_kwargs,
                                 xlabel='Time (ms)', ylabel='Mem. pot. \n(mV)', n_subplots=2,
                                 save_dir_img=os.path.join(save_dir_img, 'sta_selected_and_all_APs.png'))
 
@@ -288,7 +216,9 @@ if __name__ == '__main__':
         plot_kwargs = dict(t_AP=t_AP[:-1],
                            sta_mean_cells=sta_diff_cells,
                            sta_mean_good_APs_cells=sta_diff_good_APs_cells,
-                           ylim=(-0.2/dt, 0.2/dt),
+                           before_AP=before_AP,
+                           after_AP=after_AP,
+                           ylims=(-0.2/dt, 0.2/dt),
                            diff_selected_all=diff_selected_all
                            )
         # plot_for_all_grid_cells_grid(cell_ids, get_celltype_dict(save_dir), plot_sta_derivative_grid, plot_kwargs,

@@ -6,6 +6,7 @@ from grid_cell_stimuli import get_AP_max_idxs
 from grid_cell_stimuli.ISI_hist import get_ISIs, get_ISI_hist, get_cumulative_ISI_hist, \
     plot_ISI_hist, plot_cumulative_ISI_hist, plot_cumulative_ISI_hist_all_cells, plot_cumulative_comparison_all_cells, plot_cumulative_ISI_hist_all_cells_with_bursty
 from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data, get_celltype_dict, get_cell_ids_bursty
+from analyze_in_vivo.analyze_domnisoru.isi import plot_ISI_hist_on_ax, plot_ISI_hist_on_ax_with_kde
 from scipy.stats import ks_2samp
 from itertools import combinations
 from analyze_in_vivo.analyze_domnisoru.check_basic.in_out_field import get_starts_ends_group_of_ones
@@ -14,55 +15,6 @@ from sklearn.metrics import silhouette_score
 from scipy.optimize import brentq
 import scipy.stats as st
 pl.style.use('paper_subplots')
-
-
-def plot_ISI_hist_on_ax(ax, cell_idx, fraction_ISIs_filtered, ISI_hist, cum_ISI_hist_x, cum_ISI_hist_y):
-    # annotate how many ISIs were filtered:
-    #     ax.annotate('%i%%<200 ms' % int(round(fraction_ISIs_filtered[cell_idx] * 100)),
-    #                           xy=(0.07, 0.98), xycoords='axes fraction', fontsize=8, ha='left', va='top',
-    #                           bbox=dict(boxstyle='round', fc='w', edgecolor='0.8', alpha=0.8))
-
-    ax.bar(bins[:-1], ISI_hist[cell_idx, :] / (np.sum(ISI_hist[cell_idx, :]) * bin_width),
-           bins[1] - bins[0], color='0.5', align='edge')
-    cum_ISI_hist_x_with_end = np.insert(cum_ISI_hist_x[cell_idx], len(cum_ISI_hist_x[cell_idx]), max_ISI)
-    cum_ISI_hist_y_with_end = np.insert(cum_ISI_hist_y[cell_idx], len(cum_ISI_hist_y[cell_idx]), 1.0)
-    ax_twin = ax.twinx()
-    ax_twin.plot(cum_ISI_hist_x_with_end, cum_ISI_hist_y_with_end, color='k', drawstyle='steps-post')
-    ax_twin.set_xlim(0, max_ISI)
-    ax_twin.set_ylim(0, 1)
-    ax_twin.set_yticks([0, 0.5, 1])
-    if (cell_idx + 1) % 9 == 0 or (cell_idx+1) == 26:
-        ax_twin.set_yticklabels([0, 0.5, 1])
-        ax_twin.set_ylabel('Cum. frequency')
-    else:
-        ax_twin.set_yticklabels([])
-    ax.spines['right'].set_visible(True)
-    #ax.set_xlim(0, 50)  # TODO
-
-
-def plot_ISI_hist_on_ax_with_kde(ax, cell_idx, fraction_ISIs_filtered, ISI_hist, cum_ISI_hist_x, cum_ISI_hist_y, kernel_cells, dt_kernel=0.01):
-    # annotate how many ISIs were filtered:
-    #     ax.annotate('%i%%<200 ms' % int(round(fraction_ISIs_filtered[cell_idx] * 100)),
-    #                           xy=(0.07, 0.98), xycoords='axes fraction', fontsize=8, ha='left', va='top',
-    #                           bbox=dict(boxstyle='round', fc='w', edgecolor='0.8', alpha=0.8))
-
-    ax.bar(bins[:-1], ISI_hist[cell_idx, :] / (np.sum(ISI_hist[cell_idx, :]) * bin_width),
-           bins[1] - bins[0], color='0.5', align='edge')
-    t_kernel = np.arange(0, max_ISI+dt_kernel, dt_kernel)
-    ax.plot(t_kernel, kernel_cells[cell_idx].pdf(t_kernel), color='k')
-    # cum_ISI_hist_x_with_end = np.insert(cum_ISI_hist_x[cell_idx], len(cum_ISI_hist_x[cell_idx]), max_ISI)
-    # cum_ISI_hist_y_with_end = np.insert(cum_ISI_hist_y[cell_idx], len(cum_ISI_hist_y[cell_idx]), 1.0)
-    # ax_twin = ax.twinx()
-    # ax_twin.plot(cum_ISI_hist_x_with_end, cum_ISI_hist_y_with_end, color='k', drawstyle='steps-post')
-    # ax_twin.set_xlim(0, max_ISI)
-    # ax_twin.set_ylim(0, 1)
-    # ax_twin.set_yticks([0, 0.5, 1])
-    # if (cell_idx + 1) % 9 == 0:  # or (cell_idx+1) == 26:
-    #     ax_twin.set_yticklabels([0, 0.5, 1])
-    #     ax_twin.set_ylabel('Cum. frequency')
-    # else:
-    #     ax_twin.set_yticklabels([])
-    # ax.spines['right'].set_visible(True)
 
 
 if __name__ == '__main__':
@@ -95,7 +47,7 @@ if __name__ == '__main__':
     # over cells
     ISIs_per_cell = [0] * len(cell_ids)
     n_ISIs = [0] * len(cell_ids)
-    ISI_hist = np.zeros((len(cell_ids), len(bins)-1))
+    ISI_hist_cells = np.zeros((len(cell_ids), len(bins) - 1))
     cum_ISI_hist_y = [0] * len(cell_ids)
     cum_ISI_hist_x = [0] * len(cell_ids)
     fraction_ISIs_filtered = np.zeros(len(cell_ids))
@@ -103,6 +55,7 @@ if __name__ == '__main__':
     firing_rate = np.zeros(len(cell_ids))
     fraction_burst = np.zeros(len(cell_ids))
     peak_ISI_hist = np.zeros(len(cell_ids), dtype=object)
+    shortest_ISI = np.zeros(len(cell_ids))
     width_at_half_max = np.zeros(len(cell_ids))
     kernel_cells = np.zeros(len(cell_ids), dtype=object)
 
@@ -128,6 +81,7 @@ if __name__ == '__main__':
         n_ISIs[cell_idx] = len(ISIs)
         ISIs_per_cell[cell_idx] = ISIs
         fraction_burst[cell_idx] = np.sum(ISIs < burst_ISI) / float(len(ISIs))
+        shortest_ISI[cell_idx] = np.min(ISIs)
 
         # compute KDE
         if sigma_smooth is not None:
@@ -135,7 +89,7 @@ if __name__ == '__main__':
             kernel_cells[cell_idx] = kernel
 
         # ISI histograms
-        ISI_hist[cell_idx, :] = get_ISI_hist(ISIs, bins)
+        ISI_hist_cells[cell_idx, :] = get_ISI_hist(ISIs, bins)
         cum_ISI_hist_y[cell_idx], cum_ISI_hist_x[cell_idx] = get_cumulative_ISI_hist(ISIs)
 
         if sigma_smooth is not None:
@@ -154,8 +108,8 @@ if __name__ == '__main__':
             # pl.plot([root1, root2], [kernel.pdf(root1), kernel.pdf(root2)], 'r', linewidth=2)
             # pl.show()
         else:
-            peak_ISI_hist[cell_idx] = (bins[:-1][np.argmax(ISI_hist[cell_idx, :])],
-                                       bins[1:][np.argmax(ISI_hist[cell_idx, :])])
+            peak_ISI_hist[cell_idx] = (bins[:-1][np.argmax(ISI_hist_cells[cell_idx, :])],
+                                       bins[1:][np.argmax(ISI_hist_cells[cell_idx, :])])
 
 
         # save and plot
@@ -177,7 +131,7 @@ if __name__ == '__main__':
     #                                                cell_ids, max_ISI, os.path.join(save_dir_img))
 
 
-    # # cumulative ISI histogram for bursty and non-bursty group
+    # cumulative ISI histogram for bursty and non-bursty group
     cell_ids_bursty = get_cell_ids_bursty()
     burst_label = np.array([True if cell_id in cell_ids_bursty else False for cell_id in cell_ids])
     ISIs_all_bursty =  np.array([item for sublist in np.array(ISIs_per_cell)[burst_label] for item in sublist])
@@ -189,38 +143,38 @@ if __name__ == '__main__':
                                                    cum_ISI_hist_y_avg_nonbursty, cum_ISI_hist_x_avg_nonbursty,
                                                    cell_ids, burst_label, max_ISI, os.path.join(save_dir_img2))
 
-    from scipy.interpolate import UnivariateSpline
-    spline = UnivariateSpline(cum_ISI_hist_x_avg_nonbursty, cum_ISI_hist_y_avg_nonbursty, s=0.005)
-    pl.figure()
-    pl.plot(cum_ISI_hist_x_avg_nonbursty, cum_ISI_hist_y_avg_nonbursty,
-            drawstyle='steps-post', linewidth=2.0, color='b')
-    x = np.arange(0, 200, 0.01)
-    pl.plot(x, spline(x), 'k')
-    #pl.show()
-
-    np.diff(spline(x)) / np.diff(x)
-    x[np.where(np.diff(spline(x)) / np.diff(x) > 1 / 200.)[0][0]]
-    print x[np.argmax(np.diff(spline(x)) / np.diff(x))]
-
-    pl.figure()
-    pl.plot(x[:-1], np.diff(spline(x)) / np.diff(x))
-    #pl.show()
-
-    spline = UnivariateSpline(cum_ISI_hist_x_avg_bursty, cum_ISI_hist_y_avg_bursty, s=0.005)
-    pl.figure()
-    pl.plot(cum_ISI_hist_x_avg_bursty, cum_ISI_hist_y_avg_bursty,
-            drawstyle='steps-post', linewidth=2.0, color='r')
-    x = np.arange(0, 200, 0.01)
-    pl.plot(x, spline(x), 'k')
-    #pl.show()
-
-    np.diff(spline(x)) / np.diff(x)
-    x[np.where(np.diff(spline(x)) / np.diff(x) > 1 / 200.)[0][0]]
-    print x[np.argmax(np.diff(spline(x)) / np.diff(x))]
-
-    pl.figure()
-    pl.plot(x[:-1], np.diff(spline(x)) / np.diff(x))
-    pl.show()
+    # from scipy.interpolate import UnivariateSpline
+    # spline = UnivariateSpline(cum_ISI_hist_x_avg_nonbursty, cum_ISI_hist_y_avg_nonbursty, s=0.005)
+    # pl.figure()
+    # pl.plot(cum_ISI_hist_x_avg_nonbursty, cum_ISI_hist_y_avg_nonbursty,
+    #         drawstyle='steps-post', linewidth=2.0, color='b')
+    # x = np.arange(0, 200, 0.01)
+    # pl.plot(x, spline(x), 'k')
+    # #pl.show()
+    #
+    # np.diff(spline(x)) / np.diff(x)
+    # x[np.where(np.diff(spline(x)) / np.diff(x) > 1 / 200.)[0][0]]
+    # print x[np.argmax(np.diff(spline(x)) / np.diff(x))]
+    #
+    # pl.figure()
+    # pl.plot(x[:-1], np.diff(spline(x)) / np.diff(x))
+    # #pl.show()
+    #
+    # spline = UnivariateSpline(cum_ISI_hist_x_avg_bursty, cum_ISI_hist_y_avg_bursty, s=0.005)
+    # pl.figure()
+    # pl.plot(cum_ISI_hist_x_avg_bursty, cum_ISI_hist_y_avg_bursty,
+    #         drawstyle='steps-post', linewidth=2.0, color='r')
+    # x = np.arange(0, 200, 0.01)
+    # pl.plot(x, spline(x), 'k')
+    # #pl.show()
+    #
+    # np.diff(spline(x)) / np.diff(x)
+    # x[np.where(np.diff(spline(x)) / np.diff(x) > 1 / 200.)[0][0]]
+    # print x[np.argmax(np.diff(spline(x)) / np.diff(x))]
+    #
+    # pl.figure()
+    # pl.plot(x[:-1], np.diff(spline(x)) / np.diff(x))
+    # pl.show()
 
     # # fraction burst between bursty and non-bursty
     # from scipy.stats import ttest_ind
@@ -259,6 +213,7 @@ if __name__ == '__main__':
     else:
         np.save(os.path.join(save_dir_img, 'fraction_burst.npy'), fraction_burst)
         np.save(os.path.join(save_dir_img, 'peak_ISI_hist_'+str(max_ISI)+'_'+str(bin_width)+'.npy'), peak_ISI_hist)
+        np.save(os.path.join(save_dir_img, 'ISI_hist_' + str(max_ISI) + '_' + str(bin_width) + '.npy'), ISI_hist_cells)
 
     # plot all ISI hists
     colors_marker = np.zeros(len(burst_label), dtype=str)
@@ -269,15 +224,15 @@ if __name__ == '__main__':
     pl.rcParams.update(params)
 
     if sigma_smooth is not None:
-        plot_kwargs = dict(fraction_ISIs_filtered=fraction_ISIs_filtered, ISI_hist=ISI_hist,
-                           cum_ISI_hist_x=cum_ISI_hist_x, cum_ISI_hist_y=cum_ISI_hist_y, kernel_cells=kernel_cells)
+        plot_kwargs = dict(ISI_hist=ISI_hist_cells, cum_ISI_hist_x=cum_ISI_hist_x, cum_ISI_hist_y=cum_ISI_hist_y,
+                           max_ISI=max_ISI, bin_width=bin_width, kernel_cells=kernel_cells)
         plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_ISI_hist_on_ax_with_kde, plot_kwargs,
                                 wspace=0.18, xlabel='ISI (ms)', ylabel='Rel. frequency',
                                 save_dir_img=os.path.join(save_dir_img, 'ISI_hist_' + str(max_ISI) + '_' + str(
-                                    bin_width) + '_' + str(sigma_smooth) +'.png'))
+                                    bin_width) + '_' + str(sigma_smooth) + '.png'))
     else:
-        plot_kwargs = dict(fraction_ISIs_filtered=fraction_ISIs_filtered, ISI_hist=ISI_hist,
-                           cum_ISI_hist_x=cum_ISI_hist_x, cum_ISI_hist_y=cum_ISI_hist_y)
+        plot_kwargs = dict(ISI_hist=ISI_hist_cells, cum_ISI_hist_x=cum_ISI_hist_x, cum_ISI_hist_y=cum_ISI_hist_y,
+                           max_ISI=max_ISI, bin_width=bin_width)
         plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_ISI_hist_on_ax, plot_kwargs,
                                 wspace=0.18, xlabel='ISI (ms)', ylabel='Rel. frequency',
                                 save_dir_img=os.path.join(save_dir_img, 'ISI_hist_'+str(max_ISI)+'_'+str(bin_width)+'.png'))
@@ -288,7 +243,7 @@ if __name__ == '__main__':
 
     #     def plot_fraction_burst(ax, cell_idx, fraction_burst):
     #         ax.bar(0.5, fraction_burst[cell_idx],
-    #                0.4, color='0.5')
+    #                0.4, color='0.5')bins=bins,
     #         ax.set_xlim(0, 1)
     #         ax.set_xticks([])
     #
@@ -338,3 +293,10 @@ if __name__ == '__main__':
     # pl.savefig(os.path.join(save_dir_img, 'firing_rate_vs_fraction_ISI.png'))
 
     pl.show()
+
+    # table of ISI
+    import pandas as pd
+    burst_row = ['B' if l else 'N-B' for l in burst_label]
+    df = pd.DataFrame(data=[shortest_ISI, burst_row], columns=cell_ids, index=[0, 1])
+    df.to_csv(os.path.join(save_dir_img, 'table_' + str(max_ISI) + '_' + str(bin_width) + '_' + str(
+                sigma_smooth) + '.csv'), index=False)

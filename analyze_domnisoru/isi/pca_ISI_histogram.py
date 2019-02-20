@@ -10,36 +10,41 @@ from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_with_markers
 from matplotlib.pyplot import Line2D
 from matplotlib.patches import Patch
 from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_for_all_grid_cells
-from analyze_in_vivo.analyze_domnisoru.spike_time_autocorrelation import plot_autocorrelation
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes, mark_inset
 pl.style.use('paper_subplots')
+
+
+def plot_ISI_hist_on_ax(ax, cell_idx, ISI_hist_cells, bin_width, max_ISI):
+    bins = np.arange(0, max_ISI+bin_width, bin_width)
+    ax.bar(bins[:-1], ISI_hist_cells[cell_idx, :] / (np.sum(ISI_hist_cells[cell_idx, :]) * bin_width),
+           bins[1] - bins[0], color='0.5', align='edge')
 
 
 if __name__ == '__main__':
     save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
-    save_dir_auto_corr = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/spike_time_auto_corr'
-    #save_dir_img = '/home/cf/Dropbox/thesis/figures_results'
+    save_dir_ISI_hist = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/ISI_hist'
     cell_type = 'grid_cells'
-    save_dir_img = os.path.join(save_dir_auto_corr, cell_type)
+    save_dir_img = os.path.join(save_dir_ISI_hist, cell_type)
     cell_ids = np.array(load_cell_ids(save_dir, cell_type))
     cell_type_dict = get_celltype_dict(save_dir)
-    max_lag = 50.0
+    max_ISI = 200
     bin_width = 1.0  # ms
     sigma_smooth = None
     dt_kernel = 0.05
     remove_cells = False
     remove_cells_dict = {True: 'removed', False: 'not_removed'}
     if sigma_smooth is not None:
-        auto_corr_cells = np.load(
-            os.path.join(save_dir_auto_corr, cell_type,
-                         'autocorr_' + str(max_lag) + '_' + str(bin_width) + '_' + str(sigma_smooth) + '.npy'))
+        ISI_hist_cells = np.load(
+            os.path.join(save_dir_ISI_hist, 'cut_ISIs_at_'+str(max_ISI), cell_type,
+                         'ISI_hist_' + str(max_ISI) + '_' + str(bin_width) + '_' + str(sigma_smooth) + '.npy'))
     else:
-        auto_corr_cells = np.load(os.path.join(save_dir_auto_corr, cell_type,
-                                               'autocorr_' + str(max_lag) +'_' + str(bin_width) + '.npy'))
-    max_lag_idx = to_idx(max_lag, bin_width)
+        ISI_hist_cells = np.load(os.path.join(save_dir_ISI_hist, 'cut_ISIs_at_'+str(max_ISI), cell_type,
+                                               'ISI_hist_' + str(max_ISI) + '_' + str(bin_width) + '.npy'))
+    max_ISI_idx = to_idx(max_ISI, bin_width)
     if sigma_smooth is not None:
-        t_auto_corr = np.arange(-max_lag_idx, max_lag_idx + dt_kernel, dt_kernel)
+        t_ISI_hist = np.arange(0, max_ISI_idx + dt_kernel, dt_kernel)
     else:
-        t_auto_corr = np.arange(-max_lag_idx, max_lag_idx + bin_width, bin_width)
+        t_ISI_hist = np.arange(0, max_ISI_idx, bin_width)
     theta_cells = load_cell_ids(save_dir, 'giant_theta')
     DAP_cells, DAP_cells_additional = get_cell_ids_DAP_cells()
 
@@ -50,57 +55,58 @@ if __name__ == '__main__':
         idxs = range(len(cell_ids))
         idxs.remove(idx_s104_0007)
         idxs.remove(idx_s110_0002)
-        auto_corr_cells_for_pca = auto_corr_cells[np.array(idxs)]
+        ISI_hist_cells_for_pca = ISI_hist_cells[np.array(idxs)]
     else:
-        auto_corr_cells_for_pca = auto_corr_cells
-    auto_corr_cells_centered = auto_corr_cells - np.mean(auto_corr_cells_for_pca, 0)
+        ISI_hist_cells_for_pca = ISI_hist_cells
+    ISI_hist_cells_centered = ISI_hist_cells - np.mean(ISI_hist_cells_for_pca, 0)
     pca = PCA(n_components=2)
-    pca.fit(auto_corr_cells_for_pca)
-    transformed = pca.transform(auto_corr_cells_centered)
+    pca.fit(ISI_hist_cells_for_pca)
+    transformed = pca.transform(ISI_hist_cells_centered)
 
     print 'Explained variance: %.2f, %.2f' % (pca.explained_variance_ratio_[0], pca.explained_variance_ratio_[1])
 
     fig, ax = pl.subplots(1, 2, figsize=(10, 4))
-    ax[0].bar(t_auto_corr, pca.components_[0, :], bin_width, color='k', align='center',
+    ax[0].bar(t_ISI_hist, pca.components_[0, :], bin_width, color='k', align='center',
               label='Explained var.: %i' % np.round(pca.explained_variance_ratio_[0]*100)+'%')
-    ax[1].bar(t_auto_corr, pca.components_[1, :], bin_width, color='gray', align='center',
+    ax[1].bar(t_ISI_hist, pca.components_[1, :], bin_width, color='gray', align='center',
               label='Explained var.: %i' % np.round(pca.explained_variance_ratio_[1]*100)+'%')
-    ax[0].set_xlabel('Lag (ms)')
-    ax[1].set_xlabel('Lag (ms)')
+    ax[0].set_xlabel('ISI (ms)')
+    ax[1].set_xlabel('ISI (ms)')
     ax[0].set_ylabel('PC1')
     ax[1].set_ylabel('PC2')
-    ax[0].set_xticks([-max_lag, 0, max_lag])
-    ax[1].set_xticks([-max_lag, 0, max_lag])
+    ax[0].set_xticks([0, max_ISI])
+    ax[1].set_xticks([0, max_ISI])
     ax[0].legend()
     ax[1].legend()
     pl.tight_layout()
     if sigma_smooth is not None:
-        pl.savefig(os.path.join(save_dir_img, 'pca_autocorrelation_PCs_' + str(max_lag) + '_' + str(
+        pl.savefig(os.path.join(save_dir_img, 'pca_ISI_hist_PCs_' + str(max_ISI) + '_' + str(
             bin_width) + '_' + str(sigma_smooth) + '_' + remove_cells_dict[remove_cells] + '.png'))
     else:
-        pl.savefig(os.path.join(save_dir_img, 'pca_autocorrelation_PCs_' + str(max_lag) +'_' + str(
+        pl.savefig(os.path.join(save_dir_img, 'pca_ISI_hist_PCs_' + str(max_ISI) + '_' + str(
             bin_width) + '_' + remove_cells_dict[remove_cells] + '.png'))
     # pl.show()
 
     # pca backtransform
     from analyze_in_vivo.load.load_domnisoru import get_cell_ids_bursty
     back_transformed = np.dot(transformed, pca.components_[:2, :])
-    back_transformed += np.mean(auto_corr_cells_for_pca, axis=0)
-    plot_kwargs = dict(t_auto_corr=t_auto_corr, auto_corr_cells=back_transformed, bin_size=bin_width,
-                       max_lag=max_lag)
+    back_transformed += np.mean(ISI_hist_cells_for_pca, axis=0)
+    plot_kwargs = dict(ISI_hist_cells=back_transformed, bin_width=bin_width, max_ISI=max_ISI)
     burst_label = np.array([True if cell_id in get_cell_ids_bursty() else False for cell_id in cell_ids])
     colors_marker = np.zeros(len(burst_label), dtype=str)
     colors_marker[burst_label] = 'r'
     colors_marker[~burst_label] = 'b'
-    plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_autocorrelation, plot_kwargs,
-                            xlabel='Time (ms)', ylabel='Spike-time \nautocorrelation', colors_marker=colors_marker,
-                            save_dir_img=os.path.join(save_dir_img, 'backtransformed_autocorr_' + str(max_lag) + '_' + str(
-                                bin_width) + '_' + str(sigma_smooth) + '_' + remove_cells_dict[remove_cells] + '.png'))
+    plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_ISI_hist_on_ax, plot_kwargs,
+                            xlabel='Time (ms)', ylabel='ISI histogram', colors_marker=colors_marker,
+                            save_dir_img=os.path.join(save_dir_img, 'backtransformed_ISI_hist_' + str(
+                                max_ISI) + '_' + str(bin_width) + '_' + str(
+                                sigma_smooth) + '_' + remove_cells_dict[remove_cells] + '.png'))
 
     # k-means
     n_clusters = 2
     kmeans = KMeans(n_clusters=n_clusters, random_state=0).fit(transformed)
     labels = kmeans.labels_
+    labels = burst_label  # TODO
 
     print('Bursty: ', cell_ids[labels.astype(bool)])
     print('Non-bursty: ', cell_ids[~labels.astype(bool)])
@@ -185,18 +191,33 @@ if __name__ == '__main__':
     ax.set_ylabel('PC2')
 
     for i in range(len(cell_ids)):
-        ax.annotate(cell_ids[i], xy=(transformed[i, 0] + 0.002, transformed[i, 1] + 0.002), fontsize=7)
+        ax.annotate(cell_ids[i], xy=(transformed[i, 0] + 4, transformed[i, 1] + 2), fontsize=7)
 
     #ax.set_ylim([-0.058, 0.17])
     #ax.set_xlim([-0.065, 0.133])
+
+    # inset
+    axins = inset_axes(ax, width='50%', height='50%', loc='center')
+    plot_with_markers(axins, transformed[labels == 0, 0], transformed[labels == 0, 1], cell_ids[labels == 0],
+                      cell_type_dict, edgecolor='b', theta_cells=theta_cells, DAP_cells=DAP_cells, legend=False)
+    plot_with_markers(axins, transformed[labels == 1, 0], transformed[labels == 1, 1], cell_ids[labels == 1],
+                      cell_type_dict, edgecolor='r', theta_cells=theta_cells, DAP_cells=DAP_cells, legend=False)
+    for i in range(len(cell_ids)):
+        axins.annotate(cell_ids[i], xy=(transformed[i, 0] + 4, transformed[i, 1] + 2), fontsize=7)
+    axins.set_ylim(-230, 100)
+    axins.set_xlim(-450, -100)
+    axins.spines['top'].set_visible(True)
+    axins.spines['right'].set_visible(True)
+    mark_inset(ax, axins, loc1=2, loc2=4, fc="none", ec="0.5")
+
     pl.tight_layout()
     #pl.subplots_adjust(bottom=0.06, left=0.06, top=0.98, right=0.84)
     if sigma_smooth is not None:
         pl.savefig(os.path.join(save_dir_img,
-                                'pca_autocorrelation_with_cell_ids_' + str(max_lag) + '_' + str(
+                                'pca_autocorrelation_with_cell_ids_' + str(max_ISI) + '_' + str(
                                     bin_width) + '_' + str(sigma_smooth) + '_' + remove_cells_dict[remove_cells] + '.png'))
     else:
-        pl.savefig(os.path.join(save_dir_img, 'pca_autocorrelation_with_cell_ids_' + str(max_lag) +'_' + str(
+        pl.savefig(os.path.join(save_dir_img, 'pca_ISI_hist_with_cell_ids_' + str(max_ISI) + '_' + str(
             bin_width) + '_' + remove_cells_dict[remove_cells] + '.png'))
 
     # # plot for slides

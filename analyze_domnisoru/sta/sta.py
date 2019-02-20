@@ -4,12 +4,13 @@ import matplotlib.pyplot as pl
 import os
 from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data, load_field_indices, get_celltype_dict
 from analyze_in_vivo.analyze_schmidt_hieber import detrend
+from analyze_in_vivo.analyze_domnisoru.sta import plot_sta_on_ax
+from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_for_all_grid_cells, plot_for_cell_group
+from analyze_in_vivo.analyze_domnisoru.position_vs_firing_rate import threshold_by_velocity, get_spike_train
 from cell_characteristics import to_idx
 from cell_characteristics.sta_stc import get_sta, get_sta_median, plot_APs
 from grid_cell_stimuli import get_AP_max_idxs, find_all_AP_traces
 from cell_fitting.util import init_nan
-from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_for_all_grid_cells, plot_for_cell_group
-from analyze_in_vivo.analyze_domnisoru.position_vs_firing_rate import threshold_by_velocity, get_spike_train
 pl.style.use('paper_subplots')
 
 
@@ -51,15 +52,6 @@ def get_in_or_out_field_AP_max_idxs(kind, AP_max_idxs, velocity, cell_id, save_d
     else:
         return ValueError('kind not correctly specified!')
     return AP_max_idxs_selected
-
-
-def plot_sta(ax, cell_idx, t_AP, sta_mean_cells, sta_std_cells, before_AP=5, after_AP=25):
-    ax.plot(t_AP, sta_mean_cells[cell_idx], 'k')
-    ax.fill_between(t_AP, sta_mean_cells[cell_idx] - sta_std_cells[cell_idx],
-                    sta_mean_cells[cell_idx] + sta_std_cells[cell_idx], color='0.6')
-    ax.set_ylim(-90, 30)
-    ax.set_xlim(-before_AP, after_AP)
-    ax.set_xticks([-10, 0, 10, 20])
 
 
 def plot_v_hist(ax, cell_idx, t_AP, bins_v, v_hist_cells, before_AP=5, after_AP=25):
@@ -113,13 +105,13 @@ if __name__ == '__main__':
         before_AP_idx = to_idx(before_AP, dt)
         after_AP_idx = to_idx(after_AP, dt)
 
-        # for testing
-        pl.figure()
-        pl.title(cell_id)
-        pl.plot(t, v)
-        #pl.xlim(1000, 11000)
-        #pl.ylim(-90, 20)
-        pl.show()
+        # # for testing
+        # pl.figure()
+        # pl.title(cell_id)
+        # pl.plot(t, v)
+        # #pl.xlim(1000, 11000)
+        # #pl.ylim(-90, 20)
+        # pl.show()
 
         # get APs
         if use_AP_max_idxs_domnisoru:
@@ -152,11 +144,11 @@ if __name__ == '__main__':
         if not os.path.exists(save_dir_cell):
             os.makedirs(save_dir_cell)
 
-        np.save(os.path.join(save_dir_cell, 'sta_mean.npy'), sta_mean_cells[cell_idx])
-        np.save(os.path.join(save_dir_cell, 'sta_std.npy'), sta_std_cells[cell_idx])
-        np.save(os.path.join(save_dir_cell, 'v_hist.npy'), v_hist_cells[cell_idx])
-        np.save(os.path.join(save_dir_cell, 't_AP.npy'), t_AP)
-        np.save(os.path.join(save_dir_cell, 'bins_v.npy'), bins_v)
+        # np.save(os.path.join(save_dir_cell, 'sta_mean.npy'), sta_mean_cells[cell_idx])
+        # np.save(os.path.join(save_dir_cell, 'sta_std.npy'), sta_std_cells[cell_idx])
+        # np.save(os.path.join(save_dir_cell, 'v_hist.npy'), v_hist_cells[cell_idx])
+        # np.save(os.path.join(save_dir_cell, 't_AP.npy'), t_AP)
+        # np.save(os.path.join(save_dir_cell, 'bins_v.npy'), bins_v)
 
         # # plot
         # np.save(os.path.join(save_dir_cell, 'sta_mean.npy'), sta_mean)
@@ -174,14 +166,18 @@ if __name__ == '__main__':
 
     pl.close('all')
 
+    # save
+    np.save(os.path.join(save_dir_img, 'sta_mean_'+str(before_AP)+'_'+str(after_AP)+'.npy'), sta_mean_cells)
+
+    # plot
     if cell_type == 'grid_cells':
         plot_kwargs = dict(t_AP=t_AP, sta_mean_cells=sta_mean_cells, sta_std_cells=sta_std_cells)
-        plot_for_all_grid_cells(cell_ids, get_celltype_dict(save_dir), plot_sta, plot_kwargs,
+        plot_for_all_grid_cells(cell_ids, get_celltype_dict(save_dir), plot_sta_on_ax, plot_kwargs,
                                 xlabel='Time (ms)', ylabel='Mem. pot. (mV)',
                                 save_dir_img=os.path.join(save_dir_img, 'sta_'+str(before_AP)+'_'+str(after_AP)+'.png'))
-        plot_for_all_grid_cells(cell_ids, get_celltype_dict(save_dir), plot_sta, plot_kwargs,
-                                xlabel='Time (ms)', ylabel='Mem. pot. (mV)',
-                                save_dir_img=os.path.join(save_dir_img2, 'sta.png'))
+        # plot_for_all_grid_cells(cell_ids, get_celltype_dict(save_dir), plot_sta, plot_kwargs,
+        #                         xlabel='Time (ms)', ylabel='Mem. pot. (mV)',
+        #                         save_dir_img=os.path.join(save_dir_img2, 'sta.png'))
 
         # voltage histogram over time
         plot_kwargs = dict(t_AP=t_AP, bins_v=bins_v, v_hist_cells=v_hist_cells)
@@ -194,7 +190,7 @@ if __name__ == '__main__':
                                 save_dir_img=os.path.join(save_dir_img2, 'v_hist.png'))
     else:
         plot_kwargs = dict(t_AP=t_AP, sta_mean_cells=sta_mean_cells, sta_std_cells=sta_std_cells)
-        plot_for_cell_group(cell_ids, get_celltype_dict(save_dir), plot_sta, plot_kwargs,
+        plot_for_cell_group(cell_ids, get_celltype_dict(save_dir), plot_sta_on_ax, plot_kwargs,
                                 xlabel='Time (ms)', ylabel='Mem. pot. (mV)', figsize=None,
                                 save_dir_img=os.path.join(save_dir_img, 'sta.png'))
 

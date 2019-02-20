@@ -42,8 +42,10 @@ if __name__ == '__main__':
 
     # ICA
     auto_corr_cells_centered = auto_corr_cells - np.mean(auto_corr_cells, 0)
-    ica = FastICA(n_components=2, random_state=11)
-    transformed = ica.fit_transform(auto_corr_cells_centered)  # Reconstruct signals
+    ica = FastICA(n_components=2, random_state=11, whiten=False)
+    ica.fit(auto_corr_cells_centered)
+    transformed = ica.transform(auto_corr_cells_centered)  # Reconstruct signals
+    #transformed = ica.fit_transform(auto_corr_cells_centered)  # Reconstruct signals
 
     # plot components
     fig, ax = pl.subplots(1, 2, figsize=(10, 4))

@@ -4,9 +4,9 @@ import matplotlib.pyplot as pl
 import os
 import matplotlib.gridspec as gridspec
 from analyze_in_vivo.load.load_domnisoru import get_celltype_dict, get_cell_ids_DAP_cells, load_cell_ids
-from analyze_in_vivo.analyze_domnisoru.sta import plot_sta, plot_v_hist
+from analyze_in_vivo.analyze_domnisoru.STA.sta import plot_sta, plot_v_hist
 from analyze_in_vivo.analyze_domnisoru.plot_utils import get_cell_id_with_marker, plot_with_markers
-from mpl_toolkits.mplot3d import Axes3D
+
 pl.style.use('paper_subplots')
 
 

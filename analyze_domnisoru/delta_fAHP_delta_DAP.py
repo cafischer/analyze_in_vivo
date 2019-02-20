@@ -19,7 +19,7 @@ if __name__ == '__main__':
 
     # parameters
     with_selection = True
-    use_avg_times = True
+    use_avg_times = False
     do_detrend = False
     dt = 0.05
     before_AP = 10  # ms
@@ -89,6 +89,7 @@ if __name__ == '__main__':
     v_rest_fAHP = np.zeros(len(cell_ids))
     v_DAP_fAHP = np.zeros(len(cell_ids))
     for cell_idx, cell_id in enumerate(cell_ids):
+        print cell_id
         if np.isnan(sta_mean_cells[cell_idx][0]):
             v_rest_fAHP[cell_idx] = np.nan
             v_DAP_fAHP[cell_idx] = np.nan
@@ -101,7 +102,7 @@ if __name__ == '__main__':
         if not use_avg_times and with_selection and cell_id in DAP_cells_additional:
             fAHP_idx = int(fAHP_min_idx_cells[cell_idx])
             DAP_idx = int(DAP_max_idx_cells[cell_idx])
-        elif not use_avg_times and not with_selection and cell_id in DAP_cells:
+        elif not use_avg_times and cell_id in DAP_cells:
             fAHP_idx = int(fAHP_min_idx_cells[cell_idx])
             DAP_idx = int(DAP_max_idx_cells[cell_idx])
         else:
@@ -128,8 +129,8 @@ if __name__ == '__main__':
     ax.set_xlabel('$\Delta$ fAHP', horizontalalignment='right', x=1.0)
     ax.spines['left'].set_position('zero')
     ax.spines['bottom'].set_position('zero')
-    # ax.set_xlim(-9, 9)
-    # ax.set_ylim(-4.75, 2.4)
+    ax.set_xlim(-7, 2.0)
+    ax.set_ylim(-4.0, 2.5)
     for i in range(len(cell_ids)):
         ax.annotate(cell_ids[i], xy=(v_rest_fAHP[i] + 0.09, v_DAP_fAHP[i] + 0.06), fontsize=6)
     pl.tight_layout()

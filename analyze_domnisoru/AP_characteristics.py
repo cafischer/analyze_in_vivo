@@ -5,11 +5,11 @@ import os
 from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data
 from cell_characteristics import to_idx
 from cell_characteristics.sta_stc import get_sta
-from grid_cell_stimuli import get_AP_max_idxs, find_all_AP_traces
+from grid_cell_stimuli import find_all_AP_traces
 from cell_characteristics.analyze_APs import get_spike_characteristics
 from cell_fitting.optimization.evaluation import get_spike_characteristics_dict
 from cell_fitting.util import init_nan
-from analyze_in_vivo.analyze_domnisoru.sta import get_in_or_out_field_AP_max_idxs
+from analyze_in_vivo.analyze_domnisoru.STA.sta import get_in_or_out_field_AP_max_idxs
 pl.style.use('paper')
 
 
@@ -25,6 +25,7 @@ if __name__ == '__main__':
     use_AP_max_idxs_domnisoru = True
     before_AP = 10
     after_AP = 25
+    t_v_ref = 5.0
 
     save_dir_characteristics = os.path.join(save_dir_characteristics, kind, cell_type)
     if not os.path.exists(save_dir_characteristics):
@@ -64,7 +65,7 @@ if __name__ == '__main__':
 
         # get AP characteristics from STA
         sta_mean, sta_std = get_sta(v_APs)
-        v_rest = sta_mean[before_AP_idx - to_idx(5.0, dt)]
+        v_rest = sta_mean[before_AP_idx - to_idx(t_v_ref, dt)]
         spike_characteristics_dict = get_spike_characteristics_dict()
         spike_characteristics_dict['AP_max_idx'] = before_AP_idx
         spike_characteristics_dict['AP_onset'] = before_AP_idx - to_idx(1.0, dt)
@@ -73,7 +74,7 @@ if __name__ == '__main__':
         DAP_width_per_cell[cell_idx], DAP_time_per_cell[cell_idx], \
         DAP_max_idx = get_spike_characteristics(sta_mean, t_AP, ['AP_amp', 'AP_width', 'AP_max_idx', 'DAP_deflection',
                                                                  'DAP_amp', 'DAP_width', 'DAP_time', 'DAP_max_idx'],
-                                                v_rest, check=False, **spike_characteristics_dict)
+                                                v_rest, check=True, **spike_characteristics_dict)
         AP_abs_amp_per_cell[cell_idx] = sta_mean[AP_max_idx]
 
         # test if DAP deflection greater than
