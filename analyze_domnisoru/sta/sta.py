@@ -168,6 +168,7 @@ if __name__ == '__main__':
 
     # save
     np.save(os.path.join(save_dir_img, 'sta_mean_'+str(before_AP)+'_'+str(after_AP)+'.npy'), sta_mean_cells)
+    np.save(os.path.join(save_dir_img, 'sta_std_' + str(before_AP) + '_' + str(after_AP) + '.npy'), sta_std_cells)
 
     # plot
     if cell_type == 'grid_cells':

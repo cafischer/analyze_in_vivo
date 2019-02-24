@@ -5,18 +5,20 @@ import os
 from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
 from cell_characteristics import to_idx
-from analyze_in_vivo.load.load_domnisoru import load_cell_ids, get_cell_ids_DAP_cells, get_celltype_dict
+from analyze_in_vivo.load.load_domnisoru import load_cell_ids, get_cell_ids_DAP_cells, get_celltype_dict, get_cell_ids_bursty
 from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_with_markers
-from matplotlib.pyplot import Line2D
+from analyze_in_vivo.analyze_domnisoru.isi.ISI_hist import get_ISI_hist_peak_width
 from matplotlib.patches import Patch
 from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_for_all_grid_cells
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes, mark_inset
+import pandas as pd
 pl.style.use('paper_subplots')
 
 
 def plot_ISI_hist_on_ax(ax, cell_idx, ISI_hist_cells, bin_width, max_ISI):
     bins = np.arange(0, max_ISI+bin_width, bin_width)
-    ax.bar(bins[:-1], ISI_hist_cells[cell_idx, :] / (np.sum(ISI_hist_cells[cell_idx, :]) * bin_width),
+    ax.bar(bins[:len(ISI_hist_cells[cell_idx, :])],
+           ISI_hist_cells[cell_idx, :] / (np.sum(ISI_hist_cells[cell_idx, :]) * bin_width),
            bins[1] - bins[0], color='0.5', align='edge')
 
 
@@ -28,10 +30,10 @@ if __name__ == '__main__':
     cell_ids = np.array(load_cell_ids(save_dir, cell_type))
     cell_type_dict = get_celltype_dict(save_dir)
     max_ISI = 200
-    bin_width = 1.0  # ms
-    sigma_smooth = None
+    bin_width = 1  # ms
+    sigma_smooth = 1
     dt_kernel = 0.05
-    remove_cells = False
+    remove_cells = True
     remove_cells_dict = {True: 'removed', False: 'not_removed'}
     if sigma_smooth is not None:
         ISI_hist_cells = np.load(
@@ -40,6 +42,8 @@ if __name__ == '__main__':
     else:
         ISI_hist_cells = np.load(os.path.join(save_dir_ISI_hist, 'cut_ISIs_at_'+str(max_ISI), cell_type,
                                                'ISI_hist_' + str(max_ISI) + '_' + str(bin_width) + '.npy'))
+    for cell_idx in range(len(cell_ids)):  # normalize
+        ISI_hist_cells[cell_idx] = ISI_hist_cells[cell_idx] / (np.sum(ISI_hist_cells[cell_idx]) * bin_width)
     max_ISI_idx = to_idx(max_ISI, bin_width)
     if sigma_smooth is not None:
         t_ISI_hist = np.arange(0, max_ISI_idx + dt_kernel, dt_kernel)
@@ -88,10 +92,12 @@ if __name__ == '__main__':
     # pl.show()
 
     # pca backtransform
-    from analyze_in_vivo.load.load_domnisoru import get_cell_ids_bursty
     back_transformed = np.dot(transformed, pca.components_[:2, :])
     back_transformed += np.mean(ISI_hist_cells_for_pca, axis=0)
-    plot_kwargs = dict(ISI_hist_cells=back_transformed, bin_width=bin_width, max_ISI=max_ISI)
+    if sigma_smooth is not None:
+        plot_kwargs = dict(ISI_hist_cells=back_transformed, bin_width=dt_kernel, max_ISI=max_ISI)
+    else:
+        plot_kwargs = dict(ISI_hist_cells=back_transformed, bin_width=bin_width, max_ISI=max_ISI)
     burst_label = np.array([True if cell_id in get_cell_ids_bursty() else False for cell_id in cell_ids])
     colors_marker = np.zeros(len(burst_label), dtype=str)
     colors_marker[burst_label] = 'r'
@@ -102,11 +108,26 @@ if __name__ == '__main__':
                                 max_ISI) + '_' + str(bin_width) + '_' + str(
                                 sigma_smooth) + '_' + remove_cells_dict[remove_cells] + '.png'))
 
+    if sigma_smooth is not None:
+        peak_ISI_hist = np.zeros(len(cell_ids))
+        width_at_half_max = np.zeros(len(cell_ids))
+        for cell_idx, cell_id in enumerate(cell_ids):
+            peak_ISI_hist[cell_idx], width_at_half_max[cell_idx] = get_ISI_hist_peak_width(back_transformed[cell_idx],
+                                                                                           np.arange(0, max_ISI+dt_kernel, dt_kernel))
+
+        burst_row = ['B' if l else 'N-B' for l in burst_label]
+        df = pd.DataFrame(data=np.vstack((peak_ISI_hist, width_at_half_max, burst_row)).T,
+                          columns=['ISI peak', 'ISI width', 'burst behavior'], index=cell_ids)
+        df.index.name = 'Cell ids'
+        df.to_csv(os.path.join(save_dir_img, 'ISI_distribution_bt_' + str(max_ISI) + '_' + str(bin_width) + '_' + str(
+            sigma_smooth) + '.csv'))
+
+
     # k-means
     n_clusters = 2
-    kmeans = KMeans(n_clusters=n_clusters, random_state=0).fit(transformed)
+    kmeans = KMeans(n_clusters=n_clusters, random_state=5).fit(transformed)
     labels = kmeans.labels_
-    labels = burst_label  # TODO
+    #labels = burst_label  # TODO
 
     print('Bursty: ', cell_ids[labels.astype(bool)])
     print('Non-bursty: ', cell_ids[~labels.astype(bool)])
@@ -191,24 +212,24 @@ if __name__ == '__main__':
     ax.set_ylabel('PC2')
 
     for i in range(len(cell_ids)):
-        ax.annotate(cell_ids[i], xy=(transformed[i, 0] + 4, transformed[i, 1] + 2), fontsize=7)
+        ax.annotate(cell_ids[i], xy=(transformed[i, 0] + 0.003, transformed[i, 1] + 0.003), fontsize=7)
 
     #ax.set_ylim([-0.058, 0.17])
     #ax.set_xlim([-0.065, 0.133])
 
-    # inset
-    axins = inset_axes(ax, width='50%', height='50%', loc='center')
-    plot_with_markers(axins, transformed[labels == 0, 0], transformed[labels == 0, 1], cell_ids[labels == 0],
-                      cell_type_dict, edgecolor='b', theta_cells=theta_cells, DAP_cells=DAP_cells, legend=False)
-    plot_with_markers(axins, transformed[labels == 1, 0], transformed[labels == 1, 1], cell_ids[labels == 1],
-                      cell_type_dict, edgecolor='r', theta_cells=theta_cells, DAP_cells=DAP_cells, legend=False)
-    for i in range(len(cell_ids)):
-        axins.annotate(cell_ids[i], xy=(transformed[i, 0] + 4, transformed[i, 1] + 2), fontsize=7)
-    axins.set_ylim(-230, 100)
-    axins.set_xlim(-450, -100)
-    axins.spines['top'].set_visible(True)
-    axins.spines['right'].set_visible(True)
-    mark_inset(ax, axins, loc1=2, loc2=4, fc="none", ec="0.5")
+    # # inset
+    # axins = inset_axes(ax, width='50%', height='50%', loc='center')
+    # plot_with_markers(axins, transformed[labels == 0, 0], transformed[labels == 0, 1], cell_ids[labels == 0],
+    #                   cell_type_dict, edgecolor='b', theta_cells=theta_cells, DAP_cells=DAP_cells, legend=False)
+    # plot_with_markers(axins, transformed[labels == 1, 0], transformed[labels == 1, 1], cell_ids[labels == 1],
+    #                   cell_type_dict, edgecolor='r', theta_cells=theta_cells, DAP_cells=DAP_cells, legend=False)
+    # for i in range(len(cell_ids)):
+    #     axins.annotate(cell_ids[i], xy=(transformed[i, 0] + 4, transformed[i, 1] + 2), fontsize=7)
+    # axins.set_ylim(-230, 100)
+    # axins.set_xlim(-450, -100)
+    # axins.spines['top'].set_visible(True)
+    # axins.spines['right'].set_visible(True)
+    # mark_inset(ax, axins, loc1=2, loc2=4, fc="none", ec="0.5")
 
     pl.tight_layout()
     #pl.subplots_adjust(bottom=0.06, left=0.06, top=0.98, right=0.84)

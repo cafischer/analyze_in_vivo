@@ -40,12 +40,42 @@ if __name__ == '__main__':
     theta_cells = load_cell_ids(save_dir, 'giant_theta')
     DAP_cells, DAP_cells_additional = get_cell_ids_DAP_cells()
 
+    def svd_whiten(X):
+        U, s, Vt = np.linalg.svd(X, full_matrices=False)
+        # U and Vt are the singular matrices, and s contains the singular values.
+        # Since the rows of both U and Vt are orthonormal vectors, then U * Vt
+        # will be white
+        X_white = np.dot(U, Vt)
+        return X_white
+
+
+    def whiten(X, fudge=1E-18):
+        # the matrix X should be observations-by-components
+
+        # get the covariance matrix
+        Xcov = np.dot(X.T, X)
+
+        # eigenvalue decomposition of the covariance matrix
+        d, V = np.linalg.eigh(Xcov)
+
+        # a fudge factor can be used so that eigenvectors associated with
+        # small eigenvalues do not get overamplified.
+        D = np.diag(1. / np.sqrt(d + fudge))
+
+        # whitening matrix
+        W = np.dot(np.dot(V, D), V.T)
+
+        # multiply by the whitening matrix
+        X_white = np.dot(X, W)
+        return X_white, W
+
     # ICA
     auto_corr_cells_centered = auto_corr_cells - np.mean(auto_corr_cells, 0)
-    ica = FastICA(n_components=2, random_state=11, whiten=False)
+    ica = FastICA(random_state=11, whiten=True)  # n_components=2,
     ica.fit(auto_corr_cells_centered)
     transformed = ica.transform(auto_corr_cells_centered)  # Reconstruct signals
     #transformed = ica.fit_transform(auto_corr_cells_centered)  # Reconstruct signals
+
 
     # plot components
     fig, ax = pl.subplots(1, 2, figsize=(10, 4))

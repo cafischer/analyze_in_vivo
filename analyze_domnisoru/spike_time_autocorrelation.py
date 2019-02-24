@@ -84,7 +84,7 @@ def get_autocorrelation_by_ISIs(ISIs, max_lag=50, bin_width=1, remove_zero=True,
 def get_all_SIs(ISIs_cum):
     ISIs_cum = np.insert(ISIs_cum, 0, 0)  # add distance to 1st spike
     SI_mat = np.tile(ISIs_cum, (len(ISIs_cum), 1)) - np.array([ISIs_cum]).T
-    return SI_mat.flatten()  #np.array(all_SIs)bins[:int(len(bins/2.))]
+    return SI_mat.flatten()
 
 
 # def change_bin_size_of_spike_train(spike_train, bin_size, dt):
@@ -113,9 +113,9 @@ if __name__ == '__main__':
     param_list = ['Vm_ljpc', 'spiketimes']
 
     # parameters
-    bin_width = 1.0  # ms
-    max_lag = 200.0
-    sigma_smooth = None  # ms  None for no smoothing
+    bin_width = 1  # ms
+    max_lag = 200
+    sigma_smooth = 1  # ms  None for no smoothing
     dt_kernel = 0.05  # ms (same as dt data as lower bound for precision)
     use_AP_max_idxs_domnisoru = True
     save_dir_img = os.path.join(save_dir_img, cell_type)
@@ -169,7 +169,7 @@ if __name__ == '__main__':
             autocorr_kernel_cells[cell_idx, :] = kernel_cells[cell_idx].pdf(t_kernel)
 
         # pl.figure()
-        # pl.bar(t_auto_corr, auto_corr, bin_size, color='r', align='center', alpha=0.5)
+        # pl.bar(bins[:-1], autocorr_cells[cell_idx, :], bin_width, color='r', align='center', alpha=0.5)
         # t_kernel = np.arange(-50, 50+01, 0.1)
         # pl.plot(t_kernel, kernel.pdf(t_kernel), color='k')
         # pl.xlabel('Time (ms)')

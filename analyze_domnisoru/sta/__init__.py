@@ -22,7 +22,7 @@ def plot_sta_grid_on_ax(ax, cell_idx, subplot_idx, t_AP, sta_mean_cells, sta_std
         ax.set_xlim(-before_AP, after_AP)
         ax.set_xticks(np.arange(-before_AP, after_AP + 5, 10))
         ax.set_xticklabels([])
-        ax.annotate('selected APs', xy=(25, ylims[0]), textcoords='data',
+        ax.annotate('selected APs', xy=(25, ax.get_ylim()[0]), textcoords='data',
                     horizontalalignment='right', verticalalignment='bottom', fontsize=8)
     elif subplot_idx == 1:
         ax.plot(t_AP, sta_mean_cells[cell_idx], 'k')
@@ -31,7 +31,7 @@ def plot_sta_grid_on_ax(ax, cell_idx, subplot_idx, t_AP, sta_mean_cells, sta_std
         ax.set_ylim(*ylims)
         ax.set_xlim(-before_AP, after_AP)
         ax.set_xticks(np.arange(-before_AP, after_AP+5, 10))
-        ax.annotate('all APs', xy=(25, ylims[0]), textcoords='data',
+        ax.annotate('all APs', xy=(25, ax.get_ylim()[0]), textcoords='data',
                     horizontalalignment='right', verticalalignment='bottom', fontsize=8)
 
 

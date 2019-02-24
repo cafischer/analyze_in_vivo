@@ -14,7 +14,36 @@ from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_for_all_grid_cells
 from sklearn.metrics import silhouette_score
 from scipy.optimize import brentq
 import scipy.stats as st
+import pandas as pd
 pl.style.use('paper_subplots')
+
+
+def get_ISI_hist_peak_width(ISI_hist, t):
+    peak_idx = np.argmax(ISI_hist)
+    peak_ISI_hist = t[peak_idx]
+    half_max = ISI_hist[peak_idx] / 2.
+
+    # def fun_roots(x):
+    #     return kernel.pdf(x) - half_max
+    # root1 = brentq(fun_roots, 0, peak_ISI_hist)
+    # root2 = brentq(fun_roots, peak_ISI_hist, max_ISI)
+
+    root1_idx = np.nonzero(np.diff(np.sign(ISI_hist[:peak_idx] - half_max
+                                           + np.spacing(ISI_hist[:peak_idx] - half_max))) == 2)[0][-1]
+    root2_idx = np.nonzero(np.diff(np.sign(ISI_hist[peak_idx:] - half_max
+                                           + np.spacing(ISI_hist[peak_idx:] - half_max))) == -2)[0][0] + peak_idx
+    root1 = t[root1_idx]
+    root2 = t[root2_idx]
+    width_at_half_max = root2 - root1
+
+    # for visualization
+    # pl.figure()
+    # pl.plot(t, ISI_hist, 'k')
+    # pl.plot(peak_ISI_hist, ISI_hist[peak_idx], 'or')
+    # pl.plot([root1, root2], [ISI_hist[root1_idx], ISI_hist[root2_idx]], 'r', linewidth=2)
+    # pl.show()
+    return peak_ISI_hist, width_at_half_max
+
 
 
 if __name__ == '__main__':
@@ -33,10 +62,11 @@ if __name__ == '__main__':
     filter_long_ISIs = True
     max_ISI = 200
     burst_ISI = 8  # ms
-    bin_width = 1.0  # ms
+    bin_width = 1  # ms
     bins = np.arange(0, max_ISI+bin_width, bin_width)
-    sigma_smooth = None  # ms  None for no smoothing
+    sigma_smooth = 1  # ms  None for no smoothing
     dt_kernel = 0.05
+    t_kernel = np.arange(0, max_ISI + dt_kernel, dt_kernel)
     if filter_long_ISIs:
         save_dir_img = os.path.join(save_dir_img, 'cut_ISIs_at_'+str(max_ISI))
     save_dir_img = os.path.join(save_dir_img, cell_type)
@@ -48,6 +78,7 @@ if __name__ == '__main__':
     ISIs_per_cell = [0] * len(cell_ids)
     n_ISIs = [0] * len(cell_ids)
     ISI_hist_cells = np.zeros((len(cell_ids), len(bins) - 1))
+    ISI_hist_kernel_cells = np.zeros((len(cell_ids), int(max_ISI/dt_kernel)+1))
     cum_ISI_hist_y = [0] * len(cell_ids)
     cum_ISI_hist_x = [0] * len(cell_ids)
     fraction_ISIs_filtered = np.zeros(len(cell_ids))
@@ -81,37 +112,23 @@ if __name__ == '__main__':
         n_ISIs[cell_idx] = len(ISIs)
         ISIs_per_cell[cell_idx] = ISIs
         fraction_burst[cell_idx] = np.sum(ISIs < burst_ISI) / float(len(ISIs))
-        shortest_ISI[cell_idx] = np.min(ISIs)
 
         # compute KDE
         if sigma_smooth is not None:
             kernel = st.gaussian_kde(ISIs, bw_method=np.sqrt(sigma_smooth / np.cov(ISIs)))
             kernel_cells[cell_idx] = kernel
+            ISI_hist_kernel_cells[cell_idx] = kernel.pdf(t_kernel)
 
         # ISI histograms
         ISI_hist_cells[cell_idx, :] = get_ISI_hist(ISIs, bins)
         cum_ISI_hist_y[cell_idx], cum_ISI_hist_x[cell_idx] = get_cumulative_ISI_hist(ISIs)
 
-        if sigma_smooth is not None:
-            t_kernel = np.arange(0, max_ISI + dt_kernel, dt_kernel)
-            peak_ISI_hist[cell_idx] = t_kernel[np.argmax(kernel.pdf(t_kernel))]
-            half_max = np.max(kernel.pdf(t_kernel)) / 2.
-            def fun_roots(x):
-                return kernel.pdf(x) - half_max
-            root1 = brentq(fun_roots, 0, peak_ISI_hist[cell_idx])
-            root2 = brentq(fun_roots, peak_ISI_hist[cell_idx], max_ISI)
-            width_at_half_max[cell_idx] = root2 - root1
-
-            # pl.figure()
-            # pl.plot(t_kernel, kernel.pdf(t_kernel), 'k')
-            # pl.plot(peak_ISI_hist[cell_idx], kernel.pdf(peak_ISI_hist[cell_idx]), 'or')
-            # pl.plot([root1, root2], [kernel.pdf(root1), kernel.pdf(root2)], 'r', linewidth=2)
-            # pl.show()
-        else:
+        if sigma_smooth is None:
             peak_ISI_hist[cell_idx] = (bins[:-1][np.argmax(ISI_hist_cells[cell_idx, :])],
                                        bins[1:][np.argmax(ISI_hist_cells[cell_idx, :])])
-
-
+        else:
+            peak_ISI_hist[cell_idx], width_at_half_max[cell_idx] = get_ISI_hist_peak_width(ISI_hist_kernel_cells[cell_idx], t_kernel)
+        shortest_ISI[cell_idx] = np.mean(np.sort(ISIs)[:10])
         # save and plot
         # save_dir_cell = os.path.join(save_dir_img, cell_id)
         # if not os.path.exists(save_dir_cell):
@@ -210,10 +227,20 @@ if __name__ == '__main__':
         np.save(os.path.join(save_dir_img, 'width_at_half_ISI_peak' + str(max_ISI) + '_' + str(bin_width) + '_' + str(
             sigma_smooth) + '.npy'),
                 width_at_half_max)
+        np.save(os.path.join(save_dir_img, 'ISI_hist_' + str(max_ISI) + '_' + str(bin_width) + '_' + str(
+            sigma_smooth) + '.npy'), ISI_hist_kernel_cells)
     else:
         np.save(os.path.join(save_dir_img, 'fraction_burst.npy'), fraction_burst)
         np.save(os.path.join(save_dir_img, 'peak_ISI_hist_'+str(max_ISI)+'_'+str(bin_width)+'.npy'), peak_ISI_hist)
         np.save(os.path.join(save_dir_img, 'ISI_hist_' + str(max_ISI) + '_' + str(bin_width) + '.npy'), ISI_hist_cells)
+
+    # table of ISI
+    burst_row = ['B' if l else 'N-B' for l in burst_label]
+    df = pd.DataFrame(data=np.vstack((shortest_ISI, peak_ISI_hist, width_at_half_max, burst_row)).T,
+                      columns=['mean(10 shortest ISIs)', 'ISI peak', 'ISI width', 'burst behavior'], index=cell_ids)
+    df.index.name = 'Cell ids'
+    df.to_csv(os.path.join(save_dir_img, 'ISI_distribution_' + str(max_ISI) + '_' + str(bin_width) + '_' + str(
+                sigma_smooth) + '.csv'))
 
     # plot all ISI hists
     colors_marker = np.zeros(len(burst_label), dtype=str)
@@ -224,8 +251,8 @@ if __name__ == '__main__':
     pl.rcParams.update(params)
 
     if sigma_smooth is not None:
-        plot_kwargs = dict(ISI_hist=ISI_hist_cells, cum_ISI_hist_x=cum_ISI_hist_x, cum_ISI_hist_y=cum_ISI_hist_y,
-                           max_ISI=max_ISI, bin_width=bin_width, kernel_cells=kernel_cells)
+        plot_kwargs = dict(ISI_hist=ISI_hist_cells,  max_ISI=max_ISI, bin_width=bin_width,
+                           kernel_cells=kernel_cells, dt_kernel=dt_kernel)
         plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_ISI_hist_on_ax_with_kde, plot_kwargs,
                                 wspace=0.18, xlabel='ISI (ms)', ylabel='Rel. frequency',
                                 save_dir_img=os.path.join(save_dir_img, 'ISI_hist_' + str(max_ISI) + '_' + str(
@@ -266,17 +293,17 @@ if __name__ == '__main__':
                                     sigma_smooth) + '.png'))
 
 
-    def plot_bar(ax, cell_idx, value_cells):
-        ax.bar(0.5, value_cells[cell_idx],
-               0.4, color='0.5')
-        ax.set_xlim(0, 1)
-        ax.set_xticks([])
-
-    peak_ISI_hist_means = np.array([(a + b) / 2. for (a, b) in peak_ISI_hist])
-    plot_kwargs = dict(value_cells=peak_ISI_hist_means)
-    plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_bar, plot_kwargs,
-                            xlabel='', ylabel='ISI peak', colors_marker=colors_marker,
-                            save_dir_img=None)
+    # def plot_bar(ax, cell_idx, value_cells):
+    #     ax.bar(0.5, value_cells[cell_idx],
+    #            0.4, color='0.5')
+    #     ax.set_xlim(0, 1)
+    #     ax.set_xticks([])
+    #
+    # peak_ISI_hist_means = np.array([(a + b) / 2. for (a, b) in peak_ISI_hist])
+    # plot_kwargs = dict(value_cells=peak_ISI_hist_means)
+    # plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_bar, plot_kwargs,
+    #                         xlabel='', ylabel='ISI peak', colors_marker=colors_marker,
+    #                         save_dir_img=None)
 
     # pl.figure()
     # pl.plot(len_recording / 1000.0, fraction_ISIs_filtered, 'ok')
@@ -293,10 +320,3 @@ if __name__ == '__main__':
     # pl.savefig(os.path.join(save_dir_img, 'firing_rate_vs_fraction_ISI.png'))
 
     pl.show()
-
-    # table of ISI
-    import pandas as pd
-    burst_row = ['B' if l else 'N-B' for l in burst_label]
-    df = pd.DataFrame(data=[shortest_ISI, burst_row], columns=cell_ids, index=[0, 1])
-    df.to_csv(os.path.join(save_dir_img, 'table_' + str(max_ISI) + '_' + str(bin_width) + '_' + str(
-                sigma_smooth) + '.csv'), index=False)

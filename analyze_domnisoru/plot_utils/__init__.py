@@ -196,7 +196,7 @@ def plot_for_cell_group(cell_ids, cell_type_dict, plot_fun, plot_kwargs, xlabel,
         pl.savefig(save_dir_img)
 
 
-def plot_for_all_grid_cells_grid(cell_ids, cell_type_dict, plot_fun, plot_kwargs, xlabel, ylabel, n_subplots,
+def plot_for_all_grid_cells_grid(cell_ids, cell_type_dict, plot_fun, plot_kwargs, n_subplots, xlabel='', ylabel='',
                                  wspace=None, fig_title=None, colors_marker=None, save_dir_img=None):
     plot_for_cell_group_grid(cell_ids, cell_type_dict, plot_fun, plot_kwargs, xlabel, ylabel, n_subplots, (15, 8.5),
                              (3, 9), wspace=wspace, fig_title=fig_title, colors_marker=colors_marker,

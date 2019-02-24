@@ -164,6 +164,10 @@ if __name__ == '__main__':
     print 'Max. selected > all', diff_selected_all
     # cell_ids_DAP_idx = np.array([np.where(id==np.array(cell_ids))[0][0] for id in cell_ids_DAP])
 
+    # save
+    np.save(os.path.join(save_dir_img, 'sta_mean_' + str(before_AP) + '_' + str(after_AP) + '.npy'), sta_mean_good_APs_cells)
+    np.save(os.path.join(save_dir_img, 'sta_std_' + str(before_AP) + '_' + str(after_AP) + '.npy'), sta_std_good_APs_cells)
+
     if cell_type == 'grid_cells':
         # fig, ax = pl.subplots()
         # plot_with_markers(ax, DAP_width_substitute, DAP_deflections, np.array(cell_ids), get_celltype_dict(save_dir),
