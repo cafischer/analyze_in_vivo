@@ -5,35 +5,27 @@ import os
 from grid_cell_stimuli import get_AP_max_idxs
 from grid_cell_stimuli.ISI_hist import get_ISIs, get_ISI_hist, get_cumulative_ISI_hist, \
     plot_ISI_hist, plot_cumulative_ISI_hist, plot_cumulative_ISI_hist_all_cells, plot_cumulative_comparison_all_cells, plot_cumulative_ISI_hist_all_cells_with_bursty
-from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data, get_celltype_dict, get_cell_ids_bursty
+from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data, get_celltype_dict, get_cell_ids_bursty, get_cell_ids_DAP_cells
 from analyze_in_vivo.analyze_domnisoru.isi import plot_ISI_hist_on_ax, plot_ISI_hist_on_ax_with_kde
-from scipy.stats import ks_2samp
-from itertools import combinations
-from analyze_in_vivo.analyze_domnisoru.check_basic.in_out_field import get_starts_ends_group_of_ones
-from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_for_all_grid_cells, plot_for_cell_group
-from sklearn.metrics import silhouette_score
-from scipy.optimize import brentq
+from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_with_markers
+from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_for_all_grid_cells
+from analyze_in_vivo.analyze_domnisoru import perform_kde, evaluate_kde
 import scipy.stats as st
 import pandas as pd
 pl.style.use('paper_subplots')
 
 
-def get_ISI_hist_peak_width(ISI_hist, t):
+def get_ISI_hist_peak_and_width(ISI_hist, t_hist):
     peak_idx = np.argmax(ISI_hist)
-    peak_ISI_hist = t[peak_idx]
+    peak_ISI_hist = t_hist[peak_idx]
     half_max = ISI_hist[peak_idx] / 2.
-
-    # def fun_roots(x):
-    #     return kernel.pdf(x) - half_max
-    # root1 = brentq(fun_roots, 0, peak_ISI_hist)
-    # root2 = brentq(fun_roots, peak_ISI_hist, max_ISI)
 
     root1_idx = np.nonzero(np.diff(np.sign(ISI_hist[:peak_idx] - half_max
                                            + np.spacing(ISI_hist[:peak_idx] - half_max))) == 2)[0][-1]
     root2_idx = np.nonzero(np.diff(np.sign(ISI_hist[peak_idx:] - half_max
                                            + np.spacing(ISI_hist[peak_idx:] - half_max))) == -2)[0][0] + peak_idx
-    root1 = t[root1_idx]
-    root2 = t[root2_idx]
+    root1 = t_hist[root1_idx]
+    root2 = t_hist[root2_idx]
     width_at_half_max = root2 - root1
 
     # for visualization
@@ -55,6 +47,8 @@ if __name__ == '__main__':
     cell_type_dict = get_celltype_dict(save_dir)
     cell_type = 'grid_cells'
     cell_ids = load_cell_ids(save_dir, cell_type)
+    theta_cells = load_cell_ids(save_dir, 'giant_theta')
+    DAP_cells, DAP_cells_additional = get_cell_ids_DAP_cells()
     param_list = ['Vm_ljpc', 'spiketimes']
     AP_thresholds = {'s73_0004': -55, 's90_0006': -45, 's82_0002': -35, 's117_0002': -60, 's119_0004': -50,
                      's104_0007': -55, 's79_0003': -50, 's76_0002': -50, 's101_0009': -45}
@@ -64,9 +58,9 @@ if __name__ == '__main__':
     burst_ISI = 8  # ms
     bin_width = 1  # ms
     bins = np.arange(0, max_ISI+bin_width, bin_width)
-    sigma_smooth = 1  # ms  None for no smoothing
-    dt_kernel = 0.05
-    t_kernel = np.arange(0, max_ISI + dt_kernel, dt_kernel)
+    sigma_smooth = None  # ms  None for no smoothing
+    dt_kde = 0.05
+    t_kde = np.arange(0, max_ISI + dt_kde, dt_kde)
     if filter_long_ISIs:
         save_dir_img = os.path.join(save_dir_img, 'cut_ISIs_at_'+str(max_ISI))
     save_dir_img = os.path.join(save_dir_img, cell_type)
@@ -78,7 +72,7 @@ if __name__ == '__main__':
     ISIs_per_cell = [0] * len(cell_ids)
     n_ISIs = [0] * len(cell_ids)
     ISI_hist_cells = np.zeros((len(cell_ids), len(bins) - 1))
-    ISI_hist_kernel_cells = np.zeros((len(cell_ids), int(max_ISI/dt_kernel)+1))
+    ISI_kde_cells = np.zeros((len(cell_ids), int(max_ISI / dt_kde) + 1))
     cum_ISI_hist_y = [0] * len(cell_ids)
     cum_ISI_hist_x = [0] * len(cell_ids)
     fraction_ISIs_filtered = np.zeros(len(cell_ids))
@@ -88,7 +82,7 @@ if __name__ == '__main__':
     peak_ISI_hist = np.zeros(len(cell_ids), dtype=object)
     shortest_ISI = np.zeros(len(cell_ids))
     width_at_half_max = np.zeros(len(cell_ids))
-    kernel_cells = np.zeros(len(cell_ids), dtype=object)
+    kde_cells = np.zeros(len(cell_ids), dtype=object)
 
     for cell_idx, cell_id in enumerate(cell_ids):
         print cell_id
@@ -115,9 +109,9 @@ if __name__ == '__main__':
 
         # compute KDE
         if sigma_smooth is not None:
-            kernel = st.gaussian_kde(ISIs, bw_method=np.sqrt(sigma_smooth / np.cov(ISIs)))
-            kernel_cells[cell_idx] = kernel
-            ISI_hist_kernel_cells[cell_idx] = kernel.pdf(t_kernel)
+            kde = perform_kde(ISIs, sigma_smooth)
+            kde_cells[cell_idx] = kde
+            ISI_kde_cells[cell_idx] = evaluate_kde(t_kde, kde)
 
         # ISI histograms
         ISI_hist_cells[cell_idx, :] = get_ISI_hist(ISIs, bins)
@@ -127,7 +121,7 @@ if __name__ == '__main__':
             peak_ISI_hist[cell_idx] = (bins[:-1][np.argmax(ISI_hist_cells[cell_idx, :])],
                                        bins[1:][np.argmax(ISI_hist_cells[cell_idx, :])])
         else:
-            peak_ISI_hist[cell_idx], width_at_half_max[cell_idx] = get_ISI_hist_peak_width(ISI_hist_kernel_cells[cell_idx], t_kernel)
+            peak_ISI_hist[cell_idx], width_at_half_max[cell_idx] = get_ISI_hist_peak_and_width(ISI_kde_cells[cell_idx], t_kde)
         shortest_ISI[cell_idx] = np.mean(np.sort(ISIs)[:10])
         # save and plot
         # save_dir_cell = os.path.join(save_dir_img, cell_id)
@@ -228,7 +222,7 @@ if __name__ == '__main__':
             sigma_smooth) + '.npy'),
                 width_at_half_max)
         np.save(os.path.join(save_dir_img, 'ISI_hist_' + str(max_ISI) + '_' + str(bin_width) + '_' + str(
-            sigma_smooth) + '.npy'), ISI_hist_kernel_cells)
+            sigma_smooth) + '.npy'), ISI_kde_cells)
     else:
         np.save(os.path.join(save_dir_img, 'fraction_burst.npy'), fraction_burst)
         np.save(os.path.join(save_dir_img, 'peak_ISI_hist_'+str(max_ISI)+'_'+str(bin_width)+'.npy'), peak_ISI_hist)
@@ -251,8 +245,8 @@ if __name__ == '__main__':
     pl.rcParams.update(params)
 
     if sigma_smooth is not None:
-        plot_kwargs = dict(ISI_hist=ISI_hist_cells,  max_ISI=max_ISI, bin_width=bin_width,
-                           kernel_cells=kernel_cells, dt_kernel=dt_kernel)
+        plot_kwargs = dict(ISI_hist=ISI_hist_cells, max_ISI=max_ISI, bin_width=bin_width,
+                           kernel_cells=kde_cells, dt_kernel=dt_kde)
         plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_ISI_hist_on_ax_with_kde, plot_kwargs,
                                 wspace=0.18, xlabel='ISI (ms)', ylabel='Rel. frequency',
                                 save_dir_img=os.path.join(save_dir_img, 'ISI_hist_' + str(max_ISI) + '_' + str(
@@ -319,4 +313,9 @@ if __name__ == '__main__':
     # pl.tight_layout()
     # pl.savefig(os.path.join(save_dir_img, 'firing_rate_vs_fraction_ISI.png'))
 
+    fig, ax = pl.subplots()
+    plot_with_markers(ax, peak_ISI_hist, width_at_half_max, cell_ids, cell_type_dict, theta_cells=theta_cells,
+                      DAP_cells=DAP_cells, DAP_cells_additional=DAP_cells_additional)
+    ax.set_ylabel('Width at half max (ms)')
+    ax.set_xlabel('Argument of the peak (ms)')
     pl.show()

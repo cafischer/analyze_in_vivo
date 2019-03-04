@@ -78,8 +78,11 @@ def load_cell_ids(save_dir, cell_type='grid_cells'):
     return cell_ids
 
 
-def get_cell_ids_DAP_cells():
-    return ['s79_0003', 's104_0007', 's109_0002', 's110_0002', 's119_0004'], ['s73_0004', 's85_0007']
+def get_cell_ids_DAP_cells(new=False):
+    if new:
+        return ['s67_0000', 's73_0004', 's79_0003', 's104_0007', 's109_0002', 's110_0002', 's119_0004']
+    else:
+        return ['s79_0003', 's104_0007', 's109_0002', 's110_0002', 's119_0004'], ['s73_0004', 's85_0007']
 
 
 def get_cell_ids_bursty():

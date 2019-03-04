@@ -7,8 +7,8 @@ from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_for_all_grid_cells
 from grid_cell_stimuli import get_AP_max_idxs
 from cell_characteristics import to_idx
 from analyze_in_vivo.analyze_domnisoru.position_vs_firing_rate import get_spike_train, smooth_firing_rate
+from analyze_in_vivo.analyze_domnisoru import perform_kde, evaluate_kde
 from grid_cell_stimuli.ISI_hist import get_ISIs
-import scipy.stats as st
 import warnings
 import time
 from grid_cell_stimuli.ISI_hist import get_cumulative_ISI_hist, plot_cumulative_ISI_hist_all_cells_with_bursty, \
@@ -71,8 +71,9 @@ def get_autocorrelation_by_ISIs(ISIs, max_lag=50, bin_width=1, remove_zero=True,
     autocorr = np.histogram(SIs, bins=bins)[0]
     t_autocorr = np.arange(-max_lag, max_lag + bin_width, bin_width)
 
+    # control: autocorr is symmetric
     # half_len = int((len(autocorr) - 1) / 2)
-    # assert np.all(autocorr[half_len+1:] == autocorr[:half_len][::-1])  # control: autocorr must be symmetric
+    # assert np.all(autocorr[half_len+1:] == autocorr[:half_len][::-1])
 
     if remove_zero:
         autocorr[to_idx(max_lag, bin_width)] = 0
@@ -114,9 +115,10 @@ if __name__ == '__main__':
 
     # parameters
     bin_width = 1  # ms
-    max_lag = 200
-    sigma_smooth = 1  # ms  None for no smoothing
-    dt_kernel = 0.05  # ms (same as dt data as lower bound for precision)
+    max_lag = 50
+    sigma_smooth = None  # ms  None for no smoothing
+    dt_kde = 0.05  # ms (same as dt data as lower bound for precision)
+    t_kde = np.arange(-max_lag, max_lag + dt_kde, dt_kde)
     use_AP_max_idxs_domnisoru = True
     save_dir_img = os.path.join(save_dir_img, cell_type)
 
@@ -125,8 +127,8 @@ if __name__ == '__main__':
 
     # main
     autocorr_cells = np.zeros((len(cell_ids), int(2 * max_lag / bin_width + 1)))
-    autocorr_kernel_cells = np.zeros((len(cell_ids), int(2 * max_lag / dt_kernel + 1)))
-    kernel_cells = np.zeros(len(cell_ids), dtype=object)
+    autocorr_kde_cells = np.zeros((len(cell_ids), int(2 * max_lag / dt_kde + 1)))
+    kde_cells = np.zeros(len(cell_ids), dtype=object)
     peak_autocorr = np.zeros(len(cell_ids))
     theta_power = np.zeros(len(cell_ids))
     SIs_cells = np.zeros(len(cell_ids), dtype=object)
@@ -151,22 +153,19 @@ if __name__ == '__main__':
         ISIs = get_ISIs(AP_max_idxs, t)
 
         # get autocorrelation
-        autocorr_cells[cell_idx, :], t_auto_corr, bins = get_autocorrelation_by_ISIs(ISIs, max_lag=max_lag,
-                                                                                     bin_width=bin_width)
+        autocorr_cells[cell_idx, :], t_autocorr, bins = get_autocorrelation_by_ISIs(ISIs, max_lag=max_lag,
+                                                                                    bin_width=bin_width)
 
         # compute KDE
-        ISIs_cum = np.cumsum(ISIs)
-        SIs = get_all_SIs(ISIs_cum)
+        SIs = get_all_SIs(np.cumsum(ISIs))
         SIs = SIs[np.abs(SIs) <= max_lag]
         SIs = SIs[SIs != 0]
         SIs_one_sided = SIs[SIs >= 0]
         SIs_cells[cell_idx] = SIs_one_sided
         cum_SI_hist_y[cell_idx], cum_SI_hist_x[cell_idx] = get_cumulative_ISI_hist(SIs_one_sided)
         if sigma_smooth is not None:
-            kernel = st.gaussian_kde(SIs, bw_method=np.sqrt(sigma_smooth/np.cov(SIs)))
-            kernel_cells[cell_idx] = kernel
-            t_kernel = np.arange(-max_lag, max_lag + dt_kernel, dt_kernel)
-            autocorr_kernel_cells[cell_idx, :] = kernel_cells[cell_idx].pdf(t_kernel)
+            kde_cells[cell_idx] = perform_kde(SIs, sigma_smooth)
+            autocorr_kde_cells[cell_idx, :] = evaluate_kde(t_kde, kde_cells[cell_idx])
 
         # pl.figure()
         # pl.bar(bins[:-1], autocorr_cells[cell_idx, :], bin_width, color='r', align='center', alpha=0.5)
@@ -180,11 +179,11 @@ if __name__ == '__main__':
 
         # get peak of autocorr
         if sigma_smooth is not None:
-            max_lag_idx = to_idx(max_lag, dt_kernel)
-            peak_autocorr[cell_idx] = t_kernel[max_lag_idx:][np.argmax(autocorr_kernel_cells[cell_idx, max_lag_idx:])]
+            max_lag_idx = to_idx(max_lag, dt_kde)
+            peak_autocorr[cell_idx] = t_kde[max_lag_idx:][np.argmax(autocorr_kde_cells[cell_idx, max_lag_idx:])]
         else:
             max_lag_idx = to_idx(max_lag, bin_width)
-            peak_autocorr[cell_idx] = t_auto_corr[max_lag_idx:][np.argmax(autocorr_cells[cell_idx, max_lag_idx:])]
+            peak_autocorr[cell_idx] = t_autocorr[max_lag_idx:][np.argmax(autocorr_cells[cell_idx, max_lag_idx:])]
 
         # # compute power in the theta range of FFT(auto_corr)
         # smooth_auto_corr = smooth_firing_rate(autocorr_cells[cell_idx], std=1.0, window_size=3)
@@ -222,7 +221,7 @@ if __name__ == '__main__':
     # save autocorrelation
     if sigma_smooth is not None:
         np.save(os.path.join(save_dir_img, 'autocorr_' + str(max_lag) + '_' + str(bin_width) + '_'+str(
-            sigma_smooth) + '.npy'), autocorr_kernel_cells)
+            sigma_smooth) + '.npy'), autocorr_kde_cells)
         np.save(os.path.join(save_dir_img, 'peak_autocorr_' + str(max_lag) + '_' + str(bin_width) + '_' + str(
                 sigma_smooth) + '.npy'), peak_autocorr)
     else:
@@ -245,20 +244,20 @@ if __name__ == '__main__':
                                                    cum_SI_hist_y_avg_bursty, cum_SI_hist_x_avg_bursty,
                                                    cum_SI_hist_y_avg_nonbursty, cum_SI_hist_x_avg_nonbursty,
                                                    cell_ids, burst_label, max_lag, None)
-    pl.show()
+    #pl.show()
 
     params = {'legend.fontsize': 9}
     pl.rcParams.update(params)
 
     if sigma_smooth is not None:
-        plot_kwargs = dict(t_auto_corr=t_auto_corr, auto_corr_cells=autocorr_cells, bin_size=bin_width,
-                           max_lag=max_lag, kernel_cells=kernel_cells)
+        plot_kwargs = dict(t_auto_corr=t_autocorr, auto_corr_cells=autocorr_cells, bin_size=bin_width,
+                           max_lag=max_lag, kernel_cells=kde_cells)
         plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_autocorrelation_with_kde, plot_kwargs,
                                 xlabel='Time (ms)', ylabel='Spike-time \nautocorrelation', colors_marker=colors_marker,
                                 save_dir_img=os.path.join(save_dir_img, 'autocorr_' + str(max_lag) +'_' + str(
                                     bin_width) + '_' + str(sigma_smooth) + '.png'))
     else:
-        plot_kwargs = dict(t_auto_corr=t_auto_corr, auto_corr_cells=autocorr_cells, bin_size=bin_width,
+        plot_kwargs = dict(t_auto_corr=t_autocorr, auto_corr_cells=autocorr_cells, bin_size=bin_width,
                            max_lag=max_lag)
         plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_autocorrelation, plot_kwargs,
                                 xlabel='Time (ms)', ylabel='Spike-time \nautocorrelation', colors_marker=colors_marker,

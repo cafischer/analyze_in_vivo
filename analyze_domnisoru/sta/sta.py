@@ -89,7 +89,6 @@ if __name__ == '__main__':
         os.makedirs(save_dir_img)
 
     # main
-    DAP_deflections = {}
     sta_mean_cells = np.zeros(len(cell_ids), dtype=object)
     sta_std_cells = np.zeros(len(cell_ids), dtype=object)
     v_hist_cells = np.zeros(len(cell_ids), dtype=object)

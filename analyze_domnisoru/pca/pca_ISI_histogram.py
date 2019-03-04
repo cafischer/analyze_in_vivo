@@ -7,7 +7,7 @@ from sklearn.cluster import KMeans
 from cell_characteristics import to_idx
 from analyze_in_vivo.load.load_domnisoru import load_cell_ids, get_cell_ids_DAP_cells, get_celltype_dict, get_cell_ids_bursty
 from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_with_markers
-from analyze_in_vivo.analyze_domnisoru.isi.ISI_hist import get_ISI_hist_peak_width
+from analyze_in_vivo.analyze_domnisoru.isi.ISI_hist import get_ISI_hist_peak_and_width
 from matplotlib.patches import Patch
 from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_for_all_grid_cells
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes, mark_inset
@@ -112,8 +112,8 @@ if __name__ == '__main__':
         peak_ISI_hist = np.zeros(len(cell_ids))
         width_at_half_max = np.zeros(len(cell_ids))
         for cell_idx, cell_id in enumerate(cell_ids):
-            peak_ISI_hist[cell_idx], width_at_half_max[cell_idx] = get_ISI_hist_peak_width(back_transformed[cell_idx],
-                                                                                           np.arange(0, max_ISI+dt_kernel, dt_kernel))
+            peak_ISI_hist[cell_idx], width_at_half_max[cell_idx] = get_ISI_hist_peak_and_width(back_transformed[cell_idx],
+                                                                                               np.arange(0, max_ISI+dt_kernel, dt_kernel))
 
         burst_row = ['B' if l else 'N-B' for l in burst_label]
         df = pd.DataFrame(data=np.vstack((peak_ISI_hist, width_at_half_max, burst_row)).T,
