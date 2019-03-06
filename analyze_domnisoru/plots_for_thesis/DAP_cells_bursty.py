@@ -6,8 +6,8 @@ import matplotlib.gridspec as gridspec
 from grid_cell_stimuli.ISI_hist import get_ISIs, get_ISI_hist, get_cumulative_ISI_hist
 from analyze_in_vivo.load.load_domnisoru import get_cell_ids_DAP_cells, load_data, get_celltype_dict, load_cell_ids
 from analyze_in_vivo.analyze_domnisoru.position_vs_firing_rate import get_spike_train
-from analyze_in_vivo.analyze_domnisoru.spike_time_autocorrelation import get_autocorrelation, change_bin_size_of_spike_train
-from analyze_in_vivo.analyze_domnisoru.plot_utils import get_cell_id_with_marker, plot_with_markers
+from analyze_in_vivo.analyze_domnisoru.autocorr.spike_time_autocorrelation import get_autocorrelation, change_bin_size_of_spike_train
+from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_with_markers
 from cell_characteristics import to_idx
 pl.style.use('paper_subplots')
 

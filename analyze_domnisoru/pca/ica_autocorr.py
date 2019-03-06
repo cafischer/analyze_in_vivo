@@ -5,10 +5,9 @@ from sklearn.cluster import KMeans
 from cell_characteristics import to_idx
 from analyze_in_vivo.load.load_domnisoru import load_cell_ids, get_cell_ids_DAP_cells, get_celltype_dict
 from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_with_markers
-from matplotlib.pyplot import Line2D
 from matplotlib.patches import Patch
 from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_for_all_grid_cells
-from analyze_in_vivo.analyze_domnisoru.spike_time_autocorrelation import plot_autocorrelation
+from analyze_in_vivo.analyze_domnisoru.autocorr.spike_time_autocorrelation import plot_autocorrelation
 from sklearn.decomposition import FastICA
 pl.style.use('paper_subplots')
 

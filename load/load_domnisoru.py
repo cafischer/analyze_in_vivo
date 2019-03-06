@@ -161,7 +161,7 @@ if __name__ == '__main__':
     # grid_cell_name = grid_cell_names[3]
     # print grid_cell_name
     # param_list = ['Vm_ljpc', 'Y_cm']
-    # data = load_data(grid_cell_name, param_list, save_dir)
+    # data = load_ISIs(grid_cell_name, param_list, save_dir)
     #
     # fig, axes = pl.subplots(1, 1, sharex='all')
     # axes.plot(np.arange(len(data['Vm_ljpc'])) * data['dt'] / 1000., data['Vm_ljpc'], 'k')

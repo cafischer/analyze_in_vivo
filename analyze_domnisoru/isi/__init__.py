@@ -2,6 +2,28 @@ import numpy as np
 import matplotlib.pyplot as pl
 
 
+def get_ISI_hist_peak_and_width(ISI_hist, t_hist):
+    peak_idx = np.argmax(ISI_hist)
+    peak_ISI_hist = t_hist[peak_idx]
+    half_max = ISI_hist[peak_idx] / 2.
+
+    root1_idx = np.nonzero(np.diff(np.sign(ISI_hist[:peak_idx] - half_max
+                                           + np.spacing(ISI_hist[:peak_idx] - half_max))) == 2)[0][-1]
+    root2_idx = np.nonzero(np.diff(np.sign(ISI_hist[peak_idx:] - half_max
+                                           + np.spacing(ISI_hist[peak_idx:] - half_max))) == -2)[0][0] + peak_idx
+    root1 = t_hist[root1_idx]
+    root2 = t_hist[root2_idx]
+    width_at_half_max = root2 - root1
+
+    # for visualization
+    # pl.figure()
+    # pl.plot(t_hist, ISI_hist, 'k')
+    # pl.plot(peak_ISI_hist, ISI_hist[peak_idx], 'or')
+    # pl.plot([root1, root2], [ISI_hist[root1_idx], ISI_hist[root2_idx]], 'r', linewidth=2)
+    # pl.show()
+    return peak_ISI_hist, width_at_half_max
+
+
 def plot_ISI_hist_on_ax(ax, cell_idx, ISI_hist, cum_ISI_hist_x, cum_ISI_hist_y, max_ISI, bin_width):
     bins = np.arange(0, max_ISI + bin_width, bin_width)
     ax.bar(bins[:-1], ISI_hist[cell_idx, :] / (np.sum(ISI_hist[cell_idx, :]) * bin_width),

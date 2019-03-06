@@ -2,14 +2,14 @@ from __future__ import division
 import matplotlib.pyplot as pl
 import numpy as np
 import os
-from grid_cell_stimuli.ISI_hist import get_ISIs, get_cumulative_ISI_hist
+from grid_cell_stimuli.ISI_hist import get_ISIs
 from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data, get_celltype_dict
 from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_for_all_grid_cells_grid
 from analyze_in_vivo.analyze_domnisoru.check_basic.in_out_field import get_starts_ends_group_of_ones
-from analyze_in_vivo.analyze_domnisoru.spike_time_autocorrelation import get_autocorrelation, change_bin_size_of_spike_train
+from analyze_in_vivo.analyze_domnisoru.autocorr.spike_time_autocorrelation import get_autocorrelation, change_bin_size_of_spike_train
 from analyze_in_vivo.analyze_domnisoru.position_vs_firing_rate import get_spike_train
 from cell_characteristics import to_idx
-import warnings
+
 pl.style.use('paper')
 
 

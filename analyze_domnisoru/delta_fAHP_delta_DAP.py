@@ -8,19 +8,22 @@ from cell_characteristics import to_idx
 from cell_fitting.optimization.evaluation import get_spike_characteristics_dict
 from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_with_markers
 from cell_fitting.util import init_nan
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 pl.style.use('paper_subplots')
 
 
 if __name__ == '__main__':
+    save_dir_img_paper = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/paper'
     save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/STA'
     save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
     cell_type = 'grid_cells'
-    cell_ids = load_cell_ids(save_dir, cell_type)
+    cell_ids = np.array(load_cell_ids(save_dir, cell_type))
 
     # parameters
     with_selection = True
     use_avg_times = True
     thresh = '1der'
+    AP_thresh_derivative = 3.0
     do_detrend = False
     dt = 0.05
     before_AP = 25  # ms
@@ -28,7 +31,6 @@ if __name__ == '__main__':
     t_vref = 10  # ms
     AP_criterion = {'AP_amp_and_width': (40, 1)}
     t_AP = np.arange(0, after_AP + before_AP + dt, dt) - before_AP
-    AP_thresh_derivative = 3.0
     before_AP_idx = to_idx(before_AP, dt)
     after_AP_idx = to_idx(after_AP, dt)
     param_list = ['Vm_ljpc', 'spiketimes', 'vel_100ms', 'fY_cm', 'fvel_100ms']
@@ -47,6 +49,7 @@ if __name__ == '__main__':
 
     # main
     sta_mean_cells = np.load(os.path.join(save_dir_img, 'sta_mean.npy'))
+    t_sta = np.arange(-before_AP, after_AP+dt, dt)
 
     AP_max_idx_cells = init_nan(len(cell_ids))
     fAHP_min_idx_cells = init_nan(len(cell_ids))
@@ -134,8 +137,43 @@ if __name__ == '__main__':
     # ax.set_ylim(-4.0, 2.5)
     for i in range(len(cell_ids)):
         ax.annotate(cell_ids[i], xy=(v_rest_fAHP[i] + 0.09, v_DAP_fAHP[i] + 0.06), fontsize=6)
+
+    # example 1
+    axins = inset_axes(ax, width='20%', height='20%', loc='lower left', bbox_to_anchor=(0.05, 0.31, 1, 1),
+                       bbox_transform=ax.transAxes)
+    i = np.where(cell_ids == 's76_0002')[0][0]
+    axins.plot(t_sta, sta_mean_cells[i], color='k')
+    axins.set_ylim(-70, 0)
+    # axins.set_xticks([])
+    # axins.set_xticklabels([-max_lag, 0, max_lag], fontsize=10)
+    axins.set_xlabel('Time (ms)', fontsize=10)
+    axins.set_ylabel('$STA_V$ (mV)', fontsize=10)
+
+    # example 2
+    axins = inset_axes(ax, width='20%', height='20%', loc='lower left', bbox_to_anchor=(0.05, 0.04, 1, 1),
+                       bbox_transform=ax.transAxes)
+    i = np.where(cell_ids == 's109_0002')[0][0]
+    axins.plot(t_sta, sta_mean_cells[i], color='k')
+    axins.set_ylim(-70, 0)
+    # axins.set_xticks([])
+    # axins.set_xticklabels([-max_lag, 0, max_lag], fontsize=10)
+    axins.set_xlabel('Time (ms)', fontsize=10)
+    axins.set_ylabel('$STA_V$ (mV)', fontsize=10)
+
+    # example 3
+    axins = inset_axes(ax, width='20%', height='20%', loc='lower left', bbox_to_anchor=(0.33, 0.04, 1, 1),
+                       bbox_transform=ax.transAxes)
+    i = np.where(cell_ids == 's84_0002')[0][0]
+    axins.plot(t_sta, sta_mean_cells[i], color='k')
+    axins.set_ylim(-70, 0)
+    # axins.set_xticks([])
+    # axins.set_xticklabels([-max_lag, 0, max_lag], fontsize=10)
+    axins.set_xlabel('Time (ms)', fontsize=10)
+    axins.set_ylabel('$STA_V$ (mV)', fontsize=10)
+
+
     pl.tight_layout()
     name_add = 'with_selection' if with_selection else 'without_selection'
     name_add2 = 'avg_times' if use_avg_times else 'not_avg_times'
-    pl.savefig(os.path.join(save_dir_img, 'delta_fAHP_delta_DAP_'+name_add+'_'+name_add2+'_'+thresh+'.png'))
+    pl.savefig(os.path.join(save_dir_img_paper, 'delta_fAHP_delta_DAP_'+name_add+'_'+name_add2+'_'+thresh+'.png'))
     pl.show()

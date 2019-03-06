@@ -15,7 +15,8 @@ pl.style.use('paper_subplots')
 
 save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/paper'
 save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
-save_dir_ISI_hist = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/ISI_hist/cut_ISIs_at_200/grid_cells'
+save_dir_ISI_hist = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/ISI_hist'
+save_dir_ISI_hist_latuske = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/latuske/ISI/ISI_hist'
 save_dir_n_spikes_in_burst = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/bursting/grid_cells'
 save_dir_ISI_return_map = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/ISI_return_map/cut_ISIs_at_200/grid_cells'
 save_dir_sta = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/STA/good_AP_criterion/not_detrended'
@@ -29,14 +30,24 @@ if not os.path.exists(save_dir_img):
 color_burst1 = 'y'
 color_burst2 = 'r'
 color_nonburst = 'b'
+max_ISI = 200
+bin_width = 1
+sigma_smooth = 1
 ISI_burst = 8  # ms
 before_AP = 25
 after_AP = 25
 t_vref = 10
 dt = 0.05
 AP_criterion = {'AP_amp_and_width': (40, 1)}
+remove_cells = True
 
-fraction_burst = np.load(os.path.join(save_dir_ISI_hist, 'fraction_burst.npy'))
+folder = 'max_ISI_' + str(max_ISI) + '_bin_width_' + str(bin_width) + '_sigma_smooth_' + str(sigma_smooth)
+
+peak_ISI_hist = np.load(os.path.join(save_dir_ISI_hist, folder, 'peak_ISI_hist.npy'))
+width_ISI_hist = np.load(os.path.join(save_dir_ISI_hist, folder, 'width_at_half_ISI_peak.npy'))
+peak_ISI_hist_latuske = np.load(os.path.join(save_dir_ISI_hist_latuske, folder, 'peak_ISI_hist.npy'))
+width_ISI_hist_latuske = np.load(os.path.join(save_dir_ISI_hist_latuske, folder, 'width_at_half_ISI_peak.npy'))
+fraction_burst = np.load(os.path.join(save_dir_ISI_hist, folder, 'fraction_burst.npy'))
 fraction_single = np.load(os.path.join(save_dir_n_spikes_in_burst, 'fraction_single_' + str(ISI_burst) + '.npy'))
 fraction_ISI_or_ISI_next_burst = np.load(os.path.join(save_dir_ISI_return_map, 'fraction_ISI_or_ISI_next_burst.npy'))
 folder_name = AP_criterion.keys()[0] + str(AP_criterion.values()[0]) \
@@ -68,20 +79,18 @@ _, p_val_fraction_ISI_or_ISI_next_burst = ttest_ind(fraction_ISI_or_ISI_next_bur
 n_bursty = sum(burst_label)
 n_nonbursty = sum(~burst_label)
 
-fig, axes = pl.subplots(2, 5, figsize=(8.5, 4))
-n_cols = 5
-outer = gridspec.GridSpec(2, n_cols, wspace=0.3, hspace=0.43)
+fig = pl.figure(figsize=(7.5, 8))
+n_cols = 4
+outer = gridspec.GridSpec(2, n_cols, hspace=0.13, wspace=0.6)
 
 data = [fraction_burst, fraction_single, fraction_ISI_or_ISI_next_burst, vdiff_onset_start]
 ylabels = ['Fraction ISIs $\leq$ 8ms', 'Fraction single spikes', 'Fraction ISI[n] or ISI[n+1] $\leq$ 8ms',
-           'Linear slope of the mem. pot. from 0 to AP onset (mV/ms)']
+           'Linear slope before AP (mV/ms)']
 letters = ['A', 'B', 'C', 'D']
 
-for i in range(n_cols - 1):
-    inner = gridspec.GridSpecFromSubplotSpec(1, 1, subplot_spec=outer[0, i])
-    ax = pl.Subplot(fig, inner[0])
+for i in range(n_cols):
+    ax = pl.Subplot(fig, outer[0, i])
     fig.add_subplot(ax)
-
     plot_with_markers(ax, -np.ones(n_bursty), data[i][burst1_label], cell_ids[burst1_label], cell_type_dict,
                       edgecolor=color_burst1, theta_cells=theta_cells, legend=False)
     plot_with_markers(ax, np.zeros(n_bursty), data[i][burst2_label], cell_ids[burst2_label], cell_type_dict,
@@ -89,15 +98,15 @@ for i in range(n_cols - 1):
     handles = plot_with_markers(ax, np.ones(n_nonbursty), data[i][~burst_label], cell_ids[~burst_label], cell_type_dict,
                       edgecolor=color_nonburst, theta_cells=theta_cells, legend=False)
     ax.set_xticks([-1, 0, 1])
-    ax.set_xticklabels(['B1', 'B2', 'N-B'])
+    ax.set_xticklabels(['B+D', 'B', 'N-B'])
 
     ax.set_xlim([-1.5, 1.5])
-    ax.set_ylim([0, 1.1])
+    if i < 3:
+        ax.set_ylim([0, 1.1])
     ax.set_ylabel(ylabels[i])
     ax.text(-0.5, 1.0, letters[i], transform=ax.transAxes, size=18, weight='bold')
 
-inner = gridspec.GridSpecFromSubplotSpec(1, 1, subplot_spec=outer[0, -1])
-ax = pl.Subplot(fig, inner[0])
+ax = pl.Subplot(fig, outer[1, -1])
 fig.add_subplot(ax)
 handles += [Patch(color=color_burst1, label='Bursty+DAP'), Patch(color=color_burst2, label='Bursty'), 
             Patch(color=color_nonburst, label='Non-bursty')]
@@ -108,13 +117,33 @@ ax.set_xticks([])
 ax.set_yticks([])
 
 # scatterplot
-inner = gridspec.GridSpecFromSubplotSpec(1, 1, subplot_spec=outer[1, :])
-ax = pl.Subplot(fig, inner[0])
+ax = pl.Subplot(fig, outer[1, :-1])
 fig.add_subplot(ax)
 
-ax.plot(fraction_single, fraction_burst, 'ok')  # TODO
+if remove_cells:
+    burst1_label[np.where(cell_ids == 's104_0007')[0][0]] = False  # take out because not enough spikes
+    burst1_label[np.where(cell_ids == 's110_0002')[0][0]] = False  # take out because not enough spikes
+
+ax.plot(peak_ISI_hist_latuske, width_ISI_hist_latuske, 'k', marker='d', linestyle='', markerfacecolor='None')
+plot_with_markers(ax, peak_ISI_hist[burst1_label], width_ISI_hist[burst1_label], cell_ids[burst1_label], cell_type_dict,
+                  edgecolor=color_burst1, theta_cells=theta_cells, legend=False)
+plot_with_markers(ax, peak_ISI_hist[burst2_label], width_ISI_hist[burst2_label], cell_ids[burst2_label], cell_type_dict,
+                  edgecolor=color_burst2, theta_cells=theta_cells, legend=False)
+plot_with_markers(ax, peak_ISI_hist[~burst_label], width_ISI_hist[~burst_label], cell_ids[~burst_label], cell_type_dict,
+                            edgecolor=color_nonburst, theta_cells=theta_cells, legend=False)
+
+# for i in range(len(cell_ids)):
+#     ax.annotate(cell_ids[i], xy=(peak_ISI_hist[i], width_ISI_hist[i]))
+
+ax.set_yscale('log', basey=2)
+ax.set_xscale('log', basex=2)
+ax.set_ylim(1, None)
+ax.set_xlim(1, None)
+ax.set_ylabel('Width of the ISI hist. at half max. (ms)')
+ax.set_xlabel('Location of the ISI hist. peak (ms)')
+ax.text(-0.5, 1.0, 'E', transform=ax.transAxes, size=18, weight='bold')
 
 pl.tight_layout()
-#pl.subplots_adjust(top=0.95, left=0.08, right=1.0, bottom=0.08)
+pl.subplots_adjust(top=0.97, left=0.09, right=0.99, bottom=0.07)
 pl.savefig(os.path.join(save_dir_img, 'difference_bursty_nonbursty_3groups.png'))
 pl.show()

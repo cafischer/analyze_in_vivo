@@ -1,19 +1,17 @@
 import numpy as np
 import matplotlib.pyplot as pl
-from matplotlib.pyplot import Line2D
 from matplotlib.patches import Patch
 import matplotlib.gridspec as gridspec
-from mpl_toolkits.mplot3d import Axes3D
-from mpl_toolkits.mplot3d import proj3d
-from mpl_toolkits.axes_grid1.inset_locator import inset_axes, mark_inset
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import os
 from sklearn.decomposition import PCA
-from sklearn.cluster import KMeans, DBSCAN, SpectralClustering
+from sklearn.cluster import KMeans
 from cell_characteristics import to_idx
 from analyze_in_vivo.load.load_domnisoru import load_cell_ids, get_cell_ids_DAP_cells, get_celltype_dict, get_cell_ids_bursty
 from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_with_markers
 from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_for_all_grid_cells
-from analyze_in_vivo.analyze_domnisoru.spike_time_autocorrelation import plot_autocorrelation
+from analyze_in_vivo.analyze_domnisoru.autocorr.spiketime_autocorr import plot_autocorrelation
+from analyze_in_vivo.analyze_domnisoru.pca import perform_PCA
 pl.style.use('paper_subplots')
 
 
@@ -37,7 +35,7 @@ def plot_pca_projection_for_thesis(save_dir_img=None):
     left, bottom, width, height = [0.5, 0.75, 0.2, 0.2]
     axins = fig.add_axes([left, bottom, width, height])
     i = np.where(cell_ids == 's79_0003')[0][0]
-    axins.bar(t_autocorr, auto_corr_cells[i], bin_width, color='r', align='center')
+    axins.bar(t_autocorr, autocorr_cells[i], bin_width, color='r', align='center')
     ax.annotate('', xy=(projected[i, 0], projected[i, 1]), xytext=(left, bottom),
                 xycoords='data', textcoords='figure fraction',
                 arrowprops=dict(arrowstyle="-", color='0.5', linewidth=0.75))
@@ -52,7 +50,7 @@ def plot_pca_projection_for_thesis(save_dir_img=None):
     left, bottom, width, height = [0.2, 0.75, 0.2, 0.2]
     axins = fig.add_axes([left, bottom, width, height])
     i = np.where(cell_ids == 's85_0007')[0][0]
-    axins.bar(t_autocorr, auto_corr_cells[i], bin_width, color='b', align='center')
+    axins.bar(t_autocorr, autocorr_cells[i], bin_width, color='b', align='center')
     ax.annotate('', xy=(projected[i, 0], projected[i, 1]), xytext=(left, bottom),
                 xycoords='data', textcoords='figure fraction',
                 arrowprops=dict(arrowstyle="-", color='0.5', linewidth=0.75))
@@ -152,7 +150,7 @@ def plot_pca_projection_slides(save_dir_img=None):
         pl.savefig(os.path.join(save_dir_img, 'pca_autocorrelation_no_examples.png'))
 
 
-def plot_pca_projection_for_paper():
+def plot_pca_projection_for_paper(save_dir_img):
     fig = pl.figure(figsize=(7, 7))
     outer = gridspec.GridSpec(2, 1, height_ratios=[2, 1], hspace=0.27)
 
@@ -165,7 +163,7 @@ def plot_pca_projection_for_paper():
     axins = inset_axes(ax, width='20%', height='20%', loc='upper left', bbox_to_anchor=(0.06, 0, 1, 1),
                        bbox_transform=ax.transAxes)
     i = np.where(cell_ids == 's84_0002')[0][0]
-    axins.bar(t_autocorr, auto_corr_cells[i], bin_width, color='b', align='center')
+    axins.bar(t_autocorr, autocorr_cells[i], bin_width, color='b', align='center')
     axins.set_yticks([])
     axins.set_xticks([-max_lag, 0, max_lag])
     axins.set_xticklabels([-max_lag, 0, max_lag], fontsize=10)
@@ -174,8 +172,8 @@ def plot_pca_projection_for_paper():
 
     # example 2
     axins = inset_axes(ax, width='20%', height='20%', loc='upper right')  # bbox_to_anchor=(0.7, 0.7, 1.0, 1.0)
-    i = np.where(cell_ids == 's73_0004')[0][0]
-    axins.bar(t_autocorr, auto_corr_cells[i], bin_width, color='r', align='center')
+    i = np.where(cell_ids == 's109_0002')[0][0]
+    axins.bar(t_autocorr, autocorr_cells[i], bin_width, color='r', align='center')
     axins.set_yticks([])
     axins.set_xticks([-max_lag, 0, max_lag])
     axins.set_xticklabels([-max_lag, 0, max_lag], fontsize=10)
@@ -185,7 +183,7 @@ def plot_pca_projection_for_paper():
     # example 3
     axins = inset_axes(ax, width='20%', height='20%', loc='center right')  # bbox_to_anchor=(0.7, 0.7, 1.0, 1.0)
     i = np.where(cell_ids == 's76_0002')[0][0]
-    axins.bar(t_autocorr, auto_corr_cells[i], bin_width, color='r', align='center')
+    axins.bar(t_autocorr, autocorr_cells[i], bin_width, color='r', align='center')
     axins.set_yticks([])
     axins.set_xticks([-max_lag, 0, max_lag])
     axins.set_xticklabels([-max_lag, 0, max_lag], fontsize=10)
@@ -208,9 +206,9 @@ def plot_pca_projection_for_paper():
     for n_component in range(n_components):
         ax = pl.Subplot(fig, inner[n_component])
         fig.add_subplot(ax)
-        ax.bar(t_autocorr, pca.components_[n_component, :], bin_width, color='k', align='center')
+        ax.bar(t_autocorr, components[n_component, :], bin_width, color='k', align='center')
         ax.annotate('Explained var.: %i' % np.round(
-                                pca.explained_variance_ratio_[n_component] * 100) + '%',
+                                explained_var[n_component] * 100) + '%',
                     xy=(0.05, 1.1), xycoords='axes fraction', ha='left', va='top', fontsize=10,  # xy=((0.05, 0.96))
                     bbox=dict(boxstyle='round', fc='w', alpha=0.2))
         ax.set_xlabel('Lag (ms)')
@@ -254,18 +252,12 @@ def plot_backtransformed(save_dir_img=None):
                             save_dir_img=save_dir_img_file)
 
 
-def perform_PCA(data_centered, n_components):
-    pca = PCA(n_components=n_components)
-    pca.fit(auto_corr_cells_for_pca)
-    projection = pca.transform(data_centered)
-    return projection, pca.components_, pca.explained_variance_ratio_
-
-
 if __name__ == '__main__':
+    save_dir_img_paper = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/paper'
     save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
-    save_dir_auto_corr = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/spike_time_auto_corr'
+    save_dir_autocorr = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/autocorr'
     cell_type = 'grid_cells'
-    save_dir_img = os.path.join(save_dir_auto_corr, cell_type, 'PCA')
+    save_dir_img = os.path.join(save_dir_autocorr, 'PCA')
     #save_dir_img = '/home/cf/Dropbox/thesis/figures_results'
     max_lag = 50
     bin_width = 1  # ms
@@ -285,14 +277,11 @@ if __name__ == '__main__':
         os.makedirs(save_dir_img)
 
     # load
+    folder = 'max_lag_' + str(max_lag) + '_bin_width_' + str(bin_width) + '_sigma_smooth_' + str(sigma_smooth)
+    autocorr_cells = np.load(os.path.join(save_dir_autocorr, folder, 'autocorr.npy'))
     if sigma_smooth is not None:
-        auto_corr_cells = np.load(
-            os.path.join(save_dir_auto_corr, cell_type,
-                         'autocorr_' + str(max_lag) + '_' + str(bin_width) + '_' + str(sigma_smooth) + '.npy'))
         t_autocorr = np.arange(-max_lag_idx, max_lag_idx + dt_kde, dt_kde)
     else:
-        auto_corr_cells = np.load(os.path.join(save_dir_auto_corr, cell_type,
-                                               'autocorr_' + str(max_lag) +'_' + str(bin_width) + '.npy'))
         t_autocorr = np.arange(-max_lag_idx, max_lag_idx + bin_width, bin_width)
 
     # PCA
@@ -302,10 +291,10 @@ if __name__ == '__main__':
         idxs = range(len(cell_ids))
         idxs.remove(idx_s104_0007)
         idxs.remove(idx_s110_0002)
-        auto_corr_cells_for_pca = auto_corr_cells[np.array(idxs)]
+        auto_corr_cells_for_pca = autocorr_cells[np.array(idxs)]
     else:
-        auto_corr_cells_for_pca = auto_corr_cells
-    auto_corr_cells_centered = auto_corr_cells - np.mean(auto_corr_cells_for_pca, 0)
+        auto_corr_cells_for_pca = autocorr_cells
+    auto_corr_cells_centered = autocorr_cells - np.mean(auto_corr_cells_for_pca, 0)
     projected, components, explained_var = perform_PCA(auto_corr_cells_centered, n_components)
 
     # PCA backtransform
@@ -324,7 +313,7 @@ if __name__ == '__main__':
     # labels = specclus.labels_
 
     # plots
-    plot_pca_projection_for_paper()
+    plot_pca_projection_for_paper(save_dir_img=save_dir_img_paper)
     pl.show()
 
     plot_PCs(n_components, t_autocorr, components, explained_var, max_lag, bin_width,

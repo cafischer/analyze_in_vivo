@@ -19,18 +19,14 @@ if __name__ == '__main__':
     cell_ids = load_cell_ids(save_dir, cell_type)
     cell_type_dict = get_celltype_dict(save_dir)
     param_list = ['Vm_ljpc', 'spiketimes']
-    AP_thresholds = {'s73_0004': -55, 's90_0006': -45, 's82_0002': -35,
-                     's117_0002': -60, 's119_0004': -50, 's104_0007': -55,
-                     's79_0003': -50, 's76_0002': -50, 's101_0009': -45}
     use_AP_max_idxs_domnisoru = True
-    filter_long_ISIs = True
-    max_ISI = 200
+    max_ISI = 200  # None if you want to take all ISIs
     ISI_burst = 8  # ms
-    bin_size = 1.0  # ms
-    steps = np.arange(0, max_ISI + bin_size, bin_size)
-    if filter_long_ISIs:
-        save_dir_img = os.path.join(save_dir_img, 'cut_ISIs_at_' + str(max_ISI))
-    save_dir_img = os.path.join(save_dir_img, cell_type)
+    bin_width = 1.0  # ms
+    steps = np.arange(0, max_ISI + bin_width, bin_width)
+
+    folder = 'max_ISI_' + str(max_ISI) + '_bin_width_' + str(bin_width)
+    save_dir_img = os.path.join(save_dir_img, folder)
     if not os.path.exists(save_dir_img):
         os.makedirs(save_dir_img)
 
@@ -56,14 +52,13 @@ if __name__ == '__main__':
         else:
             AP_max_idxs = get_AP_max_idxs(v, AP_thresholds[cell_id], dt)
         ISIs = get_ISIs(AP_max_idxs, t)
-        if filter_long_ISIs:
+        if max_ISI is not None:
             ISIs = ISIs[ISIs <= max_ISI]
         n_ISIs[cell_idx] = len(ISIs)
         ISIs_per_cell[cell_idx] = ISIs
 
-        fraction_ISI_or_ISI_next_burst[cell_idx] = float(sum(np.logical_or(ISIs_per_cell[cell_idx][:-1] < ISI_burst,
-                                                                           ISIs_per_cell[cell_idx][1:] < ISI_burst))) \
-                                                   / len(ISIs_per_cell[cell_idx][1:])
+        fraction_ISI_or_ISI_next_burst[cell_idx] = float(sum(np.logical_or(ISIs[:-1] < ISI_burst,
+                                                                           ISIs[1:] < ISI_burst))) / len(ISIs[1:])
 
         # running median
         window_size = 5.0  # ms
@@ -82,7 +77,7 @@ if __name__ == '__main__':
         # area under prob_next_ISI_burst
         prob_normed = prob_next_ISI_burst[cell_idx, :] / np.nansum(prob_next_ISI_burst[cell_idx, :])
         cum_prob = np.nancumsum(prob_normed)
-        area_under_curve_cum_prob_next_ISI_burst[cell_idx] = np.sum(cum_prob * bin_size) / (len(cum_prob) * bin_size)
+        area_under_curve_cum_prob_next_ISI_burst[cell_idx] = np.sum(cum_prob * bin_width) / (len(cum_prob) * bin_width)
 
         # save and plot
         save_dir_cell = os.path.join(save_dir_img, cell_type, cell_id)

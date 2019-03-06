@@ -9,6 +9,7 @@ pl.style.use('paper_subplots')
 
 if __name__ == '__main__':
     #save_dir_img = '/home/cf/Dropbox/thesis/figures_results'
+    save_dir_img_paper = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/paper'
     save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/ISI_hist'
 
     save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
@@ -32,7 +33,7 @@ if __name__ == '__main__':
 
     # load stuff
     grid_cells = np.array(load_cell_ids(save_dir, 'grid_cells'))
-    # theta_cells = load_cell_ids(save_dir, 'giant_theta')
+    theta_cells = load_cell_ids(save_dir, 'giant_theta')
     # DAP_cells, DAP_cells_additional = get_cell_ids_DAP_cells()
     DAP_cells = get_cell_ids_DAP_cells(new=True)
     cell_ids_bursty = get_cell_ids_bursty()
@@ -117,10 +118,8 @@ if __name__ == '__main__':
     # pl.subplots_adjust(hspace=0.04)
     # pl.savefig(os.path.join(save_dir_img, 'dap_time_vs_ISI_peak_'+str(max_ISI)+'_'+str(bin_width)+'.png'))
 
-    # for Andreas:
+    # plot for paper
     f, ax = pl.subplots()
-
-    # plot the same data on both axes
     ax.plot(np.arange(0, 20), np.arange(0, 20), '0.5', linestyle='--')
     if sigma_smooth is not None:
         ax.fill_between(np.arange(0, 20), np.arange(0, 20) - sigma_smooth, np.arange(0, 20) + sigma_smooth, color='0.5',
@@ -128,10 +127,9 @@ if __name__ == '__main__':
     else:
         ax.fill_between(np.arange(0, 20), np.arange(0, 20) - bin_width, np.arange(0, 20) + bin_width, color='0.5',
                         alpha=0.15)
-    handles = plot_with_markers(ax, DAP_time[burst_label], peak_ISI_hist[burst_label], grid_cells[burst_label], cell_type_dict,
-                      DAP_cells=DAP_cells, edgecolor='k', legend=False)
+    handles = plot_with_markers(ax, DAP_time[burst_label], peak_ISI_hist[burst_label], grid_cells[burst_label],
+                                cell_type_dict, theta_cells=theta_cells, edgecolor='k', legend=False)
     # plot_with_markers(ax, DAP_time[~burst_label], peak_ISI_hist[~burst_label], grid_cells[~burst_label], cell_type_dict,
-    #                   DAP_cells=DAP_cells,
     #                   edgecolor='b', legend=False)
     ax.set_ylabel('Peak of ISI hist. (ms)')
     ax.set_xlabel('Time$_{AP-DAP}$ (ms)')
@@ -142,8 +140,8 @@ if __name__ == '__main__':
         ax.annotate(grid_cells[i], xy=(DAP_time[i]+0.15, peak_ISI_hist[i]+0.2), fontsize=7)
     pl.tight_layout()
     if sigma_smooth is not None:
-        pl.savefig(os.path.join(save_dir_img, 'dap_time_vs_ISI_peak_' + str(max_ISI) + '_' + str(
+        pl.savefig(os.path.join(save_dir_img_paper, 'dap_time_vs_ISI_peak_' + str(max_ISI) + '_' + str(
             bin_width) + '_' + str(sigma_smooth) + '.png'))
     else:
-        pl.savefig(os.path.join(save_dir_img, 'dap_time_vs_ISI_peak_'+str(max_ISI)+'_'+str(bin_width)+'.png'))
+        pl.savefig(os.path.join(save_dir_img_paper, 'dap_time_vs_ISI_peak_'+str(max_ISI)+'_'+str(bin_width)+'.png'))
     pl.show()
