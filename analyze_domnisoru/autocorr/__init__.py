@@ -67,3 +67,16 @@ def get_all_SIs_lower_max_lag_except_zero(ISIs, max_lag):
     SIs = SIs[np.abs(SIs) <= max_lag]
     SIs = SIs[SIs != 0]
     return SIs
+
+
+def plot_autocorrelation(ax, cell_idx, t_auto_corr, auto_corr_cells, bin_size, max_lag):
+    ax.bar(t_auto_corr, auto_corr_cells[cell_idx], bin_size, color='0.5', align='center')
+    ax.set_xlim(-max_lag, max_lag)
+
+
+def plot_autocorrelation_with_kde(ax, cell_idx, t_auto_corr, auto_corr_cells, bin_size, max_lag, kernel_cells,
+                                  dt_kernel=0.05):
+    ax.bar(t_auto_corr, auto_corr_cells[cell_idx], bin_size, color='0.5', align='center')
+    t_kernel = np.arange(-max_lag, max_lag+dt_kernel, dt_kernel)
+    ax.plot(t_kernel, kernel_cells[cell_idx].pdf(t_kernel), color='k')
+    ax.set_xlim(-max_lag, max_lag)

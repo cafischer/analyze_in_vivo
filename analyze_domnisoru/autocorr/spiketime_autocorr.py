@@ -17,18 +17,6 @@ from analyze_in_vivo.load.load_domnisoru import load_cell_ids, get_celltype_dict
 pl.style.use('paper_subplots')
 
 
-def plot_autocorrelation(ax, cell_idx, t_auto_corr, auto_corr_cells, bin_size, max_lag):
-    ax.bar(t_auto_corr, auto_corr_cells[cell_idx], bin_size, color='0.5', align='center')
-    ax.set_xlim(-max_lag, max_lag)
-
-
-def plot_autocorrelation_with_kde(ax, cell_idx, t_auto_corr, auto_corr_cells, bin_size, max_lag, kernel_cells, dt_kernel=0.01):
-    ax.bar(t_auto_corr, auto_corr_cells[cell_idx], bin_size, color='0.5', align='center')
-    t_kernel = np.arange(-max_lag, max_lag+dt_kernel, dt_kernel)
-    ax.plot(t_kernel, kernel_cells[cell_idx].pdf(t_kernel), color='k')
-    ax.set_xlim(-max_lag, max_lag)
-
-
 if __name__ == '__main__':
     #save_dir_img2 = '/home/cf/Dropbox/thesis/figures_results'
     save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/autocorr'
@@ -40,7 +28,7 @@ if __name__ == '__main__':
 
     # parameters
     bin_width = 1  # ms
-    max_lag = 50
+    max_lag = 12
     sigma_smooth = None  # ms  None for no smoothing
     dt_kde = 0.05  # ms (same as dt data as lower bound for precision)
     t_kde = np.arange(-max_lag, max_lag + dt_kde, dt_kde)
@@ -134,7 +122,7 @@ if __name__ == '__main__':
 
     # table of peak autocorrelations
     burst_row = ['B' if l else 'N-B' for l in burst_label]
-    df = pd.DataFrame(data=[peak_autocorr, burst_row], index=cell_ids, columns=['peak autocorr', 'burst behavior'])
+    df = pd.DataFrame(data=np.vstack([peak_autocorr, burst_row]).T, index=cell_ids, columns=['peak autocorr', 'burst behavior'])
     df.to_csv(os.path.join(save_dir_img, 'peak_autocorr.csv'), index=False)
 
     # plot peak autocorr

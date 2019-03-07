@@ -2,12 +2,13 @@ from __future__ import division
 import matplotlib.pyplot as pl
 import numpy as np
 import os
+import pandas as pd
 from grid_cell_stimuli.ISI_hist import get_ISI_hist, get_cumulative_ISI_hist, plot_ISI_hist, plot_cumulative_ISI_hist, \
     plot_cumulative_ISI_hist_all_cells
 from analyze_in_vivo.load.load_latuske import load_ISIs
-from analyze_in_vivo.analyze_domnisoru.isi import get_ISI_hist_peak_and_width
+from analyze_in_vivo.analyze_domnisoru.isi import get_ISI_hist_peak_and_width, plot_ISI_hist_on_ax
 from analyze_in_vivo.analyze_domnisoru import perform_kde, evaluate_kde
-import pandas as pd
+from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_for_all_grid_cells
 pl.style.use('paper_subplots')
 
 
@@ -18,7 +19,7 @@ if __name__ == '__main__':
     burst_ISI = 8  # ms
     bin_width = 1  # ms
     bins = np.arange(0, max_ISI+bin_width, bin_width)
-    sigma_smooth = 1  # ms  None for no smoothing
+    sigma_smooth = None  # ms  None for no smoothing
     dt_kde = 0.05
     t_kde = np.arange(0, max_ISI + dt_kde, dt_kde)
 
@@ -85,3 +86,18 @@ if __name__ == '__main__':
                       columns=['ISI peak', 'ISI width'], index=range(len(ISIs_cells)))
     df.index.name = 'Cell ids'
     df.to_csv(os.path.join(save_dir_img, 'ISI_distribution.csv'))
+
+    # plot
+    cell_ids = [str(i) for i in range(len(ISIs_cells))]
+    cell_type_dict = {str(i): 'not known' for i in cell_ids}
+    for n in range(int(np.ceil(len(ISIs_cells) / 27.))):
+        end = (n + 1) * 27
+        if end >= len(ISIs_cells):
+            end = len(ISIs_cells)
+        plot_kwargs = dict(ISI_hist=ISI_hist_cells[n * 27:end],
+                           cum_ISI_hist_x=cum_ISI_hist_x[n * 27:end], cum_ISI_hist_y=cum_ISI_hist_y[n * 27:end],
+                           max_ISI=max_ISI, bin_width=bin_width)
+        plot_for_all_grid_cells(cell_ids[n * 27:end], cell_type_dict, plot_ISI_hist_on_ax, plot_kwargs,
+                                xlabel='ISI (ms)', ylabel='Rel. frequency', legend=False, wspace=0.18,
+                                save_dir_img=os.path.join(save_dir_img, 'ISI_hist_' + str(n) + '.png'))
+    pl.show()

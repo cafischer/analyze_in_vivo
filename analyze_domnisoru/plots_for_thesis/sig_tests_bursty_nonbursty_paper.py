@@ -47,6 +47,7 @@ peak_ISI_hist = np.load(os.path.join(save_dir_ISI_hist, folder, 'peak_ISI_hist.n
 width_ISI_hist = np.load(os.path.join(save_dir_ISI_hist, folder, 'width_at_half_ISI_peak.npy'))
 peak_ISI_hist_latuske = np.load(os.path.join(save_dir_ISI_hist_latuske, folder, 'peak_ISI_hist.npy'))
 width_ISI_hist_latuske = np.load(os.path.join(save_dir_ISI_hist_latuske, folder, 'width_at_half_ISI_peak.npy'))
+cell_ids_latuske = [str(i) for i in range(len(peak_ISI_hist_latuske))]
 fraction_burst = np.load(os.path.join(save_dir_ISI_hist, folder, 'fraction_burst.npy'))
 fraction_single = np.load(os.path.join(save_dir_n_spikes_in_burst, 'fraction_single_' + str(ISI_burst) + '.npy'))
 fraction_ISI_or_ISI_next_burst = np.load(os.path.join(save_dir_ISI_return_map, 'fraction_ISI_or_ISI_next_burst.npy'))
@@ -108,7 +109,10 @@ for i in range(n_cols):
 
 ax = pl.Subplot(fig, outer[1, -1])
 fig.add_subplot(ax)
-handles += [Patch(color=color_burst1, label='Bursty+DAP'), Patch(color=color_burst2, label='Bursty'), 
+fig_fake, ax_fake = pl.subplots()
+handle_latuske = [ax_fake.scatter(0, 0, marker='d', edgecolor='k', facecolor='None', label='Latuske')]
+pl.close(fig_fake)
+handles += handle_latuske + [Patch(color=color_burst1, label='Bursty+DAP'), Patch(color=color_burst2, label='Bursty'),
             Patch(color=color_nonburst, label='Non-bursty')]
 ax.legend(handles=handles)
 ax.spines['left'].set_visible(False)
@@ -131,6 +135,9 @@ plot_with_markers(ax, peak_ISI_hist[burst2_label], width_ISI_hist[burst2_label],
                   edgecolor=color_burst2, theta_cells=theta_cells, legend=False)
 plot_with_markers(ax, peak_ISI_hist[~burst_label], width_ISI_hist[~burst_label], cell_ids[~burst_label], cell_type_dict,
                             edgecolor=color_nonburst, theta_cells=theta_cells, legend=False)
+
+for cell_idx, cell_id in enumerate(cell_ids_latuske):
+    ax.annotate(cell_id, xy=(peak_ISI_hist_latuske[cell_idx], width_ISI_hist_latuske[cell_idx]))
 
 # for i in range(len(cell_ids)):
 #     ax.annotate(cell_ids[i], xy=(peak_ISI_hist[i], width_ISI_hist[i]))

@@ -2,10 +2,11 @@ from __future__ import division
 import numpy as np
 import matplotlib.pyplot as pl
 import os
+import pandas as pd
 from analyze_in_vivo.analyze_domnisoru import perform_kde, evaluate_kde
 from analyze_in_vivo.analyze_domnisoru.autocorr import *
 from analyze_in_vivo.load.load_latuske import load_ISIs
-import pandas as pd
+from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_for_all_grid_cells
 pl.style.use('paper_subplots')
 
 
@@ -15,7 +16,7 @@ if __name__ == '__main__':
 
     # parameters
     bin_width = 1  # ms
-    max_lag = 50
+    max_lag = 12
     sigma_smooth = None  # ms  None for no smoothing
     dt_kde = 0.05  # ms (same as dt data as lower bound for precision)
     t_kde = np.arange(-max_lag, max_lag + dt_kde, dt_kde)
@@ -71,3 +72,26 @@ if __name__ == '__main__':
     # table of peak autocorrelations
     df = pd.DataFrame(data=np.array([peak_autocorr]).T, index=np.arange(len(ISIs_cells)), columns=['peak autocorr'])
     df.to_csv(os.path.join(save_dir_img, 'peak_autocorr.csv'))
+
+
+    # plot
+    cell_ids = [str(i) for i in range(len(ISIs_cells))]
+    cell_type_dict = {str(i): 'not known' for i in cell_ids}
+    for n in range(int(np.ceil(len(ISIs_cells) / 27.))):
+        end = (n + 1) * 27
+        if end >= len(ISIs_cells):
+            end = len(ISIs_cells)
+
+        if sigma_smooth is not None:
+            plot_kwargs = dict(t_auto_corr=t_autocorr, auto_corr_cells=autocorr_cells[n * 27:end], bin_size=bin_width,
+                               max_lag=max_lag, kernel_cells=kde_cells[n * 27:end])
+            plot_for_all_grid_cells(cell_ids[n * 27:end], cell_type_dict, plot_autocorrelation_with_kde, plot_kwargs,
+                                    xlabel='Time (ms)', ylabel='Spike-time \nautocorrelation', legend=False,
+                                    save_dir_img=os.path.join(save_dir_img, 'autocorr_'+str(n)+'.png'))
+        else:
+            plot_kwargs = dict(t_auto_corr=t_autocorr, auto_corr_cells=autocorr_cells[n * 27:end], bin_size=bin_width,
+                               max_lag=max_lag)
+            plot_for_all_grid_cells(cell_ids[n * 27:end], cell_type_dict, plot_autocorrelation, plot_kwargs,
+                                    xlabel='Time (ms)', ylabel='Spike-time \nautocorrelation', legend=False,
+                                    save_dir_img=os.path.join(save_dir_img, 'autocorr_'+str(n)+'.png'))
+    pl.show()

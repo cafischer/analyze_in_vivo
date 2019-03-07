@@ -50,3 +50,21 @@ def plot_ISI_hist_on_ax_with_kde(ax, cell_idx, ISI_hist, max_ISI, bin_width,
            bins[1] - bins[0], color='0.5', align='edge')
     t_kernel = np.arange(0, max_ISI+dt_kernel, dt_kernel)
     ax.plot(t_kernel, kernel_cells[cell_idx].pdf(t_kernel), color='k')
+
+
+def plot_ISI_return_map(ax, cell_idx, ISIs_per_cell, max_ISI, median_cells=None, steps_median=None, log_scale=False):
+    if log_scale:
+        ax.loglog(ISIs_per_cell[cell_idx][:-1], ISIs_per_cell[cell_idx][1:], color='0.5',
+                marker='o', linestyle='', markersize=1, alpha=0.5)
+        ax.set_xlim(1, max_ISI)
+        ax.set_ylim(1, max_ISI)
+    else:
+        ax.plot(ISIs_per_cell[cell_idx][:-1], ISIs_per_cell[cell_idx][1:], color='0.5',
+                marker='o', linestyle='', markersize=1, alpha=0.5)
+        ax.set_xlim(0, max_ISI)
+        ax.set_ylim(0, max_ISI)
+        ax.set_xticks(np.arange(0, max_ISI + 50, 50))
+        ax.set_yticks(np.arange(0, max_ISI + 50, 50))
+    ax.set_aspect('equal', adjustable='box-forced')
+    if median_cells is not None:
+        ax.plot(steps_median, median_cells[cell_idx, :], 'k', label='median')
