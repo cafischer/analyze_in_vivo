@@ -27,27 +27,32 @@ def plot_with_markers(ax, x, y, cell_ids, cell_type_dict, z=None, edgecolor='k',
             if cell_ids[cell_idx] in theta_cells and cell_ids[cell_idx] in DAP_cells_additional:
                 hatch = '|||||/////'
 
+        if isinstance(edgecolor, list) or isinstance(edgecolor, np.ndarray):  # TODO
+            ecolor = edgecolor[cell_idx]
+        else:
+            ecolor = edgecolor
+
         if cell_type_dict[cell_ids[cell_idx]] == 'stellate':
             if z is not None:
                 ax.scatter(x[cell_idx], y[cell_idx], z[cell_idx], marker='*', hatch=hatch, s=150, linewidths=0.8,
-                           edgecolor=edgecolor, facecolor=facecolor)
+                           edgecolor=ecolor, facecolor=facecolor)
             else:
                 ax.scatter(x[cell_idx], y[cell_idx], marker='*', hatch=hatch, s=150, linewidths=0.8,
-                           edgecolor=edgecolor, facecolor=facecolor)
+                           edgecolor=ecolor, facecolor=facecolor)
         elif cell_type_dict[cell_ids[cell_idx]] == 'pyramidal':
             if z is not None:
                 ax.scatter(x[cell_idx], y[cell_idx], z[cell_idx], marker='^', hatch=hatch, s=100, linewidths=0.8,
-                           edgecolor=edgecolor, facecolor=facecolor)
+                           edgecolor=ecolor, facecolor=facecolor)
             else:
                 ax.scatter(x[cell_idx], y[cell_idx], marker='^', hatch=hatch, s=100, linewidths=0.8,
-                           edgecolor=edgecolor, facecolor=facecolor)
+                           edgecolor=ecolor, facecolor=facecolor)
         else:
             if z is not None:
                 ax.scatter(x[cell_idx], y[cell_idx], z[cell_idx], marker='o', hatch=hatch, s=100, linewidths=0.8,
-                           edgecolor=edgecolor, facecolor=facecolor)
+                           edgecolor=ecolor, facecolor=facecolor)
             else:
                 ax.scatter(x[cell_idx], y[cell_idx], marker='o', hatch=hatch, s=100, linewidths=0.8,
-                           edgecolor=edgecolor, facecolor=facecolor)
+                           edgecolor=ecolor, facecolor=facecolor)
 
     # legend
     fig_fake, ax_fake = pl.subplots()

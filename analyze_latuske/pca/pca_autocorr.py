@@ -11,6 +11,9 @@ from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_with_markers
 from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_for_all_grid_cells
 from analyze_in_vivo.analyze_domnisoru.autocorr.spiketime_autocorr import plot_autocorrelation
 from analyze_in_vivo.analyze_domnisoru.pca import perform_PCA
+import scipy as sc
+import scipy.spatial
+import scipy.cluster
 pl.style.use('paper_subplots')
 
 
@@ -93,10 +96,10 @@ def plot_pca_projection_for_paper(save_dir_img):
                           projected_domnisoru[labels_domnisoru == 2, 1], cell_ids_domnisoru[labels_domnisoru == 2],
                           get_celltype_dict(save_dir_domnisoru), theta_cells=theta_cells, edgecolor='r', legend=False)
 
-    for cell_idx, cell_id in enumerate(cell_ids_latuske):
-        ax.annotate(cell_id, xy=(projected_latuske[cell_idx, 0], projected_latuske[cell_idx, 1]))
+    # for cell_idx, cell_id in enumerate(cell_ids_latuske):
+    #     ax.annotate(cell_id, xy=(projected_latuske[cell_idx, 0], projected_latuske[cell_idx, 1]))
     for cell_idx, cell_id in enumerate(cell_ids_domnisoru):
-        ax.annotate(cell_id, xy=(projected_domnisoru[cell_idx, 0], projected_domnisoru[cell_idx, 1]))
+        ax.annotate(cell_id, xy=(projected_domnisoru[cell_idx, 0], projected_domnisoru[cell_idx, 1]), fontsize=8)
 
     fig_fake, ax_fake = pl.subplots()
     handle_latuske = [ax_fake.scatter(0, 0, marker='d', edgecolor='k', facecolor='None', label='Latuske')]
@@ -141,17 +144,24 @@ if __name__ == '__main__':
     save_dir_domnisoru = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
     save_dir_autocorr = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/latuske/autocorr'
     save_dir_autocorr_domnisoru = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/autocorr'
-    max_lag = 50
-    bin_width = 1  # ms
+    max_lag = 12  # ms
+    bin_width = 0.5  # ms
     sigma_smooth = None
     dt_kde = 0.05
     n_components = 2
-    remove_cells = False  # take out autocorrelation for cell s104_0007 and s110_0002
-    use_all = False
+    remove_cells = True  # take out autocorrelation for cell s104_0007 and s110_0002
+    use_latuske = False
+    use_domnisoru = True
+    normalization = 'max'
     max_lag_idx = to_idx(max_lag, bin_width)
 
-    folder = 'max_lag_' + str(max_lag) + '_bin_width_' + str(bin_width) + '_sigma_smooth_' + str(sigma_smooth)
-    save_dir_img = os.path.join(save_dir_autocorr, folder, 'PCA')
+    folder = 'max_lag_' + str(max_lag) + '_bin_width_' + str(bin_width) + '_sigma_smooth_' + str(sigma_smooth) + '_normalization_' + str(normalization)
+    folder2 = 'PCA_based_on'
+    if use_domnisoru:
+        folder2 += '_domnisoru'
+    if use_latuske:
+        folder2 += '_latuske'
+    save_dir_img = os.path.join(save_dir_autocorr, folder, folder2)
     if not os.path.exists(save_dir_img):
         os.makedirs(save_dir_img)
 
@@ -159,33 +169,37 @@ if __name__ == '__main__':
     autocorr_cells_latuske = np.load(os.path.join(save_dir_autocorr, folder, 'autocorr.npy'))
     cell_ids_latuske = np.array([str(i) for i in range(len(autocorr_cells_latuske))])
     if sigma_smooth is not None:
-        t_autocorr = np.arange(-max_lag_idx, max_lag_idx + dt_kde, dt_kde)
+        t_autocorr = np.arange(-max_lag, max_lag + dt_kde, dt_kde)
     else:
-        t_autocorr = np.arange(-max_lag_idx, max_lag_idx + bin_width, bin_width)
+        t_autocorr = np.arange(-max_lag, max_lag + bin_width, bin_width)
     autocorr_cells_domnisoru = np.load(os.path.join(save_dir_autocorr_domnisoru, folder, 'autocorr.npy'))
     cell_ids_domnisoru = np.array(load_cell_ids(save_dir_domnisoru, 'grid_cells'))
     theta_cells = load_cell_ids(save_dir_domnisoru, 'giant_theta')
 
     # PCA
-    if use_all and not remove_cells:
-        autocorr_cells_for_pca = np.vstack((autocorr_cells_latuske, autocorr_cells_domnisoru))
-    elif use_all and remove_cells:
+    autocorr_cells_domnisoru_for_pca = autocorr_cells_domnisoru
+    if use_domnisoru and remove_cells:
         idx_s104_0007 = np.where(np.array(cell_ids_domnisoru) == 's104_0007')[0][0]
         idx_s110_0002 = np.where(np.array(cell_ids_domnisoru) == 's110_0002')[0][0]
         idxs = range(len(cell_ids_domnisoru))
         idxs.remove(idx_s104_0007)
         idxs.remove(idx_s110_0002)
-        autocorr_cells_domnisoru_reduced = autocorr_cells_domnisoru[np.array(idxs)]
+        autocorr_cells_domnisoru_for_pca = autocorr_cells_domnisoru[np.array(idxs)]
 
-        autocorr_cells_for_pca = np.vstack((autocorr_cells_latuske, autocorr_cells_domnisoru_reduced))
-    else:
+    if use_domnisoru and use_latuske:
+        autocorr_cells_for_pca = np.vstack((autocorr_cells_latuske, autocorr_cells_domnisoru_for_pca))
+    elif use_domnisoru and not use_latuske:
+        autocorr_cells_for_pca = autocorr_cells_domnisoru_for_pca
+    elif use_latuske and not use_domnisoru:
         autocorr_cells_for_pca = autocorr_cells_latuske
-    auto_corr_cells_centered = autocorr_cells_for_pca - np.mean(autocorr_cells_for_pca, 0)
-    projected, components, explained_var = perform_PCA(auto_corr_cells_centered, n_components)
-    projected_latuske = projected[:len(autocorr_cells_latuske)]
+    else:
+        raise ValueError('Either Domnisoru or Latuske must be selected!')
 
-    # project autocorr from domnisoru cells onto components
-    projected_domnisoru = np.dot(autocorr_cells_domnisoru - np.mean(autocorr_cells_latuske, 0), components[:n_components, :].T)
+    projected, components, explained_var = perform_PCA(autocorr_cells_for_pca, n_components)
+
+    # project autocorr onto components
+    projected_latuske = np.dot(autocorr_cells_latuske - np.mean(autocorr_cells_for_pca, 0), components[:n_components, :].T)
+    projected_domnisoru = np.dot(autocorr_cells_domnisoru - np.mean(autocorr_cells_for_pca, 0), components[:n_components, :].T)
 
     # projected_idx_sort = np.argsort(projected[:, 0])
     # for autocorr in autocorr_cells[projected_idx_sort, :][::2, :]:
@@ -193,13 +207,12 @@ if __name__ == '__main__':
     #     pl.bar(t_autocorr, autocorr, bin_width, color='0.5', align='center')
     #     pl.show()
 
-    # find non-bursty
-    if max_lag == 50:
-        non_bursty_label_latuske = projected_latuske[:, 0] < -0.035  # TODO
-    elif max_lag == 12:
-        non_bursty_label_latuske = projected_latuske[:, 0] > 0.08  # TODO
-    print np.sort(cell_ids_latuske[non_bursty_label_latuske])
-
+    # # find non-bursty
+    # if max_lag == 50:
+    #     non_bursty_label_latuske = projected_latuske[:, 0] < -0.035  # TODO
+    # elif max_lag == 12:
+    #     non_bursty_label_latuske = projected_latuske[:, 0] > 0.08  # TODO
+    # print np.sort(cell_ids_latuske[non_bursty_label_latuske])
 
     # clustering
     projected_all = np.vstack((projected_latuske, projected_domnisoru))
@@ -211,7 +224,6 @@ if __name__ == '__main__':
 
     # dendrogram
     from collections import defaultdict
-
     def get_cluster_classes(dend, cell_ids, label='ivl'):
         cluster_idxs = defaultdict(list)
         for c, pi in zip(dend['color_list'], dend['icoord']):
@@ -229,17 +241,14 @@ if __name__ == '__main__':
         cluster_labels = np.array([cluster_labels_dict[cell_id] for cell_id in cell_ids])
         return cluster_labels, color_label_dict
 
-    import scipy as sc
-    import scipy.spatial
-    import scipy.cluster
-    import matplotlib as mpl
-    import matplotlib.colors
     dist_mat = sc.spatial.distance.pdist(projected_all, metric='euclidean')
     linkage = sc.cluster.hierarchy.linkage(dist_mat, method='ward')
     sc.cluster.hierarchy.set_link_color_palette(['b', 'r', 'g'])
     dend = sc.cluster.hierarchy.dendrogram(linkage, labels=np.hstack((cell_ids_latuske, cell_ids_domnisoru)),
                                            above_threshold_color="grey")
+    pl.ylabel('Distance')
     labels, _ = get_cluster_classes(dend, np.hstack((cell_ids_latuske, cell_ids_domnisoru)), label='ivl')
+    pl.savefig(os.path.join(save_dir_img, 'dendrogram.png'))
 
     labels_latuske = labels[:len(autocorr_cells_latuske)]
     labels_domnisoru = labels[len(autocorr_cells_latuske):]

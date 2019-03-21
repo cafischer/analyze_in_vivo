@@ -10,7 +10,7 @@ from cell_fitting.optimization.evaluation import get_spike_characteristics_dict
 from cell_characteristics.sta_stc import get_sta
 
 
-def get_sta_criterion(do_detrend, before_AP, after_AP, AP_criterion, t_vref, cell_ids, save_dir):
+def get_sta_criterion_all_cells(do_detrend, before_AP, after_AP, AP_criterion, t_vref, cell_ids, save_dir):
     sta_mean_good_APs_cells = np.zeros(len(cell_ids), dtype=object)
     sta_std_good_APs_cells = np.zeros(len(cell_ids), dtype=object)
     sta_mean_cells = np.zeros(len(cell_ids), dtype=object)
@@ -22,54 +22,70 @@ def get_sta_criterion(do_detrend, before_AP, after_AP, AP_criterion, t_vref, cel
         # load
         data = load_data(cell_id, param_list, save_dir)
         v = data['Vm_ljpc']
-        t = np.arange(0, len(v)) * data['dt']
-        dt = t[1] - t[0]
-        before_AP_idx = to_idx(before_AP, dt)
-        after_AP_idx = to_idx(after_AP, dt)
+        dt = data['dt']
         AP_max_idxs = data['spiketimes']
 
-        if do_detrend:
-            v = detrend(v, t, cutoff_freq=5)
-        v_APs = find_all_AP_traces(v, before_AP_idx, after_AP_idx, AP_max_idxs, AP_max_idxs)
-        t_AP = np.arange(after_AP_idx + before_AP_idx + 1) * dt
-        if v_APs is None:
-            continue
-
-        # get AP amp. and width
-        AP_amps = np.zeros(len(v_APs))
-        AP_widths = np.zeros(len(v_APs))
-        for i, v_AP in enumerate(v_APs):
-            spike_characteristics_dict = get_spike_characteristics_dict(for_data=True)
-            AP_amps[i], AP_widths[i] = get_spike_characteristics(v_AP, t_AP, ['AP_amp', 'AP_width'],
-                                                                 v_rest=v_AP[before_AP_idx - to_idx(t_vref, dt)],
-                                                                 AP_max_idx=before_AP_idx,
-                                                                 AP_onset=before_AP_idx - to_idx(1.0, dt),
-                                                                 std_idx_times=(0, 1), check=False,
-                                                                 **spike_characteristics_dict)
-
-        # select APs
-        if AP_criterion.keys()[0] == 'quantile':
-            AP_amp_thresh = np.nanpercentile(AP_amps, 100 - AP_criterion.values()[0])
-            AP_width_thresh = np.nanpercentile(AP_widths, AP_criterion.values()[0])
-        elif AP_criterion.keys()[0] == 'AP_amp_and_width':
-            AP_amp_thresh = AP_criterion.values()[0][0]
-            AP_width_thresh = AP_criterion.values()[0][1]
-        else:
-            raise ValueError('AP criterion does not exist!')
-
-        good_APs = np.logical_and(AP_amps >= AP_amp_thresh, AP_widths <= AP_width_thresh)
-        v_APs_good = v_APs[good_APs]
-        n_APs_good_cells[cell_idx] = len(v_APs_good)
-
-        # STA
-        sta_mean_cells[cell_idx], sta_std_cells[cell_idx] = get_sta(v_APs)
-        if len(v_APs_good) > 5:
-            sta_mean_good_APs_cells[cell_idx], sta_std_good_APs_cells[cell_idx] = get_sta(v_APs_good)
-        else:
-            sta_mean_good_APs_cells[cell_idx] = init_nan(len(sta_mean_cells[cell_idx]))
-            sta_std_good_APs_cells[cell_idx] = init_nan(len(sta_mean_cells[cell_idx]))
+        (sta_mean_cells[cell_idx], sta_std_cells[cell_idx],
+         sta_mean_good_APs_cells[cell_idx], sta_std_good_APs_cells[cell_idx],
+         n_APs_good_cells[cell_idx]) = get_sta_criterion(v, dt, AP_max_idxs, do_detrend, before_AP, after_AP,
+                                                         AP_criterion, t_vref)
 
     return sta_mean_cells, sta_std_cells, sta_mean_good_APs_cells, sta_std_good_APs_cells, n_APs_good_cells
+
+
+def get_sta_criterion(v, dt, AP_max_idxs, do_detrend, before_AP, after_AP, AP_criterion, t_vref):
+    before_AP_idx = to_idx(before_AP, dt)
+    after_AP_idx = to_idx(after_AP, dt)
+
+    if do_detrend:
+        v = detrend(v, np.arange(0, len(v)) * dt, cutoff_freq=5)
+
+    v_APs = find_all_AP_traces(v, before_AP_idx, after_AP_idx, AP_max_idxs, AP_max_idxs)
+    t_AP = np.arange(after_AP_idx + before_AP_idx + 1) * dt
+
+    if v_APs is None or len(v_APs) == 0:
+        return init_nan(len(t_AP)), init_nan(len(t_AP)), init_nan(len(t_AP)), init_nan(len(t_AP)), 0
+
+    AP_amps, AP_widths = get_AP_amps_and_widths(v_APs, t_AP, dt, before_AP_idx, t_vref)
+
+    v_APs_good = select_APs(AP_amps, AP_widths, AP_criterion, v_APs)
+
+    sta_mean, sta_std = get_sta(v_APs)
+    n_APs_good = len(v_APs_good)
+    if n_APs_good > 5:
+        sta_mean_good_APs, sta_std_good_APs = get_sta(v_APs_good)
+    else:
+        sta_mean_good_APs = sta_std_good_APs = init_nan(len(sta_mean))
+
+    return sta_mean, sta_std, sta_mean_good_APs, sta_std_good_APs, n_APs_good
+
+
+def get_AP_amps_and_widths(v_APs, t_AP, dt, before_AP_idx, t_vref):
+    AP_amps = np.zeros(len(v_APs))
+    AP_widths = np.zeros(len(v_APs))
+    for i, v_AP in enumerate(v_APs):
+        spike_characteristics_dict = get_spike_characteristics_dict(for_data=True)
+        AP_amps[i], AP_widths[i] = get_spike_characteristics(v_AP, t_AP, ['AP_amp', 'AP_width'],
+                                                             v_rest=v_AP[before_AP_idx - to_idx(t_vref, dt)],
+                                                             AP_max_idx=before_AP_idx,
+                                                             AP_onset=before_AP_idx - to_idx(1.0, dt),
+                                                             std_idx_times=(0, 1), check=False,
+                                                             **spike_characteristics_dict)
+    return AP_amps, AP_widths
+
+
+def select_APs(AP_amps, AP_widths, AP_criterion, v_APs):
+    if AP_criterion.keys()[0] == 'quantile':
+        AP_amp_thresh = np.nanpercentile(AP_amps, 100 - AP_criterion.values()[0])
+        AP_width_thresh = np.nanpercentile(AP_widths, AP_criterion.values()[0])
+    elif AP_criterion.keys()[0] == 'AP_amp_and_width':
+        AP_amp_thresh = AP_criterion.values()[0][0]
+        AP_width_thresh = AP_criterion.values()[0][1]
+    else:
+        raise ValueError('AP criterion does not exist!')
+    good_APs = np.logical_and(AP_amps >= AP_amp_thresh, AP_widths <= AP_width_thresh)
+    v_APs_good = v_APs[good_APs]
+    return v_APs_good
 
 
 def plot_sta_on_ax(ax, cell_idx, t_AP, sta_mean_cells, sta_std_cells, before_AP=5, after_AP=25, ylims=(None, None)):

@@ -8,7 +8,7 @@ from cell_characteristics import to_idx
 from cell_fitting.optimization.evaluation import get_spike_characteristics_dict
 from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_with_markers
 from cell_fitting.util import init_nan
-from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes, mark_inset
 pl.style.use('paper_subplots')
 
 
@@ -124,11 +124,25 @@ if __name__ == '__main__':
         # pl.plot(t_AP[DAP_idx], sta_mean_cells[cell_idx][DAP_idx], 'or')
         # pl.show()
 
+    # load PCs
+    save_dir_autocorr = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/autocorr'
+    max_lag = 50
+    max_lag_for_pca = 50
+    bin_width = 1  # ms
+    sigma_smooth = None
+    folder = 'max_lag_' + str(max_lag) + '_bin_width_' + str(bin_width) + '_sigma_smooth_' + str(sigma_smooth)
+    save_dir_pcs = os.path.join(save_dir_autocorr, folder, 'PCA')
+    projected = np.load(os.path.join(save_dir_pcs, 'projected.npy'))
+    cm = pl.get_cmap('viridis')
+    pmin = np.min(projected[:, 0])
+    pmax = np.max(projected[:, 0])
+    colors = cm((projected[:, 0] - pmin) / (pmax-pmin))
+
     # plot
     fig, ax = pl.subplots(figsize=(10, 8))
     # pl.title('From STA with selection' if with_selection else 'From STA without selection',
     #          fontsize=12)
-    plot_with_markers(ax, v_rest_fAHP, v_DAP_fAHP, cell_ids, cell_type_dict)
+    plot_with_markers(ax, v_rest_fAHP, v_DAP_fAHP, cell_ids, cell_type_dict, edgecolor=colors)  # TODO remove edgecolor
     ax.set_ylabel('$\Delta$ DAP', horizontalalignment='left', y=0.0)
     ax.set_xlabel('$\Delta$ fAHP', horizontalalignment='right', x=1.0)
     ax.spines['left'].set_position('zero')
@@ -139,37 +153,83 @@ if __name__ == '__main__':
         ax.annotate(cell_ids[i], xy=(v_rest_fAHP[i] + 0.09, v_DAP_fAHP[i] + 0.06), fontsize=6)
 
     # example 1
-    axins = inset_axes(ax, width='20%', height='20%', loc='lower left', bbox_to_anchor=(0.05, 0.31, 1, 1),
-                       bbox_transform=ax.transAxes)
-    i = np.where(cell_ids == 's76_0002')[0][0]
+    # axins = inset_axes(ax, width='20%', height='20%', loc='lower left', bbox_to_anchor=(0.05, 0.31, 1, 1),
+    #                    bbox_transform=ax.transAxes)
+    i = np.where(cell_ids == 's79_0003')[0][0]
+    left, bottom, width, height = [0.06, 0.32, 0.2, 0.2]
+    axins = fig.add_axes([left, bottom, width, height])
+    ax.annotate('', xy=(v_rest_fAHP[i], v_DAP_fAHP[i]), xytext=(left, bottom + height),
+                xycoords='data', textcoords='figure fraction',
+                arrowprops=dict(arrowstyle="-", color='0.5', linewidth=0.75))
+    ax.annotate('', xy=(v_rest_fAHP[i], v_DAP_fAHP[i]), xytext=(left + width, bottom + height),
+                xycoords='data', textcoords='figure fraction',
+                arrowprops=dict(arrowstyle="-", color='0.5', linewidth=0.75))
     axins.plot(t_sta, sta_mean_cells[i], color='k')
     axins.set_ylim(-70, 0)
     # axins.set_xticks([])
     # axins.set_xticklabels([-max_lag, 0, max_lag], fontsize=10)
-    axins.set_xlabel('Time (ms)', fontsize=10)
-    axins.set_ylabel('$STA_V$ (mV)', fontsize=10)
+    axins.spines['top'].set_visible(True)
+    axins.spines['right'].set_visible(True)
+    axins.set_xlabel('Time (ms)', fontsize=10, labelpad=1)
+    axins.set_ylabel('$STA_V$ (mV)', fontsize=10, labelpad=1)
 
     # example 2
-    axins = inset_axes(ax, width='20%', height='20%', loc='lower left', bbox_to_anchor=(0.05, 0.04, 1, 1),
-                       bbox_transform=ax.transAxes)
     i = np.where(cell_ids == 's109_0002')[0][0]
+    left, bottom, width, height = [0.06, 0.06, 0.2, 0.2]
+    axins = fig.add_axes([left, bottom, width, height])
+    ax.annotate('', xy=(v_rest_fAHP[i], v_DAP_fAHP[i]), xytext=(left, bottom + height),
+                xycoords='data', textcoords='figure fraction',
+                arrowprops=dict(arrowstyle="-", color='0.5', linewidth=0.75))
+    ax.annotate('', xy=(v_rest_fAHP[i], v_DAP_fAHP[i]), xytext=(left + width, bottom + height),
+                xycoords='data', textcoords='figure fraction',
+                arrowprops=dict(arrowstyle="-", color='0.5', linewidth=0.75))
     axins.plot(t_sta, sta_mean_cells[i], color='k')
     axins.set_ylim(-70, 0)
     # axins.set_xticks([])
     # axins.set_xticklabels([-max_lag, 0, max_lag], fontsize=10)
-    axins.set_xlabel('Time (ms)', fontsize=10)
-    axins.set_ylabel('$STA_V$ (mV)', fontsize=10)
+    axins.spines['top'].set_visible(True)
+    axins.spines['right'].set_visible(True)
+    axins.set_xlabel('Time (ms)', fontsize=10, labelpad=1)
+    axins.set_ylabel('$STA_V$ (mV)', fontsize=10, labelpad=1)
 
     # example 3
-    axins = inset_axes(ax, width='20%', height='20%', loc='lower left', bbox_to_anchor=(0.33, 0.04, 1, 1),
-                       bbox_transform=ax.transAxes)
-    i = np.where(cell_ids == 's84_0002')[0][0]
+    i = np.where(cell_ids == 's81_0004')[0][0]
+    left, bottom, width, height = [0.33, 0.32, 0.2, 0.2]
+    axins = fig.add_axes([left, bottom, width, height])
+    ax.annotate('', xy=(v_rest_fAHP[i], v_DAP_fAHP[i]), xytext=(left + width, bottom + height),
+                xycoords='data', textcoords='figure fraction',
+                arrowprops=dict(arrowstyle="-", color='0.5', linewidth=0.75))
+    ax.annotate('', xy=(v_rest_fAHP[i], v_DAP_fAHP[i]), xytext=(left + width, bottom),
+                xycoords='data', textcoords='figure fraction',
+                arrowprops=dict(arrowstyle="-", color='0.5', linewidth=0.75))
     axins.plot(t_sta, sta_mean_cells[i], color='k')
     axins.set_ylim(-70, 0)
     # axins.set_xticks([])
     # axins.set_xticklabels([-max_lag, 0, max_lag], fontsize=10)
-    axins.set_xlabel('Time (ms)', fontsize=10)
-    axins.set_ylabel('$STA_V$ (mV)', fontsize=10)
+    axins.spines['top'].set_visible(True)
+    axins.spines['right'].set_visible(True)
+    axins.set_xlabel('Time (ms)', fontsize=10, labelpad=1)
+    axins.set_ylabel('$STA_V$ (mV)', fontsize=10, labelpad=1)
+
+    # example 4
+    i = np.where(cell_ids == 's84_0002')[0][0]
+    left, bottom, width, height = [0.33, 0.06, 0.2, 0.2]
+    axins = fig.add_axes([left, bottom, width, height])
+    ax.annotate('', xy=(v_rest_fAHP[i], v_DAP_fAHP[i]), xytext=(left + width, bottom + height),
+                xycoords='data', textcoords='figure fraction',
+                arrowprops=dict(arrowstyle="-", color='0.5', linewidth=0.75))
+    ax.annotate('', xy=(v_rest_fAHP[i], v_DAP_fAHP[i]), xytext=(left + width, bottom),
+                xycoords='data', textcoords='figure fraction',
+                arrowprops=dict(arrowstyle="-", color='0.5', linewidth=0.75))
+    axins.plot(t_sta, sta_mean_cells[i], color='k')
+    axins.plot(t_sta, sta_mean_cells[i], color='k')
+    axins.set_ylim(-70, 0)
+    # axins.set_xticks([])
+    # axins.set_xticklabels([-max_lag, 0, max_lag], fontsize=10)
+    axins.spines['top'].set_visible(True)
+    axins.spines['right'].set_visible(True)
+    axins.set_xlabel('Time (ms)', fontsize=10, labelpad=1)
+    axins.set_ylabel('$STA_V$ (mV)', fontsize=10, labelpad=1)
 
 
     pl.tight_layout()

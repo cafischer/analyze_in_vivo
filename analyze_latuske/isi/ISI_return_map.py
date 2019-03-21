@@ -10,7 +10,7 @@ pl.style.use('paper_subplots')
 
 if __name__ == '__main__':
     save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/latuske/ISI/ISI_return_map'
-    ISIs_cells = load_ISIs(save_dir='/home/cf/Phd/programming/data/Caro/grid_cells_withfields_vt_0.pkl')
+    ISIs_cells = load_ISIs()
 
     max_ISI = 200  # None if you want to take all ISIs
     ISI_burst = 8  # ms

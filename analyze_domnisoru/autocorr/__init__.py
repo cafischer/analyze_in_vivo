@@ -24,7 +24,7 @@ def get_autocorrelation(x, max_lag=50):
     return auto_corr
 
 
-def get_autocorrelation_by_ISIs(ISIs, max_lag=50, bin_width=1, remove_zero=True, normalize=True):
+def get_autocorrelation_by_ISIs(ISIs, max_lag=50, bin_width=1, remove_zero=True, normalization=None):
     """
     Computes the autocorrelation of some spike train by means of the ISIs.
     :param ISIs: All ISIs obtained from the spike train. They need to be kept in the same order!
@@ -51,8 +51,10 @@ def get_autocorrelation_by_ISIs(ISIs, max_lag=50, bin_width=1, remove_zero=True,
 
     if remove_zero:
         autocorr[to_idx(max_lag, bin_width)] = 0
-    if normalize:
+    if normalization == 'sum':
         autocorr = autocorr / float(np.sum(autocorr) * bin_width)
+    elif normalization == 'max':
+        autocorr = autocorr / float(np.max(autocorr))
     return autocorr, t_autocorr, bins
 
 

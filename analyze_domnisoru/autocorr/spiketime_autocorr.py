@@ -24,17 +24,18 @@ if __name__ == '__main__':
     cell_type = 'grid_cells'
     cell_ids = load_cell_ids(save_dir, cell_type)
     cell_type_dict = get_celltype_dict(save_dir)
-    param_list = ['Vm_ljpc', 'spiketimes']
+    param_list = ['Vm_ljpc', 'spiketimes', 'fvel_100ms']
 
     # parameters
-    bin_width = 1  # ms
+    bin_width = 0.5  # ms
     max_lag = 12
     sigma_smooth = None  # ms  None for no smoothing
     dt_kde = 0.05  # ms (same as dt data as lower bound for precision)
+    normalization = 'max'  # 'sum
     t_kde = np.arange(-max_lag, max_lag + dt_kde, dt_kde)
     save_dir_img = os.path.join(save_dir_img)
 
-    folder = 'max_lag_' + str(max_lag) + '_bin_width_' + str(bin_width) + '_sigma_smooth_'+str(sigma_smooth)
+    folder = 'max_lag_' + str(max_lag) + '_bin_width_' + str(bin_width) + '_sigma_smooth_'+str(sigma_smooth) + '_normalization_' + str(normalization)
     save_dir_img = os.path.join(save_dir_img, folder)
     if not os.path.exists(save_dir_img):
         os.makedirs(save_dir_img)
@@ -45,6 +46,8 @@ if __name__ == '__main__':
     kde_cells = np.zeros(len(cell_ids), dtype=object)
     peak_autocorr = np.zeros(len(cell_ids))
     SIs_cells = np.zeros(len(cell_ids), dtype=object)
+
+    median_velocity = np.zeros(len(cell_ids))
     for cell_idx, cell_id in enumerate(cell_ids):
         print cell_id
 
@@ -60,7 +63,8 @@ if __name__ == '__main__':
 
         # get autocorrelation
         autocorr_cells[cell_idx, :], t_autocorr, bins = get_autocorrelation_by_ISIs(ISIs, max_lag=max_lag,
-                                                                                    bin_width=bin_width)
+                                                                                    bin_width=bin_width,
+                                                                                    normalization=normalization)
 
         # compute KDE
         if sigma_smooth is not None:
@@ -85,6 +89,19 @@ if __name__ == '__main__':
         # pl.xlim(-max_lag, max_lag)
         # pl.tight_layout()
         # pl.show()
+
+        # median velocity
+        velocity = data['fvel_100ms']
+        median_velocity[cell_idx] = np.median(velocity)
+
+    # # TODO
+    # sort_idxs = np.argsort(median_velocity)
+    # print median_velocity[sort_idxs]
+    # plot_kwargs = dict(t_auto_corr=t_autocorr, auto_corr_cells=autocorr_cells[sort_idxs], bin_size=bin_width,
+    #                    max_lag=max_lag)
+    # plot_for_all_grid_cells(np.array(cell_ids)[sort_idxs], cell_type_dict, plot_autocorrelation, plot_kwargs,
+    #                         xlabel='Time (ms)', ylabel='Spike-time \nautocorrelation',
+    #                         save_dir_img=os.path.join(save_dir_img, 'autocorr_sorted_by_vel.png'))
 
     # save autocorrelation
     if sigma_smooth is not None:

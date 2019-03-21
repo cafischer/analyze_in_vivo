@@ -72,39 +72,33 @@ cell_ids_burst1 = DAP_cells + ['s43_0003']  # ['s76_0002', 's117_0002', 's118_00
 burst1_label = np.array([True if cell_id in cell_ids_burst1 else False for cell_id in cell_ids])
 burst2_label = np.logical_and(burst_label, ~burst1_label)
 
-# significance tests
-_, p_val_fraction_burst = ttest_ind(fraction_burst[burst_label], fraction_burst[~burst_label])
-_, p_val_fraction_single = ttest_ind(fraction_single[burst_label], fraction_single[~burst_label])
-_, p_val_fraction_ISI_or_ISI_next_burst = ttest_ind(fraction_ISI_or_ISI_next_burst[burst_label],
-                                                    fraction_ISI_or_ISI_next_burst[~burst_label])
-
 # plot
 n_bursty = sum(burst_label)
 n_nonbursty = sum(~burst_label)
 
-fig = pl.figure(figsize=(7.5, 8))
-n_cols = 4
-outer = gridspec.GridSpec(2, n_cols, hspace=0.13, wspace=0.6)
+fig = pl.figure(figsize=(12, 4))
+n_cols = 6
+outer = gridspec.GridSpec(1, n_cols + 1)
 
-data = [fraction_burst, fraction_single, fraction_ISI_or_ISI_next_burst, vdiff_onset_start]
+data = [fraction_burst, fraction_single, fraction_ISI_or_ISI_next_burst, vdiff_onset_start,  width_ISI_hist, peak_ISI_hist]
 ylabels = ['Fraction ISIs $\leq$ 8ms', 'Fraction single spikes', 'Fraction ISI[n] or ISI[n+1] $\leq$ 8ms',
-           'Linear slope before AP (mV/ms)']
-letters = ['A', 'B', 'C', 'D']
+           'Linear slope before AP (mV/ms)',
+           'Width of the ISI hist. at half max. (ms)', 'Location of the ISI hist. peak (ms)']
+letters = ['A', 'B', 'C', 'D', 'E', 'F']
 
 for i in range(n_cols):
     # ANOVA and post-hoc t-test
     # f_stat, p_val = f_oneway(data[i][burst1_label], data[i][burst2_label], data[i][~burst_label])
     # #print 'p-val: %.5f' % p_val
-    #
     # bonferroni_correction = 3
     _, p_val1 = ttest_ind(data[i][burst1_label], data[i][burst2_label])
-    _, p_val2 = ttest_ind(data[i][np.logical_or(burst1_label, burst2_label)], data[i][~burst_label])
+    _, p_val2 = ttest_ind(data[i][burst_label], data[i][~burst_label])
     print ylabels[i]
     print 't-test'
     print 'p-val(B+D, B): %.5f' % (p_val1)
     print 'p-val(B(all), N-B): %.5f' % (p_val2)
     _, p_val1 = kruskal(data[i][burst1_label], data[i][burst2_label])
-    _, p_val2 = kruskal(data[i][np.logical_or(burst1_label, burst2_label)], data[i][~burst_label])
+    _, p_val2 = kruskal(data[i][burst_label], data[i][~burst_label])
     print ''
     print 'kruskal wallis'
     print 'p-val(B+D, B): %.5f' % (p_val1)
@@ -125,15 +119,16 @@ for i in range(n_cols):
     ax.set_xlim([-1.5, 1.5])
     if i < 3:
         ax.set_ylim([0, 1.1])
+    else:
+        ax.set_ylim([0, None])
     ax.set_ylabel(ylabels[i])
     ax.text(-0.5, 1.0, letters[i], transform=ax.transAxes, size=18, weight='bold')
 
-ax = pl.Subplot(fig, outer[1, -1])
+ax = pl.Subplot(fig, outer[0, -1])
 fig.add_subplot(ax)
 fig_fake, ax_fake = pl.subplots()
-handle_latuske = [ax_fake.scatter(0, 0, marker='d', edgecolor='k', facecolor='None', label='Latuske')]
 pl.close(fig_fake)
-handles += handle_latuske + [Patch(color=color_burst1, label='Bursty+DAP'), Patch(color=color_burst2, label='Bursty'),
+handles += [Patch(color=color_burst1, label='Bursty+DAP'), Patch(color=color_burst2, label='Bursty'),
             Patch(color=color_nonburst, label='Non-bursty')]
 ax.legend(handles=handles)
 ax.spines['left'].set_visible(False)
@@ -141,47 +136,16 @@ ax.spines['bottom'].set_visible(False)
 ax.set_xticks([])
 ax.set_yticks([])
 
-# scatterplot
-ax = pl.Subplot(fig, outer[1, :-1])
-fig.add_subplot(ax)
-
-if remove_cells:
-    burst1_label[np.where(cell_ids == 's104_0007')[0][0]] = False  # take out because not enough spikes
-    burst1_label[np.where(cell_ids == 's110_0002')[0][0]] = False  # take out because not enough spikes
-
-ax.plot(peak_ISI_hist_latuske, width_ISI_hist_latuske, 'k', marker='d', linestyle='', markerfacecolor='None')
-plot_with_markers(ax, peak_ISI_hist[burst1_label], width_ISI_hist[burst1_label], cell_ids[burst1_label], cell_type_dict,
-                  edgecolor=color_burst1, theta_cells=theta_cells, legend=False)
-plot_with_markers(ax, peak_ISI_hist[burst2_label], width_ISI_hist[burst2_label], cell_ids[burst2_label], cell_type_dict,
-                  edgecolor=color_burst2, theta_cells=theta_cells, legend=False)
-plot_with_markers(ax, peak_ISI_hist[~burst_label], width_ISI_hist[~burst_label], cell_ids[~burst_label], cell_type_dict,
-                            edgecolor=color_nonburst, theta_cells=theta_cells, legend=False)
-
-# for cell_idx, cell_id in enumerate(cell_ids_latuske):
-#     ax.annotate(cell_id, xy=(peak_ISI_hist_latuske[cell_idx], width_ISI_hist_latuske[cell_idx]))
-
-# for i in range(len(cell_ids)):
-#     ax.annotate(cell_ids[i], xy=(peak_ISI_hist[i], width_ISI_hist[i]))
-
-ax.set_yscale('log', basey=2)
-ax.set_xscale('log', basex=2)
-ax.set_ylim(1, None)
-ax.set_xlim(1, None)
-ax.set_ylabel('Width of the ISI hist. at half max. (ms)')
-ax.set_xlabel('Location of the ISI hist. peak (ms)')
-ax.text(-0.5, 1.0, 'E', transform=ax.transAxes, size=18, weight='bold')
-
 pl.tight_layout()
-pl.subplots_adjust(top=0.97, left=0.09, right=0.99, bottom=0.07)
-pl.savefig(os.path.join(save_dir_img, 'difference_bursty_nonbursty_3groups.png'))
-#pl.savefig(os.path.join(save_dir_img, 'difference_bursty_nonbursty_3groups_with_cells_ids.png'))
+#pl.subplots_adjust(top=0.97, left=0.09, right=0.99, bottom=0.07)
+pl.savefig(os.path.join(save_dir_img, 'difference_bursty_nonbursty_3groups_new.png'))
 pl.show()
 
 
 df = pd.DataFrame(data=np.vstack((fraction_burst, fraction_single, fraction_ISI_or_ISI_next_burst, vdiff_onset_start,
                                   width_ISI_hist, peak_ISI_hist)).T,
                   columns=['Fraction ISIs <= 8ms', 'Fraction single spikes', 'Fraction ISI[n] or ISI[n+1] <= 8ms',
-           'Linear slope before AP', 'Width ISI hist.', 'Location of ISI hist. peak'], index=cell_ids)
+                           'Linear slope before AP', 'Width ISI hist.', 'Location of ISI hist. peak'], index=cell_ids)
 df.index.name = 'Cell ID'
 df = df.astype(float).round(2)
 df.to_csv(os.path.join(save_dir_img, 'spike_characteristics.csv'))

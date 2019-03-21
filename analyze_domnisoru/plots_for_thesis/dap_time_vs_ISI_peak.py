@@ -2,6 +2,7 @@ import matplotlib.pyplot as pl
 from matplotlib.patches import Patch
 import numpy as np
 import os
+from scipy.stats import pearsonr
 from analyze_in_vivo.load.load_domnisoru import get_cell_ids_DAP_cells, get_celltype_dict, load_cell_ids, get_cell_ids_bursty
 from analyze_in_vivo.analyze_domnisoru.plot_utils import get_cell_id_with_marker, plot_with_markers
 pl.style.use('paper_subplots')
@@ -17,7 +18,7 @@ if __name__ == '__main__':
     cell_type_dict = get_celltype_dict(save_dir)
     max_ISI = 200
     bin_width = 1  # ms
-    sigma_smooth = None  # ms
+    sigma_smooth = 1  # ms
     before_AP = 25
     after_AP = 25
     t_vref = 10
@@ -36,6 +37,7 @@ if __name__ == '__main__':
     theta_cells = load_cell_ids(save_dir, 'giant_theta')
     # DAP_cells, DAP_cells_additional = get_cell_ids_DAP_cells()
     DAP_cells = get_cell_ids_DAP_cells(new=True)
+    DAP_label = np.array([True if cell_id in DAP_cells else False for cell_id in grid_cells])
     cell_ids_bursty = get_cell_ids_bursty()
     burst_label = np.array([True if cell_id in cell_ids_bursty else False for cell_id in grid_cells])
     # DAP_time = np.load(os.path.join(save_dir_characteristics, 'grid_cells', 'DAP_time.npy')) TODO
@@ -119,14 +121,17 @@ if __name__ == '__main__':
     # pl.savefig(os.path.join(save_dir_img, 'dap_time_vs_ISI_peak_'+str(max_ISI)+'_'+str(bin_width)+'.png'))
 
     # plot for paper
+    corr, p_val = pearsonr(DAP_time[DAP_label], peak_ISI_hist[DAP_label])
+    print 'corr: ', corr
+
     f, ax = pl.subplots()
     ax.plot(np.arange(0, 20), np.arange(0, 20), '0.5', linestyle='--')
-    if sigma_smooth is not None:
-        ax.fill_between(np.arange(0, 20), np.arange(0, 20) - sigma_smooth, np.arange(0, 20) + sigma_smooth, color='0.5',
-                        alpha=0.15)
-    else:
-        ax.fill_between(np.arange(0, 20), np.arange(0, 20) - bin_width, np.arange(0, 20) + bin_width, color='0.5',
-                        alpha=0.15)
+    # if sigma_smooth is not None:
+    #     ax.fill_between(np.arange(0, 20), np.arange(0, 20) - sigma_smooth, np.arange(0, 20) + sigma_smooth, color='0.5',
+    #                     alpha=0.15)
+    # else:
+    #     ax.fill_between(np.arange(0, 20), np.arange(0, 20) - bin_width, np.arange(0, 20) + bin_width, color='0.5',
+    #                     alpha=0.15)
     handles = plot_with_markers(ax, DAP_time[burst_label], peak_ISI_hist[burst_label], grid_cells[burst_label],
                                 cell_type_dict, theta_cells=theta_cells, edgecolor='k', legend=False)
     # plot_with_markers(ax, DAP_time[~burst_label], peak_ISI_hist[~burst_label], grid_cells[~burst_label], cell_type_dict,

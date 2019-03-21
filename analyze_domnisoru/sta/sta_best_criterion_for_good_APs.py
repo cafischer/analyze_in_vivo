@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as pl
 import os
 from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data, get_celltype_dict, get_cell_ids_DAP_cells
-from analyze_in_vivo.analyze_domnisoru.sta import get_sta_criterion, plot_sta_grid_on_ax
+from analyze_in_vivo.analyze_domnisoru.sta import get_sta_criterion_all_cells, plot_sta_grid_on_ax
 from cell_fitting.util import init_nan
 from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_for_all_grid_cells, plot_for_all_grid_cells_grid, \
     plot_with_markers
@@ -159,8 +159,8 @@ if __name__ == '__main__':
         for (before_AP, after_AP) in time_before_after_AP:
             print AP_criterion, (before_AP, after_AP)
             (sta_mean_cells, sta_std_cells, sta_mean_good_APs_cells,
-             sta_std_good_APs_cells, _) = get_sta_criterion(do_detrend, before_AP, after_AP,
-                                                            AP_criterion, t_vref, cell_ids, save_dir)
+             sta_std_good_APs_cells, _) = get_sta_criterion_all_cells(do_detrend, before_AP, after_AP,
+                                                                      AP_criterion, t_vref, cell_ids, save_dir)
 
             # save
             folder_name = AP_criterion.keys()[0] + str(AP_criterion.values()[0]) \

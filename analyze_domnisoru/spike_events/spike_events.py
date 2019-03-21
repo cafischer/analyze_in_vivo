@@ -7,6 +7,7 @@ from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_for_all_grid_cells
 from grid_cell_stimuli import get_AP_max_idxs
 from grid_cell_stimuli.ISI_hist import get_ISIs
 from analyze_in_vivo.analyze_domnisoru.check_basic.in_out_field import get_starts_ends_group_of_ones
+from analyze_in_vivo.analyze_domnisoru.spike_events import get_starts_ends_burst, get_idxs_single, get_burst_lengths
 pl.style.use('paper_subplots')
 
 
@@ -44,21 +45,12 @@ def plot_n_spikes_in_burst_all_cells(cell_type_dict, bins, count_spikes):
         plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_fun, plot_kwargs,
                                 xlabel='# Spikes \nin event', ylabel='Rel. frequency',
                                 colors_marker=colors_marker, wspace=0.18,
-                                save_dir_img=os.path.join(save_dir_img, 'count_spikes_'+ str(ISI_burst) +'.png'))
+                                save_dir_img=os.path.join(save_dir_img, 'count_spikes_' + str(burst_ISI) + '.png'))
 
         # plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_fun, plot_kwargs,
         #                         xlabel='# Spikes \nin event', ylabel='Rel. frequency',
         #                         colors_marker=colors_marker, wspace=0.18,
         #                         save_dir_img=os.path.join(save_dir_img2, 'count_spikes.png'))
-
-
-def get_n_spikes_in_burst(burst_ISI_indicator):
-    groups = np.split(burst_ISI_indicator, np.where(np.abs(np.diff(burst_ISI_indicator)) == 1)[0] + 1)
-    burst_groups = []
-    for g in groups:
-        if True in g:
-            burst_groups.append(g)
-    return np.array([len(g) + 1 for g in burst_groups])
 
 
 if __name__ == '__main__':
@@ -75,7 +67,7 @@ if __name__ == '__main__':
         os.makedirs(save_dir_img)
 
     bins = np.arange(1, 15 + 1, 1)
-    ISI_burst = 20  # ms
+    burst_ISI = 8  # ms
 
     count_spikes = np.zeros((len(cell_ids), len(bins)-1))
     fraction_single = np.zeros(len(cell_ids))
@@ -97,14 +89,11 @@ if __name__ == '__main__':
 
         # find burst indices
         ISIs = get_ISIs(AP_max_idxs, t)
-        short_ISI_indicator = np.concatenate((ISIs <= ISI_burst, np.array([False])))
-        n_spikes_in_bursts = get_n_spikes_in_burst(short_ISI_indicator.astype(int))
-        count_spikes[cell_idx, :] = np.histogram(n_spikes_in_bursts, bins)[0]
-
-        starts_burst, ends_burst = get_starts_ends_group_of_ones(short_ISI_indicator.astype(int))
+        burst_ISI_indicator = ISIs <= burst_ISI
+        starts_burst, ends_burst = get_starts_ends_burst(burst_ISI_indicator)
         AP_max_idxs_burst = AP_max_idxs[starts_burst]
-        AP_max_idxs_single = np.array(filter(lambda x: x not in AP_max_idxs[ends_burst + 1],
-                                             AP_max_idxs[~short_ISI_indicator]))
+        AP_max_idxs_single = AP_max_idxs[get_idxs_single(burst_ISI_indicator, ends_burst)]
+        count_spikes[cell_idx, :] = np.histogram(get_burst_lengths(starts_burst, ends_burst), bins)[0]
         count_spikes[cell_idx, 0] = len(AP_max_idxs_single)
         assert bins[0] == 1
         fraction_single[cell_idx] = count_spikes[cell_idx, 0] / np.sum(count_spikes[cell_idx, :])
@@ -129,7 +118,7 @@ if __name__ == '__main__':
     # pl.plot(np.ones(sum(~burst_label)), fraction_single[~burst_label], 'ob')
 
     # plot all cells
-    np.save(os.path.join(save_dir_img, 'fraction_single_' + str(ISI_burst) + '.npy'), fraction_single)
+    np.save(os.path.join(save_dir_img, 'fraction_single_' + str(burst_ISI) + '.npy'), fraction_single)
 
     pl.close('all')
     plot_n_spikes_in_burst_all_cells(cell_type_dict, bins, count_spikes)

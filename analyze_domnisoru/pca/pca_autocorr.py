@@ -159,36 +159,39 @@ def plot_pca_projection_for_paper(save_dir_img):
     ax = pl.Subplot(fig, inner[0])
     fig.add_subplot(ax)
 
-    # example 1
-    axins = inset_axes(ax, width='20%', height='20%', loc='upper left', bbox_to_anchor=(0.06, 0, 1, 1),
-                       bbox_transform=ax.transAxes)
-    i = np.where(cell_ids == 's84_0002')[0][0]
-    axins.bar(t_autocorr, autocorr_cells[i], bin_width, color='b', align='center')
-    axins.set_yticks([])
-    axins.set_xticks([-max_lag, 0, max_lag])
-    axins.set_xticklabels([-max_lag, 0, max_lag], fontsize=10)
-    axins.set_xlabel('Lag (ms)', fontsize=10)
-    axins.set_ylabel('Spike-time \nautocorrelation', fontsize=10)
-
-    # example 2
-    axins = inset_axes(ax, width='20%', height='20%', loc='upper right')  # bbox_to_anchor=(0.7, 0.7, 1.0, 1.0)
-    i = np.where(cell_ids == 's109_0002')[0][0]
-    axins.bar(t_autocorr, autocorr_cells[i], bin_width, color='r', align='center')
-    axins.set_yticks([])
-    axins.set_xticks([-max_lag, 0, max_lag])
-    axins.set_xticklabels([-max_lag, 0, max_lag], fontsize=10)
-    axins.set_xlabel('Lag (ms)', fontsize=10)
-    axins.set_ylabel('Spike-time \nautocorrelation', fontsize=10)
-
-    # example 3
-    axins = inset_axes(ax, width='20%', height='20%', loc='center right')  # bbox_to_anchor=(0.7, 0.7, 1.0, 1.0)
-    i = np.where(cell_ids == 's76_0002')[0][0]
-    axins.bar(t_autocorr, autocorr_cells[i], bin_width, color='r', align='center')
-    axins.set_yticks([])
-    axins.set_xticks([-max_lag, 0, max_lag])
-    axins.set_xticklabels([-max_lag, 0, max_lag], fontsize=10)
-    axins.set_xlabel('Lag (ms)', fontsize=10)
-    axins.set_ylabel('Spike-time \nautocorrelation', fontsize=10)
+    # # example 1
+    # axins = inset_axes(ax, width='20%', height='20%', loc='upper left', bbox_to_anchor=(0.13, 0, 1, 1),
+    #                    bbox_transform=ax.transAxes)
+    # i = np.where(cell_ids == 's84_0002')[0][0]
+    # axins.bar(t_autocorr, autocorr_cells[i], bin_width, color='b', align='center')
+    # #axins.set_yticks([])
+    # #axins.set_ylim(0, 0.03)
+    # axins.set_xticks([-max_lag_for_pca, 0, max_lag_for_pca])
+    # axins.set_xticklabels([-max_lag_for_pca, 0, max_lag_for_pca], fontsize=10)
+    # axins.set_xlabel('Lag (ms)', fontsize=10)
+    # axins.set_ylabel('Spike-time \nautocorrelation', fontsize=10)
+    #
+    # # example 2
+    # axins = inset_axes(ax, width='20%', height='20%', loc='upper right')  # bbox_to_anchor=(0.7, 0.7, 1.0, 1.0)
+    # i = np.where(cell_ids == 's109_0002')[0][0]
+    # axins.bar(t_autocorr, autocorr_cells[i], bin_width, color='r', align='center')
+    # #axins.set_yticks([])
+    # #axins.set_ylim(0, 0.03)
+    # axins.set_xticks([-max_lag_for_pca, 0, max_lag_for_pca])
+    # axins.set_xticklabels([-max_lag_for_pca, 0, max_lag_for_pca], fontsize=10)
+    # axins.set_xlabel('Lag (ms)', fontsize=10)
+    # axins.set_ylabel('Spike-time \nautocorrelation', fontsize=10)
+    #
+    # # example 3
+    # axins = inset_axes(ax, width='20%', height='20%', loc='center right')  # bbox_to_anchor=(0.7, 0.7, 1.0, 1.0)
+    # i = np.where(cell_ids == 's76_0002')[0][0]
+    # axins.bar(t_autocorr, autocorr_cells[i], bin_width, color='r', align='center')
+    # #axins.set_yticks([])
+    # #axins.set_ylim(0, 0.1)
+    # axins.set_xticks([-max_lag_for_pca, 0, max_lag_for_pca])
+    # axins.set_xticklabels([-max_lag_for_pca, 0, max_lag_for_pca], fontsize=10)
+    # axins.set_xlabel('Lag (ms)', fontsize=10)
+    # axins.set_ylabel('Spike-time \nautocorrelation', fontsize=10)
 
     # outside plot
     plot_with_markers(ax, projected[labels == 0, 0], projected[labels == 0, 1], cell_ids[labels == 0],
@@ -213,7 +216,7 @@ def plot_pca_projection_for_paper(save_dir_img):
                     bbox=dict(boxstyle='round', fc='w', alpha=0.2))
         ax.set_xlabel('Lag (ms)')
         ax.set_ylabel('PC' + str(n_component + 1))
-        ax.set_xticks([-max_lag, 0, max_lag])
+        ax.set_xticks([-max_lag_for_pca, 0, max_lag_for_pca])
 
     # legend from upper plot
     ax = pl.Subplot(fig, inner[2])
@@ -230,12 +233,12 @@ def plot_pca_projection_for_paper(save_dir_img):
     pl.subplots_adjust(left=0.12, right=0.98, bottom=0.07, top=0.98)
     if save_dir_img is not None:
         pl.savefig(os.path.join(save_dir_img, 'pca_autocorrelation_paper_' + str(max_lag) + '_' + str(
-                                    bin_width) + '_' + str(sigma_smooth) + '_' + remove_cells_dict[
-                                    remove_cells] + '.png'))
+            max_lag_for_pca) + '_' + str(bin_width) + '_' + str(sigma_smooth) + '_' + remove_cells_dict[
+            remove_cells] + '.png'))
 
 
 def plot_backtransformed(save_dir_img=None):
-    plot_kwargs = dict(t_auto_corr=t_autocorr, auto_corr_cells=back_transformed, bin_size=bin_width,
+    plot_kwargs = dict(t_auto_corr=t_autocorr, auto_corr_cells=back_projected, bin_size=bin_width,
                        max_lag=max_lag)
     burst_label = np.array([True if cell_id in get_cell_ids_bursty() else False for cell_id in cell_ids])
     colors_marker = np.zeros(len(burst_label), dtype=str)
@@ -251,20 +254,33 @@ def plot_backtransformed(save_dir_img=None):
                             xlabel='Time (ms)', ylabel='Spike-time \nautocorrelation', colors_marker=colors_marker,
                             save_dir_img=save_dir_img_file)
 
+    def plot_2autocorrelations(ax, cell_idx, t_auto_corr, auto_corr_cells1, auto_corr_cells2, error, bin_size, max_lag):
+        ax.bar(t_auto_corr, auto_corr_cells1[cell_idx], bin_size, color='k', align='center', alpha=0.5)
+        ax.bar(t_auto_corr, auto_corr_cells2[cell_idx], bin_size, color='orange', align='center', alpha=0.5)
+        ax.set_xlim(-max_lag_for_pca, max_lag_for_pca)
+        ax.annotate(error[cell_idx], xy=(1.0, 1.0), xycoords='axes fraction', horizontalalignment='right',
+                    verticalalignment='top')
+
+    plot_kwargs = dict(t_auto_corr=t_autocorr, auto_corr_cells2=back_projected, auto_corr_cells1=autocorr_cells,
+                       bin_size=bin_width, max_lag=max_lag, error=error_backprojection_str)
+    plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_2autocorrelations, plot_kwargs,
+                            xlabel='Time (ms)', ylabel='Spike-time \nautocorrelation', colors_marker=colors_marker,
+                            save_dir_img=save_dir_img_file)
 
 if __name__ == '__main__':
     save_dir_img_paper = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/paper'
     save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
     save_dir_autocorr = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/autocorr'
     cell_type = 'grid_cells'
-    save_dir_img = os.path.join(save_dir_autocorr, 'PCA')
     #save_dir_img = '/home/cf/Dropbox/thesis/figures_results'
-    max_lag = 50
-    bin_width = 1  # ms
+    max_lag = 12  # ms
+    max_lag_for_pca = 12  # ms
+    bin_width = 0.5  # ms
     sigma_smooth = None
-    dt_kde = 0.05
+    dt_kde = 0.05  # ms
     n_components = 2
     remove_cells = True
+    normalization = 'max'
 
     max_lag_idx = to_idx(max_lag, bin_width)
     remove_cells_dict = {True: 'removed', False: 'not_removed'}
@@ -273,16 +289,21 @@ if __name__ == '__main__':
     theta_cells = load_cell_ids(save_dir, 'giant_theta')
     DAP_cells, DAP_cells_additional = get_cell_ids_DAP_cells()
     DAP_cells_new = get_cell_ids_DAP_cells(new=True)
+
+    folder = 'max_lag_' + str(max_lag) + '_bin_width_' + str(bin_width) + '_sigma_smooth_' + str(
+        sigma_smooth) + '_normalization_' + str(normalization)
+    save_dir_img = os.path.join(save_dir_autocorr, folder, 'PCA')
+    if max_lag_for_pca != max_lag:
+        save_dir_img = os.path.join(save_dir_img, 'max_lag_for_pca_'+str(max_lag_for_pca))
     if not os.path.exists(save_dir_img):
         os.makedirs(save_dir_img)
 
     # load
-    folder = 'max_lag_' + str(max_lag) + '_bin_width_' + str(bin_width) + '_sigma_smooth_' + str(sigma_smooth)
     autocorr_cells = np.load(os.path.join(save_dir_autocorr, folder, 'autocorr.npy'))
     if sigma_smooth is not None:
-        t_autocorr = np.arange(-max_lag_idx, max_lag_idx + dt_kde, dt_kde)
+        t_autocorr = np.arange(-max_lag, max_lag + dt_kde, dt_kde)
     else:
-        t_autocorr = np.arange(-max_lag_idx, max_lag_idx + bin_width, bin_width)
+        t_autocorr = np.arange(-max_lag, max_lag + bin_width, bin_width)
 
     # PCA
     if remove_cells:  # take out autocorrelation for cell s104_0007 and s110_0002
@@ -291,15 +312,27 @@ if __name__ == '__main__':
         idxs = range(len(cell_ids))
         idxs.remove(idx_s104_0007)
         idxs.remove(idx_s110_0002)
-        auto_corr_cells_for_pca = autocorr_cells[np.array(idxs)]
+        autocorr_cells_for_pca = autocorr_cells[np.array(idxs)]
     else:
-        auto_corr_cells_for_pca = autocorr_cells
-    auto_corr_cells_centered = autocorr_cells - np.mean(auto_corr_cells_for_pca, 0)
-    projected, components, explained_var = perform_PCA(auto_corr_cells_centered, n_components)
+        autocorr_cells_for_pca = autocorr_cells
+
+    if max_lag_for_pca != max_lag:
+        assert max_lag > max_lag_for_pca
+        assert sigma_smooth is None  # not implemented with smoothing
+        diff_lag_idx = to_idx(max_lag - max_lag_for_pca, bin_width)
+        t_autocorr = np.arange(-max_lag_idx + diff_lag_idx, max_lag_idx - diff_lag_idx + bin_width, bin_width)
+        autocorr_cells = autocorr_cells[:, diff_lag_idx:-diff_lag_idx]
+        autocorr_cells_for_pca = autocorr_cells_for_pca[:, diff_lag_idx:-diff_lag_idx]
+    projected_, components, explained_var = perform_PCA(autocorr_cells_for_pca, n_components)
+    projected = np.dot(autocorr_cells - np.mean(autocorr_cells_for_pca, 0), components[:n_components, :].T)
 
     # PCA backtransform
-    back_transformed = np.dot(projected, components[:n_components, :])
-    back_transformed += np.mean(auto_corr_cells_for_pca, axis=0)
+    back_projected = np.dot(projected, components[:n_components, :])
+    back_projected += np.mean(autocorr_cells_for_pca, axis=0)
+
+    len_autocorr = np.shape(autocorr_cells)[1]
+    error_backprojection = np.array([np.sqrt(np.sum((o-bp)**2)/len_autocorr) for o, bp in zip(autocorr_cells, back_projected)])
+    error_backprojection_str = ['%.4f' % e for e in error_backprojection]
 
     # k-means
     n_clusters = 2
@@ -311,6 +344,9 @@ if __name__ == '__main__':
 
     # specclus = SpectralClustering(n_clusters=n_clusters, random_state=3).fit(transformed)
     # labels = specclus.labels_
+
+    # save
+    np.save(os.path.join(save_dir_img, 'projected.npy'), projected)
 
     # plots
     plot_pca_projection_for_paper(save_dir_img=save_dir_img_paper)
