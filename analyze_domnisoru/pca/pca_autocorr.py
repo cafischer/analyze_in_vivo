@@ -12,7 +12,7 @@ from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_with_markers
 from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_for_all_grid_cells
 from analyze_in_vivo.analyze_domnisoru.autocorr.spiketime_autocorr import plot_autocorrelation
 from analyze_in_vivo.analyze_domnisoru.pca import perform_PCA
-pl.style.use('paper_subplots')
+#pl.style.use('paper_subplots')
 
 
 def plot_PCs(n_components, x, PCs, explained_var, max_lag, bin_width, save_dir_img=None):
@@ -204,6 +204,9 @@ def plot_pca_projection_for_paper(save_dir_img):
     ax.set_xlabel('PC1')
     ax.set_ylabel('PC2')
 
+    for cell_idx, cell_id in enumerate(cell_ids):
+        ax.annotate(cell_id, xy=(projected[cell_idx, 0], projected[cell_idx, 1]), fontsize=8)
+
     # lower plot
     inner = gridspec.GridSpecFromSubplotSpec(1, 3, subplot_spec=outer[1], width_ratios=[1, 1, 0.5], wspace=0.5)
     for n_component in range(n_components):
@@ -268,19 +271,27 @@ def plot_backtransformed(save_dir_img=None):
                             save_dir_img=save_dir_img_file)
 
 if __name__ == '__main__':
-    save_dir_img_paper = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/paper'
-    save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
-    save_dir_autocorr = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/autocorr'
+    #save_dir_img_paper = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/paper'
+    #save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
+    #save_dir_autocorr = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/autocorr'
+
+    save_dir_img_paper = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/paper'
+    save_dir = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
+    save_dir_autocorr = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/autocorr'
+
+    if not os.path.exists(save_dir_img_paper):
+        os.makedirs(save_dir_img_paper)
+
     cell_type = 'grid_cells'
     #save_dir_img = '/home/cf/Dropbox/thesis/figures_results'
-    max_lag = 12  # ms
-    max_lag_for_pca = 12  # ms
-    bin_width = 0.5  # ms
+    max_lag = 150  # ms
+    max_lag_for_pca = max_lag  # ms
+    bin_width = 1  # ms
     sigma_smooth = None
     dt_kde = 0.05  # ms
     n_components = 2
     remove_cells = True
-    normalization = 'max'
+    normalization = 'sum'
 
     max_lag_idx = to_idx(max_lag, bin_width)
     remove_cells_dict = {True: 'removed', False: 'not_removed'}

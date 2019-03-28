@@ -12,24 +12,32 @@ from cell_characteristics import to_idx
 from cell_characteristics.analyze_APs import get_AP_onset_idxs
 from scipy.stats import f_oneway, ttest_ind, kruskal
 import pandas as pd
-#pl.style.use('paper_subplots')
+from analyze_in_vivo.analyze_domnisoru import perform_kde, evaluate_kde
+pl.style.use('paper')
 
 
 #save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/paper'
 #save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
 #save_dir_ISI_hist = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/ISI_hist'
-#save_dir_ISI_hist_latuske = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/latuske/ISI/ISI_hist'
-#save_dir_n_spikes_in_burst = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/bursting/grid_cells'
-#save_dir_ISI_return_map = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/ISI_return_map'
+#save_dir_spike_events = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/bursting/grid_cells'
+#save_dir_ISI_return_map = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/ISI_return_map/cut_ISIs_at_200/grid_cells'
 #save_dir_sta = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/STA/good_AP_criterion/not_detrended'
+#save_dir_ISI_hist_latuske = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/latuske/ISI/ISI_hist'
+#save_dir_spike_events_latuske = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/latuske/spike_events'
+#save_dir_ISI_return_map_latuske = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/latuske/ISI/ISI_return_map'
 
 save_dir_img = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/paper'
 save_dir = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
 save_dir_ISI_hist = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/ISI_hist'
-save_dir_n_spikes_in_burst = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/bursting/grid_cells'
+save_dir_spike_events = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/bursting/grid_cells'
 save_dir_ISI_return_map = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/ISI_return_map'
+save_dir_firing_rate = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/firing_rate'
 save_dir_sta = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/STA/good_AP_criterion/not_detrended'
 save_dir_ISI_hist_latuske = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/latuske/ISI/ISI_hist'
+save_dir_spike_events_latuske = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/latuske/spike_events'
+save_dir_ISI_return_map_latuske = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/latuske/ISI/ISI_return_map'
+save_dir_firing_rate_latuske = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/latuske/firing_rate'
+save_dir_delta_DAP = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/delta_DAP_delta_fAHP'
 
 cell_type_dict = get_celltype_dict(save_dir)
 theta_cells = load_cell_ids(save_dir, 'giant_theta')
@@ -44,7 +52,7 @@ color_nonburst = 'b'
 max_ISI = 200
 bin_width = 1
 sigma_smooth = 1
-ISI_burst = 8  # ms
+burst_ISI = 8  # ms
 before_AP = 25
 after_AP = 25
 t_vref = 10
@@ -54,16 +62,17 @@ remove_cells = True
 
 folder = 'max_ISI_' + str(max_ISI) + '_bin_width_' + str(bin_width) + '_sigma_smooth_' + str(sigma_smooth)
 
+# load domnisoru
 peak_ISI_hist = np.load(os.path.join(save_dir_ISI_hist, folder, 'peak_ISI_hist.npy'))
 width_ISI_hist = np.load(os.path.join(save_dir_ISI_hist, folder, 'width_at_half_ISI_peak.npy'))
-peak_ISI_hist_latuske = np.load(os.path.join(save_dir_ISI_hist_latuske, folder, 'peak_ISI_hist.npy'))
-width_ISI_hist_latuske = np.load(os.path.join(save_dir_ISI_hist_latuske, folder, 'width_at_half_ISI_peak.npy'))
-cell_ids_latuske = [str(i) for i in range(len(peak_ISI_hist_latuske))]
 fraction_burst = np.load(os.path.join(save_dir_ISI_hist, folder, 'fraction_burst.npy'))
-fraction_single = np.load(os.path.join(save_dir_n_spikes_in_burst, 'fraction_single_' + str(ISI_burst) + '.npy'))
+shortest_ISI = np.load(os.path.join(save_dir_ISI_hist, folder, 'shortest_ISI.npy'))
+CV_ISIs = np.load(os.path.join(save_dir_ISI_hist, folder, 'CV_ISIs.npy'))
+fraction_single = np.load(os.path.join(save_dir_spike_events, 'fraction_single_' + str(burst_ISI) + '.npy'))
 fraction_ISI_or_ISI_next_burst = np.load(os.path.join(save_dir_ISI_return_map,
                                                       'max_ISI_' + str(max_ISI) + '_bin_width_' + str(bin_width),
                                                       'fraction_ISI_or_ISI_next_burst.npy'))
+firing_rate = np.load(os.path.join(save_dir_firing_rate, 'firing_rate.npy'))
 folder_name = AP_criterion.keys()[0] + str(AP_criterion.values()[0]) \
               + '_before_after_AP_' + str((before_AP, after_AP)) + '_t_vref_' + str(t_vref)
 sta_mean_cells = np.load(os.path.join(save_dir_sta, folder_name, 'sta_mean.npy'))
@@ -77,86 +86,68 @@ t_onset = np.array([t_sta[AP_thresh_idx[i]] + before_AP for i in range(len(sta_m
 v_start = np.array([sta_mean_cells[i][0] for i in range(len(sta_mean_cells))])
 vdiff_onset_start = (v_onset - v_start) / t_onset
 
+v_rest_fAHP = np.load(os.path.join(save_dir_delta_DAP, 'avg_times', 'v_rest_fAHP.npy'))
+v_DAP_fAHP = np.load(os.path.join(save_dir_delta_DAP, 'avg_times', 'v_DAP_fAHP.npy'))
+
 cell_ids = np.array(load_cell_ids(save_dir, 'grid_cells'))
 burst_label = np.array([True if cell_id in get_cell_ids_bursty() else False for cell_id in cell_ids])
 cell_ids_burst1 = DAP_cells + ['s43_0003']  # ['s76_0002', 's117_0002', 's118_0002', 's120_0002']
 burst1_label = np.array([True if cell_id in cell_ids_burst1 else False for cell_id in cell_ids])
 burst2_label = np.logical_and(burst_label, ~burst1_label)
 
-# plot
-n_bursty = sum(burst_label)
-n_nonbursty = sum(~burst_label)
 
-fig = pl.figure(figsize=(12, 4))
-n_cols = 6
-outer = gridspec.GridSpec(1, n_cols + 1)
-
-data = [fraction_burst, fraction_single, fraction_ISI_or_ISI_next_burst, vdiff_onset_start,  width_ISI_hist, peak_ISI_hist]
+data = [fraction_burst, fraction_single, fraction_ISI_or_ISI_next_burst,  width_ISI_hist,
+        peak_ISI_hist, firing_rate, shortest_ISI, CV_ISIs, vdiff_onset_start]
 ylabels = ['Fraction ISIs $\leq$ 8ms', 'Fraction single spikes', 'Fraction ISI[n] or ISI[n+1] $\leq$ 8ms',
-           'Linear slope before AP (mV/ms)',
-           'Width of the ISI hist. at half max. (ms)', 'Location of the ISI hist. peak (ms)']
-letters = ['A', 'B', 'C', 'D', 'E', 'F']
+           'Width of the ISI hist. (ms)', 'ISI hist. peak (ms)',
+           'Firing rate (Hz)', 'Mean 10% shortest ISIs', 'CV of ISIs', 'Linear slope before AP (mV/ms)']
 
-for i in range(n_cols):
-    # ANOVA and post-hoc t-test
-    # f_stat, p_val = f_oneway(data[i][burst1_label], data[i][burst2_label], data[i][~burst_label])
-    # #print 'p-val: %.5f' % p_val
-    # bonferroni_correction = 3
-    _, p_val1 = ttest_ind(data[i][burst1_label], data[i][burst2_label])
-    _, p_val2 = ttest_ind(data[i][burst_label], data[i][~burst_label])
-    print ylabels[i]
-    print 't-test'
-    print 'p-val(B+D, B): %.5f' % (p_val1)
-    print 'p-val(B(all), N-B): %.5f' % (p_val2)
-    _, p_val1 = kruskal(data[i][burst1_label], data[i][burst2_label])
-    _, p_val2 = kruskal(data[i][burst_label], data[i][~burst_label])
-    print ''
-    print 'kruskal wallis'
-    print 'p-val(B+D, B): %.5f' % (p_val1)
-    print 'p-val(B(all), N-B): %.5f' % (p_val2)
-    print ''
+# plot
+fig, axes = pl.subplots(3, 3, figsize=(10, 8))
+i_row = 0
+i_col = 0
+for i in range(9):
+    if i_col == 3:
+        i_row += 1
+        i_col = 0
+    plot_with_markers(axes[i_row, i_col], v_rest_fAHP[burst1_label], data[i][burst1_label], cell_ids[burst1_label],
+                      cell_type_dict, edgecolor=color_burst1, legend=False)
+    plot_with_markers(axes[i_row, i_col], v_rest_fAHP[burst2_label], data[i][burst2_label], cell_ids[burst2_label],
+                      cell_type_dict, edgecolor=color_burst2, legend=False)
+    plot_with_markers(axes[i_row, i_col], v_rest_fAHP[~burst_label], data[i][~burst_label], cell_ids[~burst_label],
+                      cell_type_dict, edgecolor=color_nonburst, legend=False)
+    axes[i_row, i_col].set_xlabel('delta fAHP')
+    axes[i_row, i_col].set_ylabel(ylabels[i])
 
-    ax = pl.Subplot(fig, outer[0, i])
-    fig.add_subplot(ax)
-    plot_with_markers(ax, -np.ones(n_bursty), data[i][burst1_label], cell_ids[burst1_label], cell_type_dict,
-                      edgecolor=color_burst1, theta_cells=theta_cells, legend=False)
-    plot_with_markers(ax, np.zeros(n_bursty), data[i][burst2_label], cell_ids[burst2_label], cell_type_dict,
-                      edgecolor=color_burst2, theta_cells=theta_cells, legend=False)
-    handles = plot_with_markers(ax, np.ones(n_nonbursty), data[i][~burst_label], cell_ids[~burst_label], cell_type_dict,
-                      edgecolor=color_nonburst, theta_cells=theta_cells, legend=False)
-    ax.set_xticks([-1, 0, 1])
-    ax.set_xticklabels(['B+D', 'B', 'N-B'])
-
-    ax.set_xlim([-1.5, 1.5])
     if i < 3:
-        ax.set_ylim([0, 1.1])
+        axes[i_row, i_col].set_ylim([0, 1.1])
     else:
-        ax.set_ylim([0, None])
-    ax.set_ylabel(ylabels[i])
-    ax.text(-0.5, 1.0, letters[i], transform=ax.transAxes, size=18, weight='bold')
+        axes[i_row, i_col].set_ylim([0, None])
 
-ax = pl.Subplot(fig, outer[0, -1])
-fig.add_subplot(ax)
-fig_fake, ax_fake = pl.subplots()
-pl.close(fig_fake)
-handles += [Patch(color=color_burst1, label='Bursty+DAP'), Patch(color=color_burst2, label='Bursty'),
-            Patch(color=color_nonburst, label='Non-bursty')]
-ax.legend(handles=handles)
-ax.spines['left'].set_visible(False)
-ax.spines['bottom'].set_visible(False)
-ax.set_xticks([])
-ax.set_yticks([])
-
+    i_col += 1
 pl.tight_layout()
-#pl.subplots_adjust(top=0.97, left=0.09, right=0.99, bottom=0.07)
-pl.savefig(os.path.join(save_dir_img, 'difference_bursty_nonbursty_3groups_new.png'))
+#pl.show()
+
+fig, axes = pl.subplots(3, 3, figsize=(10, 8))
+i_row = 0
+i_col = 0
+for i in range(9):
+    if i_col == 3:
+        i_row += 1
+        i_col = 0
+    plot_with_markers(axes[i_row, i_col], v_DAP_fAHP[burst1_label], data[i][burst1_label], cell_ids[burst1_label],
+                      cell_type_dict, edgecolor=color_burst1, legend=False)
+    plot_with_markers(axes[i_row, i_col], v_DAP_fAHP[burst2_label], data[i][burst2_label], cell_ids[burst2_label],
+                      cell_type_dict, edgecolor=color_burst2, legend=False)
+    plot_with_markers(axes[i_row, i_col], v_DAP_fAHP[~burst_label], data[i][~burst_label], cell_ids[~burst_label],
+                      cell_type_dict, edgecolor=color_nonburst, legend=False)
+    axes[i_row, i_col].set_xlabel('delta DAP')
+    axes[i_row, i_col].set_ylabel(ylabels[i])
+
+    if i < 3:
+        axes[i_row, i_col].set_ylim([0, 1.1])
+    else:
+        axes[i_row, i_col].set_ylim([0, None])
+    i_col += 1
+pl.tight_layout()
 pl.show()
-
-
-df = pd.DataFrame(data=np.vstack((fraction_burst, fraction_single, fraction_ISI_or_ISI_next_burst, vdiff_onset_start,
-                                  width_ISI_hist, peak_ISI_hist)).T,
-                  columns=['Fraction ISIs <= 8ms', 'Fraction single spikes', 'Fraction ISI[n] or ISI[n+1] <= 8ms',
-                           'Linear slope before AP', 'Width ISI hist.', 'Location of ISI hist. peak'], index=cell_ids)
-df.index.name = 'Cell ID'
-df = df.astype(float).round(2)
-df.to_csv(os.path.join(save_dir_img, 'spike_characteristics.csv'))

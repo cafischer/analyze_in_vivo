@@ -12,30 +12,31 @@ from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_for_all_grid_cells
 from analyze_in_vivo.analyze_domnisoru import perform_kde, evaluate_kde
 import scipy.stats as st
 import pandas as pd
-pl.style.use('paper_subplots')
+#pl.style.use('paper_subplots')
 
 
 if __name__ == '__main__':
     # Note: not all APs are captured as the spikes are so small and noise is high and depth of hyperpolarization
     # between successive spikes varies
-    save_dir_img2 = '/home/cf/Dropbox/thesis/figures_results'
-    save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/ISI_hist'
-    save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
+    #save_dir_img2 = '/home/cf/Dropbox/thesis/figures_results'
+    #save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/ISI_hist'
+    #save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
+
+    save_dir_img = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/ISI_hist'
+    save_dir = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
+
     cell_type_dict = get_celltype_dict(save_dir)
     cell_type = 'grid_cells'
     cell_ids = load_cell_ids(save_dir, cell_type)
     theta_cells = load_cell_ids(save_dir, 'giant_theta')
     DAP_cells, DAP_cells_additional = get_cell_ids_DAP_cells()
     param_list = ['Vm_ljpc', 'spiketimes']
-    AP_thresholds = {'s73_0004': -55, 's90_0006': -45, 's82_0002': -35, 's117_0002': -60, 's119_0004': -50,
-                     's104_0007': -55, 's79_0003': -50, 's76_0002': -50, 's101_0009': -45}
-    use_AP_max_idxs_domnisoru = True
     max_ISI = 200  # None if you want to take all ISIs
     burst_ISI = 8  # ms
     bin_width = 1  # ms
     bins = np.arange(0, max_ISI+bin_width, bin_width)
-    sigma_smooth = 1  # ms  None for no smoothing
-    dt_kde = 0.05
+    sigma_smooth = None  # ms  None for no smoothing
+    dt_kde = 0.05  # ms
     t_kde = np.arange(0, max_ISI + dt_kde, dt_kde)
 
     folder = 'max_ISI_' + str(max_ISI) + '_bin_width_' + str(bin_width) + '_sigma_smooth_' + str(sigma_smooth)
@@ -51,12 +52,11 @@ if __name__ == '__main__':
     cum_ISI_hist_y = [0] * len(cell_ids)
     cum_ISI_hist_x = [0] * len(cell_ids)
     fraction_ISIs_filtered = np.zeros(len(cell_ids))
-    len_recording = np.zeros(len(cell_ids))
-    firing_rate = np.zeros(len(cell_ids))
     fraction_burst = np.zeros(len(cell_ids))
     peak_ISI_hist = np.zeros(len(cell_ids), dtype=object)
     shortest_ISI = np.zeros(len(cell_ids))
     width_ISI_hist = np.zeros(len(cell_ids))
+    CV_ISIs = np.zeros(len(cell_ids))
     kde_cells = np.zeros(len(cell_ids), dtype=object)
 
     for cell_idx, cell_id in enumerate(cell_ids):
@@ -66,17 +66,12 @@ if __name__ == '__main__':
         v = data['Vm_ljpc']
         t = np.arange(0, len(v)) * data['dt']
         dt = t[1] - t[0]
+        AP_max_idxs = data['spiketimes']
 
         # ISIs
-        if use_AP_max_idxs_domnisoru:
-            AP_max_idxs = data['spiketimes']
-        else:
-            AP_max_idxs = get_AP_max_idxs(v, AP_thresholds[cell_id], dt)
         ISIs = get_ISIs(AP_max_idxs, t)
         if max_ISI is not None:
             fraction_ISIs_filtered[cell_idx] = np.sum(ISIs <= max_ISI) / float(len(ISIs))
-            len_recording[cell_idx] = t[-1]
-            firing_rate[cell_idx] = len(AP_max_idxs) / (len_recording[cell_idx] / 1000.0)
             ISIs = ISIs[ISIs <= max_ISI]
         n_ISIs[cell_idx] = len(ISIs)
         ISIs_per_cell[cell_idx] = ISIs
@@ -97,7 +92,12 @@ if __name__ == '__main__':
                                        bins[1:][np.argmax(ISI_hist_cells[cell_idx, :])])
         else:
             peak_ISI_hist[cell_idx], width_ISI_hist[cell_idx] = get_ISI_hist_peak_and_width(ISI_kde_cells[cell_idx], t_kde)
-        shortest_ISI[cell_idx] = np.mean(np.sort(ISIs)[:10])
+        shortest_ISI[cell_idx] = np.mean(np.sort(ISIs)[:int(round(len(ISIs)*0.1))])
+        print 'n short: ', int(round(len(ISIs)*0.1))
+        print shortest_ISI[cell_idx]
+
+        CV_ISIs[cell_idx] = np.std(ISIs) / np.mean(ISIs)
+
         # save and plot
         # save_dir_cell = os.path.join(save_dir_img, cell_id)
         # if not os.path.exists(save_dir_cell):
@@ -120,13 +120,15 @@ if __name__ == '__main__':
         np.save(os.path.join(save_dir_img, 'fraction_burst.npy'), fraction_burst)
         np.save(os.path.join(save_dir_img, 'peak_ISI_hist.npy'), peak_ISI_hist)
         np.save(os.path.join(save_dir_img, 'ISI_hist.npy'), ISI_hist_cells)
+    np.save(os.path.join(save_dir_img, 'shortest_ISI.npy'), shortest_ISI)
+    np.save(os.path.join(save_dir_img, 'CV_ISIs.npy'), CV_ISIs)
 
     # table of ISI
     cell_ids_bursty = get_cell_ids_bursty()
     burst_label = np.array([True if cell_id in cell_ids_bursty else False for cell_id in cell_ids])
     burst_row = ['B' if l else 'N-B' for l in burst_label]
     df = pd.DataFrame(data=np.vstack((shortest_ISI, peak_ISI_hist, width_ISI_hist, burst_row)).T,
-                      columns=['mean(10 shortest ISIs)', 'ISI peak', 'ISI width', 'burst behavior'], index=cell_ids)
+                      columns=['mean(shortest ISIs)', 'ISI peak', 'ISI width', 'burst behavior'], index=cell_ids)
     df.index.name = 'Cell ids'
     df.to_csv(os.path.join(save_dir_img, 'ISI_distribution.csv'))
 
@@ -138,14 +140,14 @@ if __name__ == '__main__':
 
 
     # cumulative ISI histogram for bursty and non-bursty group
-    ISIs_all_bursty =  np.array([item for sublist in np.array(ISIs_per_cell)[burst_label] for item in sublist])
-    ISIs_all_nonbursty = np.array([item for sublist in np.array(ISIs_per_cell)[~burst_label] for item in sublist])
-    cum_ISI_hist_y_avg_bursty, cum_ISI_hist_x_avg_bursty = get_cumulative_ISI_hist(ISIs_all_bursty)
-    cum_ISI_hist_y_avg_nonbursty, cum_ISI_hist_x_avg_nonbursty = get_cumulative_ISI_hist(ISIs_all_nonbursty)
-    plot_cumulative_ISI_hist_all_cells_with_bursty(cum_ISI_hist_y, cum_ISI_hist_x,
-                                                   cum_ISI_hist_y_avg_bursty, cum_ISI_hist_x_avg_bursty,
-                                                   cum_ISI_hist_y_avg_nonbursty, cum_ISI_hist_x_avg_nonbursty,
-                                                   cell_ids, burst_label, max_ISI, os.path.join(save_dir_img2))
+    #ISIs_all_bursty =  np.array([item for sublist in np.array(ISIs_per_cell)[burst_label] for item in sublist])
+    #ISIs_all_nonbursty = np.array([item for sublist in np.array(ISIs_per_cell)[~burst_label] for item in sublist])
+    #cum_ISI_hist_y_avg_bursty, cum_ISI_hist_x_avg_bursty = get_cumulative_ISI_hist(ISIs_all_bursty)
+    #cum_ISI_hist_y_avg_nonbursty, cum_ISI_hist_x_avg_nonbursty = get_cumulative_ISI_hist(ISIs_all_nonbursty)
+    #plot_cumulative_ISI_hist_all_cells_with_bursty(cum_ISI_hist_y, cum_ISI_hist_x,
+    #                                               cum_ISI_hist_y_avg_bursty, cum_ISI_hist_x_avg_bursty,
+    #                                               cum_ISI_hist_y_avg_nonbursty, cum_ISI_hist_x_avg_nonbursty,
+    #                                               cell_ids, burst_label, max_ISI, os.path.join(save_dir_img2))
 
     # from scipy.interpolate import UnivariateSpline
     # spline = UnivariateSpline(cum_ISI_hist_x_avg_nonbursty, cum_ISI_hist_y_avg_nonbursty, s=0.005)
@@ -254,20 +256,6 @@ if __name__ == '__main__':
     # plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_bar, plot_kwargs,
     #                         xlabel='', ylabel='ISI peak', colors_marker=colors_marker,
     #                         save_dir_img=None)
-
-    # pl.figure()
-    # pl.plot(len_recording / 1000.0, fraction_ISIs_filtered, 'ok')
-    # pl.xlabel('Dur. recording (s)')
-    # pl.ylabel('Fraction ISI < 200 ms')
-    # pl.tight_layout()
-    # pl.savefig(os.path.join(save_dir_img, 'dur_rec_vs_fraction_ISI.png'))
-    #
-    # pl.figure()
-    # pl.plot(firing_rate / 1000.0, fraction_ISIs_filtered, 'ok')
-    # pl.xlabel('Firing rate (Hz)')
-    # pl.ylabel('Fraction ISI < 200 ms')
-    # pl.tight_layout()
-    # pl.savefig(os.path.join(save_dir_img, 'firing_rate_vs_fraction_ISI.png'))
 
     # fig, ax = pl.subplots()
     # plot_with_markers(ax, peak_ISI_hist, width_at_half_max, cell_ids, cell_type_dict, theta_cells=theta_cells,

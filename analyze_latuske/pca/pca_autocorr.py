@@ -14,7 +14,7 @@ from analyze_in_vivo.analyze_domnisoru.pca import perform_PCA
 import scipy as sc
 import scipy.spatial
 import scipy.cluster
-pl.style.use('paper_subplots')
+pl.style.use('paper')
 
 
 def plot_pca_projection_for_paper(save_dir_img):
@@ -80,7 +80,7 @@ def plot_pca_projection_for_paper(save_dir_img):
 
     ax.plot(projected_latuske[labels_latuske == 0, 0], projected_latuske[labels_latuske == 0, 1], 'b', marker='d',
             linestyle='', markerfacecolor='None')
-    ax.plot(projected_latuske[labels_latuske == 1, 0], projected_latuske[labels_latuske == 1, 1], 'g', marker='d',
+    ax.plot(projected_latuske[labels_latuske == 1, 0], projected_latuske[labels_latuske == 1, 1], 'r', marker='d',
             linestyle='', markerfacecolor='None')
     if n_clusters == 3:
         ax.plot(projected_latuske[labels_latuske == 2, 0], projected_latuske[labels_latuske == 2, 1], 'r', marker='d',
@@ -90,7 +90,7 @@ def plot_pca_projection_for_paper(save_dir_img):
                       get_celltype_dict(save_dir_domnisoru), theta_cells=theta_cells, edgecolor='b', legend=False)
     handles = plot_with_markers(ax, projected_domnisoru[labels_domnisoru == 1, 0],
                                 projected_domnisoru[labels_domnisoru == 1, 1], cell_ids_domnisoru[labels_domnisoru == 1],
-                                get_celltype_dict(save_dir_domnisoru), theta_cells=theta_cells, edgecolor='g', legend=False)
+                                get_celltype_dict(save_dir_domnisoru), theta_cells=theta_cells, edgecolor='r', legend=False)
     if n_clusters == 3:
         plot_with_markers(ax, projected_domnisoru[labels_domnisoru == 2, 0],
                           projected_domnisoru[labels_domnisoru == 2, 1], cell_ids_domnisoru[labels_domnisoru == 2],
@@ -98,8 +98,8 @@ def plot_pca_projection_for_paper(save_dir_img):
 
     # for cell_idx, cell_id in enumerate(cell_ids_latuske):
     #     ax.annotate(cell_id, xy=(projected_latuske[cell_idx, 0], projected_latuske[cell_idx, 1]))
-    for cell_idx, cell_id in enumerate(cell_ids_domnisoru):
-        ax.annotate(cell_id, xy=(projected_domnisoru[cell_idx, 0], projected_domnisoru[cell_idx, 1]), fontsize=8)
+    #for cell_idx, cell_id in enumerate(cell_ids_domnisoru):
+    #    ax.annotate(cell_id, xy=(projected_domnisoru[cell_idx, 0], projected_domnisoru[cell_idx, 1]), fontsize=8)
 
     fig_fake, ax_fake = pl.subplots()
     handle_latuske = [ax_fake.scatter(0, 0, marker='d', edgecolor='k', facecolor='None', label='Latuske')]
@@ -141,18 +141,23 @@ def plot_pca_projection_for_paper(save_dir_img):
 
 
 if __name__ == '__main__':
-    save_dir_domnisoru = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
-    save_dir_autocorr = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/latuske/autocorr'
-    save_dir_autocorr_domnisoru = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/autocorr'
-    max_lag = 12  # ms
-    bin_width = 0.5  # ms
+    #save_dir_domnisoru = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
+    #save_dir_autocorr = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/latuske/autocorr'
+    #save_dir_autocorr_domnisoru = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/autocorr'
+
+    save_dir_domnisoru = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
+    save_dir_autocorr = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/latuske/autocorr'
+    save_dir_autocorr_domnisoru = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/autocorr'
+
+    max_lag = 50  # ms
+    bin_width = 1  # ms
     sigma_smooth = None
     dt_kde = 0.05
     n_components = 2
     remove_cells = True  # take out autocorrelation for cell s104_0007 and s110_0002
     use_latuske = False
     use_domnisoru = True
-    normalization = 'max'
+    normalization = 'sum'
     max_lag_idx = to_idx(max_lag, bin_width)
 
     folder = 'max_lag_' + str(max_lag) + '_bin_width_' + str(bin_width) + '_sigma_smooth_' + str(sigma_smooth) + '_normalization_' + str(normalization)
@@ -242,17 +247,43 @@ if __name__ == '__main__':
         return cluster_labels, color_label_dict
 
     dist_mat = sc.spatial.distance.pdist(projected_all, metric='euclidean')
+    #dist_mat = sc.spatial.distance.pdist(projected_latuske, metric='euclidean')
     linkage = sc.cluster.hierarchy.linkage(dist_mat, method='ward')
     sc.cluster.hierarchy.set_link_color_palette(['b', 'r', 'g'])
     dend = sc.cluster.hierarchy.dendrogram(linkage, labels=np.hstack((cell_ids_latuske, cell_ids_domnisoru)),
                                            above_threshold_color="grey")
+    #dend = sc.cluster.hierarchy.dendrogram(linkage, labels=cell_ids_latuske, above_threshold_color="grey")
     pl.ylabel('Distance')
     labels, _ = get_cluster_classes(dend, np.hstack((cell_ids_latuske, cell_ids_domnisoru)), label='ivl')
+    #labels, _ = get_cluster_classes(dend, cell_ids_latuske, label='ivl')
     pl.savefig(os.path.join(save_dir_img, 'dendrogram.png'))
 
     labels_latuske = labels[:len(autocorr_cells_latuske)]
     labels_domnisoru = labels[len(autocorr_cells_latuske):]
 
+    nonbursty = cell_ids_latuske[(labels_latuske==0)]
+    print np.sort(nonbursty)
+    nonbursty = cell_ids_domnisoru[(labels_domnisoru == 0)]
+    print np.sort(nonbursty)
+
     # plots
     plot_pca_projection_for_paper(save_dir_img=save_dir_img)
     pl.show()
+
+    # non-bursty cells
+    # based on Latuske
+    #['10' '11' '12' '13' '14' '16' '21' '29' '30' '31' '33' '34' '35' '52' '57']
+    #['s100_0006' 's115_0018' 's115_0024' 's115_0030' 's74_0006' 's81_0004' 's84_0002' 's85_0007' 's90_0006' 's96_0009']
+
+    # based on Domnisoru
+    #['10' '11' '12' '13' '14' '21' '29' '30' '31' '33' '34' '35' '52' '57']  -16
+    # ['s100_0006' 's115_0018' 's115_0024' 's115_0030' 's74_0006' 's81_0004' 's84_0002' 's85_0007' 's90_0006' 's96_0009']
+
+    # based on Domnisoru, dendrogram Domnisoru
+    # ['s74_0006' 's81_0004' 's84_0002' 's85_0007' 's90_0006' 's96_0009' 's100_0006' 's115_0018' 's115_0024' 's115_0030']
+
+    # based on Domnisoru, dendrogram Latuske
+    # ['10' '11' '12' '13' '14' '21' '29' '30' '31' '33' '34' '35' '52' '57']
+
+    # based on Latuske, dendrogram Latuske
+    # ['10' '11' '12' '13' '14' '16' '17' '21' '29' '30' '31' '32' '33' '34' '35' '51' '52' '57']

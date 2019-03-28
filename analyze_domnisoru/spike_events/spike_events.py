@@ -8,7 +8,7 @@ from grid_cell_stimuli import get_AP_max_idxs
 from grid_cell_stimuli.ISI_hist import get_ISIs
 from analyze_in_vivo.analyze_domnisoru.check_basic.in_out_field import get_starts_ends_group_of_ones
 from analyze_in_vivo.analyze_domnisoru.spike_events import get_starts_ends_burst, get_idxs_single, get_burst_lengths
-pl.style.use('paper_subplots')
+#pl.style.use('paper_subplots')
 
 
 def plot_n_spikes_in_burst_all_cells(cell_type_dict, bins, count_spikes):
@@ -54,9 +54,13 @@ def plot_n_spikes_in_burst_all_cells(cell_type_dict, bins, count_spikes):
 
 
 if __name__ == '__main__':
-    save_dir_img2 = '/home/cf/Dropbox/thesis/figures_results'
-    save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/bursting'
-    save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
+    #save_dir_img2 = '/home/cf/Dropbox/thesis/figures_results'
+    #save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/bursting'
+    #save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
+
+    save_dir_img = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/bursting'
+    save_dir = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
+
     cell_type = 'grid_cells'
     cell_ids = load_cell_ids(save_dir, cell_type)
     cell_type_dict = get_celltype_dict(save_dir)

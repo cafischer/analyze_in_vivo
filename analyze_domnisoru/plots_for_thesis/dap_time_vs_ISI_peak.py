@@ -5,51 +5,64 @@ import os
 from scipy.stats import pearsonr
 from analyze_in_vivo.load.load_domnisoru import get_cell_ids_DAP_cells, get_celltype_dict, load_cell_ids, get_cell_ids_bursty
 from analyze_in_vivo.analyze_domnisoru.plot_utils import get_cell_id_with_marker, plot_with_markers
-pl.style.use('paper_subplots')
+from scipy.stats import ttest_ind
+pl.style.use('paper')
 
 
 if __name__ == '__main__':
     #save_dir_img = '/home/cf/Dropbox/thesis/figures_results'
-    save_dir_img_paper = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/paper'
-    save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/ISI_hist'
+    #save_dir_img_paper = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/paper'
+    #save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/ISI_hist'
+    #save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
+    #save_dir_characteristics = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/AP_characteristics/all'
 
-    save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
-    save_dir_characteristics = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/AP_characteristics/all'
+    save_dir_img_paper = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/paper'
+    save_dir_img = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/ISI_hist'
+    save_dir = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
+    save_dir_characteristics = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/AP_characteristics/all'
+    save_dir_bootstrap = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/bootstrap/'
+
     cell_type_dict = get_celltype_dict(save_dir)
     max_ISI = 200
     bin_width = 1  # ms
-    sigma_smooth = 1  # ms
+    sigma_smooth = None  # ms
     before_AP = 25
     after_AP = 25
     t_vref = 10
     dt = 0.05
     AP_criterion = {'AP_amp_and_width': (40, 1)}
-    folder_name = AP_criterion.keys()[0] + str(AP_criterion.values()[0]) \
-                  + '_before_after_AP_' + str((before_AP, after_AP)) + '_t_vref_' + str(t_vref)
-    save_dir_img = os.path.join(save_dir_img, 'cut_ISIs_at_' + str(max_ISI), 'grid_cells')
-    save_dir_DAP_times = os.path.join('/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/STA/good_AP_criterion/not_detrended',
-                                      folder_name)
-    save_dir_ISI_hist = os.path.join('/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/ISI_hist',
-                                     'cut_ISIs_at_' + str(max_ISI))
 
     # load stuff
     grid_cells = np.array(load_cell_ids(save_dir, 'grid_cells'))
     theta_cells = load_cell_ids(save_dir, 'giant_theta')
-    # DAP_cells, DAP_cells_additional = get_cell_ids_DAP_cells()
     DAP_cells = get_cell_ids_DAP_cells(new=True)
-    DAP_label = np.array([True if cell_id in DAP_cells else False for cell_id in grid_cells])
-    cell_ids_bursty = get_cell_ids_bursty()
-    burst_label = np.array([True if cell_id in cell_ids_bursty else False for cell_id in grid_cells])
-    # DAP_time = np.load(os.path.join(save_dir_characteristics, 'grid_cells', 'DAP_time.npy')) TODO
-    DAP_time = np.load(os.path.join(save_dir_DAP_times, 'DAP_time.npy'))
-    DAP_time[np.where(grid_cells == 's43_0003')] = np.nan  # not real DAP
+    DAP_label = np.array([cell_id in DAP_cells for cell_id in grid_cells])
+
+    folder_name = AP_criterion.keys()[0] + str(AP_criterion.values()[0]) \
+                  + '_before_after_AP_' + str((before_AP, after_AP)) + '_t_vref_' + str(t_vref)
+    save_dir_DAP_times = os.path.join('/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/STA/good_AP_criterion/not_detrended',
+                                      folder_name)
+    save_dir_ISI_hist = os.path.join('/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/ISI_hist')
+    DAP_time = np.load(os.path.join(save_dir_DAP_times, 'DAP_time.npy'))[DAP_label]
+
+    folder_name = 'max_ISI_' + str(max_ISI) + '_bin_width_' + str(bin_width) + '_sigma_smooth_' + str(sigma_smooth)
     if sigma_smooth is not None:
-        peak_ISI_hist = np.load(os.path.join(save_dir_ISI_hist, 'grid_cells', 'peak_ISI_hist_'+str(max_ISI)+'_'+str(
-            bin_width)+ '_' + str(sigma_smooth)+'.npy'))
+        ISI_peak = np.load(os.path.join(save_dir_ISI_hist, folder_name, 'peak_ISI_hist.npy'))[DAP_label]
     else:
-        peak_ISI_hist = np.load(os.path.join(save_dir_ISI_hist, 'grid_cells', 'peak_ISI_hist_'+str(max_ISI)+'_'+str(
-            bin_width)+'.npy'))
-        peak_ISI_hist = np.array([(p[0] + p[1]) / 2. for p in peak_ISI_hist])  # set middle of bin as peak
+        ISI_peak = np.load(os.path.join(save_dir_ISI_hist, folder_name, 'peak_ISI_hist.npy'))[DAP_label]
+        ISI_peak = np.array([(p[0] + p[1]) / 2. for p in ISI_peak])  # set middle of bin as peak
+
+    folder_name = AP_criterion.keys()[0] + str(AP_criterion.values()[0]) \
+                  + '_before_after_AP_' + str((before_AP, after_AP)) + '_t_vref_' + str(t_vref)
+    DAP_time_mean = np.load(os.path.join(save_dir_bootstrap, folder_name, 'mean_DAP_time.npy'))
+    DAP_time_se = np.load(os.path.join(save_dir_bootstrap, folder_name, 'se_DAP_time.npy'))
+
+    if sigma_smooth is not None:
+        folder_name = 'max_ISI_' + str(max_ISI) + '_sigma_smooth_' + str(sigma_smooth)
+    else:
+        folder_name = 'max_ISI_' + str(max_ISI) + '_bin_width_' + str(bin_width)
+    ISI_peak_mean = np.load(os.path.join(save_dir_bootstrap, folder_name, 'mean_ISI_peak.npy'))
+    ISI_peak_se = np.load(os.path.join(save_dir_bootstrap, folder_name, 'se_ISI_peak.npy'))
 
     # # plot correlation DAP-time and peak ISI-hist
     # fig, ax = pl.subplots()
@@ -70,83 +83,29 @@ if __name__ == '__main__':
     # pl.savefig(os.path.join(save_dir_img, 'dap_time_vs_ISI_peak.png'))
     # pl.show()
 
-    # # alternative figure
-    # f, (ax, ax2) = pl.subplots(2, 1,  gridspec_kw={'height_ratios': [1, 5]}, figsize=(6, 6))
-    #
-    # # plot the same data on both axes
-    # ax.plot(np.arange(0, 20), np.arange(0, 20), '0.5', linestyle='--')
-    # plot_with_markers(ax, DAP_time[burst_label], peak_ISI_hist[burst_label], grid_cells[burst_label], cell_type_dict,
-    #                   theta_cells=theta_cells, DAP_cells=DAP_cells, DAP_cells_additional=DAP_cells_additional,
-    #                   edgecolor='r', legend=False)
-    # plot_with_markers(ax, DAP_time[~burst_label], peak_ISI_hist[~burst_label], grid_cells[~burst_label], cell_type_dict,
-    #                   theta_cells=theta_cells, DAP_cells=DAP_cells, DAP_cells_additional=DAP_cells_additional,
-    #                   edgecolor='b', legend=False)
-    #
-    # ax2.plot(np.arange(0, 20), np.arange(0, 20), '0.5', linestyle='--')
-    # handles = plot_with_markers(ax2, DAP_time[burst_label], peak_ISI_hist[burst_label], grid_cells[burst_label],
-    #                             cell_type_dict, theta_cells=theta_cells, DAP_cells=DAP_cells,
-    #                             DAP_cells_additional=DAP_cells_additional, edgecolor='r', legend=False)
-    # plot_with_markers(ax2, DAP_time[~burst_label], peak_ISI_hist[~burst_label], grid_cells[~burst_label], cell_type_dict,
-    #                   theta_cells=theta_cells, DAP_cells=DAP_cells, DAP_cells_additional=DAP_cells_additional,
-    #                   edgecolor='b', legend=False)
-    # handles += [Patch(color='r', label='Bursty'), Patch(color='b', label='Non-bursty')]
-    # ax2.legend(handles=handles, loc='lower right')
-    # ax2.set_ylabel('Peak of ISI hist. (ms)')
-    # ax2.set_xlabel('Time$_{AP-DAP}$ (ms)')
-    #
-    # # zoom-in / limit the view to different portions of the data
-    # ax.set_xlim(0, 9)
-    # ax2.set_xlim(0, 9)
-    # ax.set_ylim(33.5, 36.5)  # outliers only
-    # ax2.set_ylim(0, 9)  # most of the data
-    #
-    # # hide the spines between ax and ax2
-    # ax.spines['bottom'].set_visible(False)
-    # ax.set_yticks([34, 36])
-    # ax.set_xticklabels([])
-    # ax.set_xticks([])
-    # ax2.set_yticks(np.arange(0, 10, 2))
-    # ax2.set_xticks(ax2.get_yticks())
-    # ax2.set_xticklabels(ax2.get_yticks())
-    #
-    #
-    # # cut diagonal lines
-    # d = .015  # how big to make the diagonal lines in axes coordinates
-    # kwargs = dict(transform=ax.transAxes, color='k', clip_on=False)
-    # ax2.plot((-d, +d), (-d-0.125, +d-0.125), **kwargs)        # top-left diagonal
-    # ax2.plot((-d, +d), (-d, +d), **kwargs)  # bottom-left diagonal
-    #
-    # pl.tight_layout()
-    # pl.subplots_adjust(hspace=0.04)
-    # pl.savefig(os.path.join(save_dir_img, 'dap_time_vs_ISI_peak_'+str(max_ISI)+'_'+str(bin_width)+'.png'))
-
     # plot for paper
-    corr, p_val = pearsonr(DAP_time[DAP_label], peak_ISI_hist[DAP_label])
-    print 'corr: ', corr
+    corr, p_val = pearsonr(DAP_time, ISI_peak)
+    _, p_val_t = ttest_ind(DAP_time, ISI_peak)
+    print 'corr (pearson): %.2f' % corr
+    print 'p (pearson): %.2f' % p_val
+    print 'p (t-test): %.2f' % p_val_t
 
     f, ax = pl.subplots()
-    ax.plot(np.arange(0, 20), np.arange(0, 20), '0.5', linestyle='--')
-    # if sigma_smooth is not None:
-    #     ax.fill_between(np.arange(0, 20), np.arange(0, 20) - sigma_smooth, np.arange(0, 20) + sigma_smooth, color='0.5',
-    #                     alpha=0.15)
-    # else:
-    #     ax.fill_between(np.arange(0, 20), np.arange(0, 20) - bin_width, np.arange(0, 20) + bin_width, color='0.5',
-    #                     alpha=0.15)
-    handles = plot_with_markers(ax, DAP_time[burst_label], peak_ISI_hist[burst_label], grid_cells[burst_label],
-                                cell_type_dict, theta_cells=theta_cells, edgecolor='k', legend=False)
-    # plot_with_markers(ax, DAP_time[~burst_label], peak_ISI_hist[~burst_label], grid_cells[~burst_label], cell_type_dict,
-    #                   edgecolor='b', legend=False)
+    max_val = max(np.max(DAP_time_mean), np.max(ISI_peak_mean))
+    ax.plot([0, max_val], [0, max_val], '0.5', linestyle='--')
+    #handles = plot_with_markers(ax, DAP_time_mean, ISI_peak_mean, grid_cells[burst_label],
+    #                            cell_type_dict, theta_cells=theta_cells, edgecolor='k', legend=False)
+    ax.errorbar(DAP_time_mean, ISI_peak, xerr=DAP_time_se, linestyle='', capsize=2, color='k', marker='o', markersize=3)  # yerr=ISI_peak_se,
     ax.set_ylabel('Peak of ISI hist. (ms)')
     ax.set_xlabel('Time$_{AP-DAP}$ (ms)')
     ax.set_xlim(0, 7.5)
     ax.set_ylim(0, 7.5)
-    ax.legend(handles=handles, loc='lower right')
-    for i in range(len(grid_cells)):
-        ax.annotate(grid_cells[i], xy=(DAP_time[i]+0.15, peak_ISI_hist[i]+0.2), fontsize=7)
+    #ax.legend(handles=handles, loc='lower right')
+    #for i in range(len(DAP_cells)):
+    #    ax.annotate(DAP_cells[i], xy=(DAP_time_mean[i]+0.1, ISI_peak_mean[i]+0.35), fontsize=7)
     pl.tight_layout()
     if sigma_smooth is not None:
-        pl.savefig(os.path.join(save_dir_img_paper, 'dap_time_vs_ISI_peak_' + str(max_ISI) + '_' + str(
-            bin_width) + '_' + str(sigma_smooth) + '.png'))
+        pl.savefig(os.path.join(save_dir_img_paper, 'dap_time_vs_ISI_peak_kde.png'))
     else:
-        pl.savefig(os.path.join(save_dir_img_paper, 'dap_time_vs_ISI_peak_'+str(max_ISI)+'_'+str(bin_width)+'.png'))
+        pl.savefig(os.path.join(save_dir_img_paper, 'dap_time_vs_ISI_peak_binned.png'))
     pl.show()

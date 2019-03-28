@@ -9,19 +9,25 @@ from cell_fitting.optimization.evaluation import get_spike_characteristics_dict
 from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_with_markers
 from cell_fitting.util import init_nan
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes, mark_inset
-pl.style.use('paper_subplots')
+pl.style.use('paper')
 
 
 if __name__ == '__main__':
-    save_dir_img_paper = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/paper'
-    save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/STA'
-    save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
+    #save_dir_img_paper = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/paper'
+    #save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/STA'
+    #save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
+
+    save_dir_img_paper = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/paper'
+    save_dir_img = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/STA'
+    save_dir_data = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/delta_DAP_delta_fAHP'
+    save_dir = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
+
     cell_type = 'grid_cells'
     cell_ids = np.array(load_cell_ids(save_dir, cell_type))
 
     # parameters
     with_selection = True
-    use_avg_times = True
+    use_avg_times = False
     thresh = '1der'
     AP_thresh_derivative = 3.0
     do_detrend = False
@@ -118,31 +124,33 @@ if __name__ == '__main__':
         v_rest_fAHP[cell_idx] = sta_mean_cells[cell_idx][fAHP_idx] - sta_mean_cells[cell_idx][AP_thresh_idx]
         v_DAP_fAHP[cell_idx] = sta_mean_cells[cell_idx][DAP_idx] - sta_mean_cells[cell_idx][fAHP_idx]
 
-        # pl.figure()
-        # pl.plot(t_AP, sta_mean_cells[cell_idx], 'k')
-        # pl.plot(t_AP[fAHP_idx], sta_mean_cells[cell_idx][fAHP_idx], 'ob')
-        # pl.plot(t_AP[DAP_idx], sta_mean_cells[cell_idx][DAP_idx], 'or')
-        # pl.show()
+        #pl.figure()
+        #pl.title(cell_id)
+        #pl.plot(t_AP, sta_mean_cells[cell_idx], 'k')
+        #pl.plot(t_AP[AP_thresh_idx], sta_mean_cells[cell_idx][AP_thresh_idx], 'oy')
+        #pl.plot(t_AP[fAHP_idx], sta_mean_cells[cell_idx][fAHP_idx], 'ob')
+        #pl.plot(t_AP[DAP_idx], sta_mean_cells[cell_idx][DAP_idx], 'or')
+        #pl.show()
 
     # load PCs
-    save_dir_autocorr = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/autocorr'
-    max_lag = 50
-    max_lag_for_pca = 50
-    bin_width = 1  # ms
-    sigma_smooth = None
-    folder = 'max_lag_' + str(max_lag) + '_bin_width_' + str(bin_width) + '_sigma_smooth_' + str(sigma_smooth)
-    save_dir_pcs = os.path.join(save_dir_autocorr, folder, 'PCA')
-    projected = np.load(os.path.join(save_dir_pcs, 'projected.npy'))
-    cm = pl.get_cmap('viridis')
-    pmin = np.min(projected[:, 0])
-    pmax = np.max(projected[:, 0])
-    colors = cm((projected[:, 0] - pmin) / (pmax-pmin))
+    #save_dir_autocorr = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/autocorr'
+    #max_lag = 50
+    #max_lag_for_pca = 50
+    #bin_width = 1  # ms
+    #sigma_smooth = None
+    #folder = 'max_lag_' + str(max_lag) + '_bin_width_' + str(bin_width) + '_sigma_smooth_' + str(sigma_smooth)
+    #save_dir_pcs = os.path.join(save_dir_autocorr, folder, 'PCA')
+    #projected = np.load(os.path.join(save_dir_pcs, 'projected.npy'))
+    #cm = pl.get_cmap('viridis')
+    #pmin = np.min(projected[:, 0])
+    #pmax = np.max(projected[:, 0])
+    #colors = cm((projected[:, 0] - pmin) / (pmax-pmin))
 
     # plot
     fig, ax = pl.subplots(figsize=(10, 8))
     # pl.title('From STA with selection' if with_selection else 'From STA without selection',
     #          fontsize=12)
-    plot_with_markers(ax, v_rest_fAHP, v_DAP_fAHP, cell_ids, cell_type_dict, edgecolor=colors)  # TODO remove edgecolor
+    plot_with_markers(ax, v_rest_fAHP, v_DAP_fAHP, cell_ids, cell_type_dict)  # TODO remove edgecolor=colors
     ax.set_ylabel('$\Delta$ DAP', horizontalalignment='left', y=0.0)
     ax.set_xlabel('$\Delta$ fAHP', horizontalalignment='right', x=1.0)
     ax.spines['left'].set_position('zero')
@@ -237,3 +245,8 @@ if __name__ == '__main__':
     name_add2 = 'avg_times' if use_avg_times else 'not_avg_times'
     pl.savefig(os.path.join(save_dir_img_paper, 'delta_fAHP_delta_DAP_'+name_add+'_'+name_add2+'_'+thresh+'.png'))
     pl.show()
+
+    if not os.path.exists(os.path.join(save_dir_data, name_add2)):
+        os.makedirs(os.path.join(save_dir_data, name_add2))
+    np.save(os.path.join(save_dir_data, name_add2, 'v_rest_fAHP.npy'), v_rest_fAHP)
+    np.save(os.path.join(save_dir_data, name_add2, 'v_DAP_fAHP.npy'), v_DAP_fAHP)

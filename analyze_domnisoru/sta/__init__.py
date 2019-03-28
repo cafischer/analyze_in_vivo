@@ -47,7 +47,6 @@ def get_sta_criterion(v, dt, AP_max_idxs, do_detrend, before_AP, after_AP, AP_cr
         return init_nan(len(t_AP)), init_nan(len(t_AP)), init_nan(len(t_AP)), init_nan(len(t_AP)), 0
 
     AP_amps, AP_widths = get_AP_amps_and_widths(v_APs, t_AP, dt, before_AP_idx, t_vref)
-
     v_APs_good = select_APs(AP_amps, AP_widths, AP_criterion, v_APs)
 
     sta_mean, sta_std = get_sta(v_APs)

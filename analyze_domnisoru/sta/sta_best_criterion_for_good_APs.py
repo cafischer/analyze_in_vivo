@@ -10,7 +10,7 @@ from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_for_all_grid_cells
 from cell_characteristics import to_idx
 from cell_characteristics.analyze_APs import get_AP_onset_idxs
 from scipy.signal import gaussian
-pl.style.use('paper_subplots')
+#pl.style.use('paper_subplots')
 
 
 def smooth(y, box_pts):
@@ -130,8 +130,8 @@ if __name__ == '__main__':
     # test_osculating_circle(0.05)
     # pl.show()
 
-    save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/STA/good_AP_criterion'
-    save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
+    save_dir_img = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/STA/good_AP_criterion'
+    save_dir = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
     cell_type = 'grid_cells'
     cell_ids = load_cell_ids(save_dir, cell_type)
     param_list = ['Vm_ljpc', 'spiketimes']

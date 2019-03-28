@@ -14,24 +14,28 @@ import pandas as pd
 from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_with_markers
 from analyze_in_vivo.load.load_domnisoru import load_cell_ids, get_celltype_dict, get_cell_ids_bursty, \
     get_cell_ids_DAP_cells
-pl.style.use('paper_subplots')
+pl.style.use('paper')
 
 
 if __name__ == '__main__':
     #save_dir_img2 = '/home/cf/Dropbox/thesis/figures_results'
-    save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/autocorr'
-    save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
+    #save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/autocorr'
+    #save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
+
+    save_dir_img = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/autocorr'
+    save_dir = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
+
     cell_type = 'grid_cells'
     cell_ids = load_cell_ids(save_dir, cell_type)
     cell_type_dict = get_celltype_dict(save_dir)
-    param_list = ['Vm_ljpc', 'spiketimes', 'fvel_100ms']
+    param_list = ['Vm_ljpc', 'spiketimes']
 
     # parameters
-    bin_width = 0.5  # ms
-    max_lag = 12
+    bin_width = 1  # ms
+    max_lag = 50
     sigma_smooth = None  # ms  None for no smoothing
     dt_kde = 0.05  # ms (same as dt data as lower bound for precision)
-    normalization = 'max'  # 'sum
+    normalization = 'sum'  # 'sum
     t_kde = np.arange(-max_lag, max_lag + dt_kde, dt_kde)
     save_dir_img = os.path.join(save_dir_img)
 
@@ -91,8 +95,8 @@ if __name__ == '__main__':
         # pl.show()
 
         # median velocity
-        velocity = data['fvel_100ms']
-        median_velocity[cell_idx] = np.median(velocity)
+        #velocity = data['fvel_100ms']
+        #median_velocity[cell_idx] = np.median(velocity)
 
     # # TODO
     # sort_idxs = np.argsort(median_velocity)

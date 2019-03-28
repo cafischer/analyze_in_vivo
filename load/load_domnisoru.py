@@ -3,7 +3,7 @@ import os
 import matplotlib.pyplot as pl
 import numpy as np
 import json
-pl.style.use('paper')
+#pl.style.use('paper_subplots')
 
 
 def load_data(cell_id, param_list, save_dir):

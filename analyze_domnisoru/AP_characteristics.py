@@ -8,13 +8,17 @@ from analyze_in_vivo.analyze_domnisoru.sta import get_sta_criterion_all_cells
 from cell_characteristics.analyze_APs import get_spike_characteristics
 from cell_fitting.optimization.evaluation import get_spike_characteristics_dict
 from cell_fitting.util import init_nan
-pl.style.use('paper_subplots')
+pl.style.use('paper')
 
 
 if __name__ == '__main__':
     #save_dir_characteristics = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/AP_characteristics/'
-    save_dir_characteristics = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/STA/good_AP_criterion/'
-    save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
+    #save_dir_characteristics = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/STA/good_AP_criterion/'
+    #save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
+
+    save_dir_characteristics = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/STA/good_AP_criterion/'
+    save_dir = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
+
     cell_type = 'grid_cells'
     cell_ids = load_cell_ids(save_dir, cell_type)
     param_list = ['Vm_ljpc', 'spiketimes', 'vel_100ms']
@@ -25,7 +29,7 @@ if __name__ == '__main__':
     do_detrend = False
     before_AP = 25
     after_AP = 25
-    t_vref = 10.0
+    t_vref = 10
     dt = 0.05
     AP_criterion = {'AP_amp_and_width': (40, 1)}
     folder_detrend = {True: 'detrended', False: 'not_detrended'}

@@ -5,11 +5,14 @@ import os
 from analyze_in_vivo.load.load_latuske import load_ISIs
 from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_for_all_grid_cells
 from analyze_in_vivo.analyze_domnisoru.isi import plot_ISI_return_map
-pl.style.use('paper_subplots')
+#pl.style.use('paper_subplots')
 
 
 if __name__ == '__main__':
-    save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/latuske/ISI/ISI_return_map'
+    #save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/latuske/ISI/ISI_return_map'
+
+    save_dir_img = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/latuske/ISI/ISI_return_map'
+
     ISIs_cells = load_ISIs()
 
     max_ISI = 200  # None if you want to take all ISIs

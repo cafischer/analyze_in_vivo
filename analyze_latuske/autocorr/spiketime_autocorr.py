@@ -7,20 +7,21 @@ from analyze_in_vivo.analyze_domnisoru import perform_kde, evaluate_kde
 from analyze_in_vivo.analyze_domnisoru.autocorr import *
 from analyze_in_vivo.load.load_latuske import load_ISIs
 from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_for_all_grid_cells
-pl.style.use('paper_subplots')
+pl.style.use('paper')
 
 
 if __name__ == '__main__':
-    save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/latuske/autocorr'
+    #save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/latuske/autocorr'
+    save_dir_img = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/latuske/autocorr'
     ISIs_cells = load_ISIs()
 
     # parameters
-    bin_width = 0.5  # ms
-    max_lag = 12
+    bin_width = 1  # ms
+    max_lag = 50
     sigma_smooth = None  # ms  None for no smoothing
     dt_kde = 0.05  # ms (same as dt data as lower bound for precision)
     t_kde = np.arange(-max_lag, max_lag + dt_kde, dt_kde)
-    normalization = 'max'  # 'sum
+    normalization = 'sum'  # 'sum
 
     folder = 'max_lag_' + str(max_lag) + '_bin_width_' + str(bin_width) + '_sigma_smooth_'+str(sigma_smooth) + '_normalization_' + str(normalization)
     save_dir_img = os.path.join(save_dir_img, folder)

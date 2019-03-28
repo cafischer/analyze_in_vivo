@@ -8,7 +8,7 @@ from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_with_markers
 from grid_cell_stimuli import get_AP_max_idxs
 import matplotlib.gridspec as gridspec
 from scipy.stats import median_test
-pl.style.use('paper')
+#pl.style.use('paper')
 
 
 if __name__ == '__main__':
