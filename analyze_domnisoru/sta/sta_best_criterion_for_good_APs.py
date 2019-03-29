@@ -33,10 +33,10 @@ def plot_grid_on_ax(ax, cell_idx, t_AP, sta_1der, sta_1der_smooth, sta_2der, sta
                     sta_mean_cells, before_AP, after_AP, ylims=(None, None)):
     ax.plot(t_AP, sta_mean_cells[cell_idx], 'k')
 
-    argmax = np.argmax(k_smooth[cell_idx][:to_idx(before_AP, 0.05)])
+    #argmax = np.argmax(k_smooth[cell_idx][:to_idx(before_AP, 0.05)])
     #ax.plot(t_AP[argmax], sta_mean_cells[cell_idx][argmax], 'b', marker='^', markersize=4)
-    ax.axhline(sta_mean_cells[cell_idx][argmax], 0, 1, color='b', linewidth=0.6)
-    ax.axvline(t_AP[argmax], 0, 1, color='b', linewidth=0.6)
+    #ax.axhline(sta_mean_cells[cell_idx][argmax], 0, 1, color='b', linewidth=0.6)
+    #ax.axvline(t_AP[argmax], 0, 1, color='b', linewidth=0.6)
     # argmin = np.argmin(k_smooth[cell_idx][to_idx(before_AP-1, 0.05):to_idx(before_AP, 0.05)]) + to_idx(before_AP-1, 0.05)
     # ax.axhline(sta_mean_cells[cell_idx][argmin], 0, 1, color='lightblue')
     # ax.axvline(t_AP[argmin], 0, 1, color='lightblue')
@@ -49,11 +49,11 @@ def plot_grid_on_ax(ax, cell_idx, t_AP, sta_1der, sta_1der_smooth, sta_2der, sta
     # ax.axhline(sta_mean_cells[cell_idx][argmax], 0, 1, color='orange')
     # ax.axvline(t_AP[argmax], 0, 1, color='orange')
 
-    AP_thresh_derivative = 5  # TODO 3
+    AP_thresh_derivative = 15
     AP_thresh_idx = get_AP_onset_idxs(sta_1der[cell_idx][:to_idx(before_AP, 0.05)], AP_thresh_derivative)[-1]
-    # ax.plot(t_AP[AP_thresh_idx], sta_mean_cells[cell_idx][AP_thresh_idx], 'y', marker='v', markersize=4)
-    ax.axhline(sta_mean_cells[cell_idx][AP_thresh_idx], 0, 1, color='y', linewidth=0.6)
-    ax.axvline(t_AP[AP_thresh_idx], 0, 1, color='y', linewidth=0.6)
+    ax.plot(t_AP[AP_thresh_idx], sta_mean_cells[cell_idx][AP_thresh_idx], 'b', marker='x', markersize=5)
+    #ax.axhline(sta_mean_cells[cell_idx][AP_thresh_idx], 0, 1, color='y', linewidth=0.6)
+    #ax.axvline(t_AP[AP_thresh_idx], 0, 1, color='y', linewidth=0.6)
 
     # pl.figure()
     # pl.plot(t_AP, sta_mean_cells[cell_idx]/np.max(np.abs(sta_mean_cells[cell_idx])), 'k')

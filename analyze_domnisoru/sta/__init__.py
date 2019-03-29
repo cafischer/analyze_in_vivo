@@ -6,7 +6,7 @@ from cell_characteristics import to_idx
 from analyze_in_vivo.analyze_schmidt_hieber import detrend
 from grid_cell_stimuli import find_all_AP_traces
 from cell_characteristics.analyze_APs import get_spike_characteristics
-from cell_fitting.optimization.evaluation import get_spike_characteristics_dict
+from analyze_in_vivo.analyze_domnisoru.spike_characteristics import get_spike_characteristics_dict
 from cell_characteristics.sta_stc import get_sta
 
 

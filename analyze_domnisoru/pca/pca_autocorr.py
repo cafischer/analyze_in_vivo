@@ -7,11 +7,12 @@ import os
 from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
 from cell_characteristics import to_idx
-from analyze_in_vivo.load.load_domnisoru import load_cell_ids, get_cell_ids_DAP_cells, get_celltype_dict, get_cell_ids_bursty
+from analyze_in_vivo.load.load_domnisoru import load_cell_ids, get_cell_ids_DAP_cells, get_celltype_dict, \
+    get_label_burstgroups, get_colors_burstgroups
 from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_with_markers
 from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_for_all_grid_cells
 from analyze_in_vivo.analyze_domnisoru.autocorr.spiketime_autocorr import plot_autocorrelation
-from analyze_in_vivo.analyze_domnisoru.pca import perform_PCA
+from analyze_in_vivo.analyze_domnisoru.pca import perform_PCA, ward_clustering
 #pl.style.use('paper_subplots')
 
 
@@ -159,53 +160,65 @@ def plot_pca_projection_for_paper(save_dir_img):
     ax = pl.Subplot(fig, inner[0])
     fig.add_subplot(ax)
 
-    # # example 1
-    # axins = inset_axes(ax, width='20%', height='20%', loc='upper left', bbox_to_anchor=(0.13, 0, 1, 1),
-    #                    bbox_transform=ax.transAxes)
-    # i = np.where(cell_ids == 's84_0002')[0][0]
-    # axins.bar(t_autocorr, autocorr_cells[i], bin_width, color='b', align='center')
-    # #axins.set_yticks([])
-    # #axins.set_ylim(0, 0.03)
-    # axins.set_xticks([-max_lag_for_pca, 0, max_lag_for_pca])
-    # axins.set_xticklabels([-max_lag_for_pca, 0, max_lag_for_pca], fontsize=10)
-    # axins.set_xlabel('Lag (ms)', fontsize=10)
-    # axins.set_ylabel('Spike-time \nautocorrelation', fontsize=10)
-    #
-    # # example 2
-    # axins = inset_axes(ax, width='20%', height='20%', loc='upper right')  # bbox_to_anchor=(0.7, 0.7, 1.0, 1.0)
-    # i = np.where(cell_ids == 's109_0002')[0][0]
-    # axins.bar(t_autocorr, autocorr_cells[i], bin_width, color='r', align='center')
-    # #axins.set_yticks([])
-    # #axins.set_ylim(0, 0.03)
-    # axins.set_xticks([-max_lag_for_pca, 0, max_lag_for_pca])
-    # axins.set_xticklabels([-max_lag_for_pca, 0, max_lag_for_pca], fontsize=10)
-    # axins.set_xlabel('Lag (ms)', fontsize=10)
-    # axins.set_ylabel('Spike-time \nautocorrelation', fontsize=10)
-    #
-    # # example 3
-    # axins = inset_axes(ax, width='20%', height='20%', loc='center right')  # bbox_to_anchor=(0.7, 0.7, 1.0, 1.0)
-    # i = np.where(cell_ids == 's76_0002')[0][0]
-    # axins.bar(t_autocorr, autocorr_cells[i], bin_width, color='r', align='center')
-    # #axins.set_yticks([])
-    # #axins.set_ylim(0, 0.1)
-    # axins.set_xticks([-max_lag_for_pca, 0, max_lag_for_pca])
-    # axins.set_xticklabels([-max_lag_for_pca, 0, max_lag_for_pca], fontsize=10)
-    # axins.set_xlabel('Lag (ms)', fontsize=10)
-    # axins.set_ylabel('Spike-time \nautocorrelation', fontsize=10)
+    # example 1
+    axins = inset_axes(ax, width='20%', height='20%', loc='upper left', bbox_to_anchor=(0.13, 0, 1, 1),
+                       bbox_transform=ax.transAxes)
+    i = np.where(cell_ids == 's84_0002')[0][0]
+    axins.bar(t_autocorr, autocorr_cells[i], bin_width, color='b', align='center')
+    #axins.set_yticks([])
+    #axins.set_ylim(0, 0.03)
+    axins.set_xticks([-max_lag_for_pca, 0, max_lag_for_pca])
+    axins.set_xticklabels([-max_lag_for_pca, 0, max_lag_for_pca], fontsize=10)
+    axins.set_xlabel('Lag (ms)', fontsize=10)
+    axins.set_ylabel('Spike-time \nautocorrelation', fontsize=10)
+
+    # example 2
+    axins = inset_axes(ax, width='20%', height='20%', loc='upper right')  # bbox_to_anchor=(0.7, 0.7, 1.0, 1.0)
+    i = np.where(cell_ids == 's109_0002')[0][0]
+    axins.bar(t_autocorr, autocorr_cells[i], bin_width, color='r', align='center')
+    #axins.set_yticks([])
+    #axins.set_ylim(0, 0.03)
+    axins.set_xticks([-max_lag_for_pca, 0, max_lag_for_pca])
+    axins.set_xticklabels([-max_lag_for_pca, 0, max_lag_for_pca], fontsize=10)
+    axins.set_xlabel('Lag (ms)', fontsize=10)
+    axins.set_ylabel('Spike-time \nautocorrelation', fontsize=10)
+
+    # example 3
+    axins = inset_axes(ax, width='20%', height='20%', loc='center right')  # bbox_to_anchor=(0.7, 0.7, 1.0, 1.0)
+    i = np.where(cell_ids == 's76_0002')[0][0]
+    axins.bar(t_autocorr, autocorr_cells[i], bin_width, color='r', align='center')
+    #axins.set_yticks([])
+    #axins.set_ylim(0, 0.1)
+    axins.set_xticks([-max_lag_for_pca, 0, max_lag_for_pca])
+    axins.set_xticklabels([-max_lag_for_pca, 0, max_lag_for_pca], fontsize=10)
+    axins.set_xlabel('Lag (ms)', fontsize=10)
+    axins.set_ylabel('Spike-time \nautocorrelation', fontsize=10)
+
+    # labels
+    nonburst_label = labels == 0
+    burst_label = ~nonburst_label
+    cell_ids_burst1 = DAP_cells + ['s43_0003']
+    burst1_label = np.array([True if cell_id in cell_ids_burst1 else False for cell_id in cell_ids])
+    burst2_label = np.logical_and(burst_label, ~burst1_label)
 
     # outside plot
-    plot_with_markers(ax, projected[labels == 0, 0], projected[labels == 0, 1], cell_ids[labels == 0],
-                      cell_type_dict, edgecolor='b', DAP_cells=DAP_cells_new, legend=False)
-    handles = plot_with_markers(ax, projected[labels == 1, 0], projected[labels == 1, 1], cell_ids[labels == 1],
-                                cell_type_dict, edgecolor='r', DAP_cells=DAP_cells_new, legend=False)
-    plot_with_markers(ax, projected[labels == 2, 0], projected[labels == 2, 1], cell_ids[labels == 2],
-                      cell_type_dict, edgecolor='g', DAP_cells=DAP_cells_new, legend=False)  # TODO
-    handles_bursty = [Patch(color='r', label='Bursty'), Patch(color='b', label='Non-bursty')]
+    plot_with_markers(ax, projected[labels_burstgroups['NB'], 0], projected[labels_burstgroups['NB'], 1],
+                      cell_ids[labels_burstgroups['NB']], cell_type_dict,
+                      edgecolor=colors_burstgroups['NB'], theta_cells=theta_cells, legend=False)
+    handles = plot_with_markers(ax, projected[labels_burstgroups['B+D'], 0], projected[labels_burstgroups['B+D'], 1],
+                                cell_ids[labels_burstgroups['B+D']], cell_type_dict,
+                                edgecolor=colors_burstgroups['B+D'], theta_cells=theta_cells, legend=False)
+    plot_with_markers(ax, projected[labels_burstgroups['B'], 0], projected[labels_burstgroups['B'], 1],
+                      cell_ids[labels_burstgroups['B']], cell_type_dict,
+                      edgecolor=colors_burstgroups['B'], theta_cells=theta_cells, legend=False)
+    handles += [Patch(color=colors_burstgroups['B+D'], label='Bursty+DAP'),
+                Patch(color=colors_burstgroups['B'], label='Bursty'),
+                Patch(color=colors_burstgroups['NB'], label='Non-bursty')]
     ax.set_xlabel('PC1')
     ax.set_ylabel('PC2')
 
-    for cell_idx, cell_id in enumerate(cell_ids):
-        ax.annotate(cell_id, xy=(projected[cell_idx, 0], projected[cell_idx, 1]), fontsize=8)
+    #for cell_idx, cell_id in enumerate(cell_ids):
+    #    ax.annotate(cell_id, xy=(projected[cell_idx, 0], projected[cell_idx, 1]), fontsize=8)
 
     # lower plot
     inner = gridspec.GridSpecFromSubplotSpec(1, 3, subplot_spec=outer[1], width_ratios=[1, 1, 0.5], wspace=0.5)
@@ -224,7 +237,7 @@ def plot_pca_projection_for_paper(save_dir_img):
     # legend from upper plot
     ax = pl.Subplot(fig, inner[2])
     fig.add_subplot(ax)
-    legend1 = ax.legend(handles=handles + handles_bursty, loc='upper right')
+    legend1 = ax.legend(handles=handles, loc='upper right')
     ax.add_artist(legend1)
     ax.spines['left'].set_visible(False)
     ax.spines['bottom'].set_visible(False)
@@ -282,9 +295,11 @@ if __name__ == '__main__':
     if not os.path.exists(save_dir_img_paper):
         os.makedirs(save_dir_img_paper)
 
+    labels_burstgroups = get_label_burstgroups()
+    colors_burstgroups = get_colors_burstgroups()
     cell_type = 'grid_cells'
     #save_dir_img = '/home/cf/Dropbox/thesis/figures_results'
-    max_lag = 150  # ms
+    max_lag = 50  # ms
     max_lag_for_pca = max_lag  # ms
     bin_width = 1  # ms
     sigma_smooth = None
@@ -298,8 +313,7 @@ if __name__ == '__main__':
     cell_ids = np.array(load_cell_ids(save_dir, cell_type))
     cell_type_dict = get_celltype_dict(save_dir)
     theta_cells = load_cell_ids(save_dir, 'giant_theta')
-    DAP_cells, DAP_cells_additional = get_cell_ids_DAP_cells()
-    DAP_cells_new = get_cell_ids_DAP_cells(new=True)
+    DAP_cells = get_cell_ids_DAP_cells(new=True)
 
     folder = 'max_lag_' + str(max_lag) + '_bin_width_' + str(bin_width) + '_sigma_smooth_' + str(
         sigma_smooth) + '_normalization_' + str(normalization)
@@ -335,6 +349,7 @@ if __name__ == '__main__':
         autocorr_cells = autocorr_cells[:, diff_lag_idx:-diff_lag_idx]
         autocorr_cells_for_pca = autocorr_cells_for_pca[:, diff_lag_idx:-diff_lag_idx]
     projected_, components, explained_var = perform_PCA(autocorr_cells_for_pca, n_components)
+    components[1, :] *= -1
     projected = np.dot(autocorr_cells - np.mean(autocorr_cells_for_pca, 0), components[:n_components, :].T)
 
     # PCA backtransform
@@ -345,16 +360,18 @@ if __name__ == '__main__':
     error_backprojection = np.array([np.sqrt(np.sum((o-bp)**2)/len_autocorr) for o, bp in zip(autocorr_cells, back_projected)])
     error_backprojection_str = ['%.4f' % e for e in error_backprojection]
 
-    # k-means
-    n_clusters = 2
-    kmeans = KMeans(n_clusters=n_clusters, random_state=0).fit(projected)
-    labels = kmeans.labels_
+    # clustering
+    #n_clusters = 2
+    #kmeans = KMeans(n_clusters=n_clusters, random_state=0).fit(projected)
+    #labels = kmeans.labels_
 
     # dbscan = DBSCAN(eps=0.03, min_samples=3).fit(transformed)
     # labels = dbscan.labels_
 
     # specclus = SpectralClustering(n_clusters=n_clusters, random_state=3).fit(transformed)
     # labels = specclus.labels_
+
+    labels, dend = ward_clustering(projected, cell_ids)
 
     # save
     np.save(os.path.join(save_dir_img, 'projected.npy'), projected)
@@ -363,16 +380,16 @@ if __name__ == '__main__':
     plot_pca_projection_for_paper(save_dir_img=save_dir_img_paper)
     pl.show()
 
-    plot_PCs(n_components, t_autocorr, components, explained_var, max_lag, bin_width,
-             save_dir_img)
+    #plot_PCs(n_components, t_autocorr, components, explained_var, max_lag, bin_width,
+    #         save_dir_img)
 
-    plot_backtransformed(save_dir_img)
+    #plot_backtransformed(save_dir_img)
 
-    plot_pca_projection_for_thesis(save_dir_img=save_dir_img)
+    #plot_pca_projection_for_thesis(save_dir_img=save_dir_img)
 
-    plot_pca_projection_with_cell_ids(save_dir_img=save_dir_img)
-    if n_components == 3:
-        plot_pca_projection_3d_with_cell_ids(save_dir_img=save_dir_img)
+    #plot_pca_projection_with_cell_ids(save_dir_img=save_dir_img)
+    #if n_components == 3:
+    #    plot_pca_projection_3d_with_cell_ids(save_dir_img=save_dir_img)
 
     # plot_pca_projection_slides(save_dir_img=None)
 

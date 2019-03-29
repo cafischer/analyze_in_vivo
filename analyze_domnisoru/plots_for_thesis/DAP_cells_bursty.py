@@ -9,7 +9,7 @@ from analyze_in_vivo.analyze_domnisoru.position_vs_firing_rate import get_spike_
 from analyze_in_vivo.analyze_domnisoru.autocorr.spike_time_autocorrelation import get_autocorrelation, change_bin_size_of_spike_train
 from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_with_markers
 from cell_characteristics import to_idx
-pl.style.use('paper_subplots')
+pl.style.use('paper')
 
 
 if __name__ == '__main__':

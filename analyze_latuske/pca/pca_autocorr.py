@@ -10,10 +10,7 @@ from analyze_in_vivo.load.load_domnisoru import load_cell_ids, get_cell_ids_DAP_
 from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_with_markers
 from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_for_all_grid_cells
 from analyze_in_vivo.analyze_domnisoru.autocorr.spiketime_autocorr import plot_autocorrelation
-from analyze_in_vivo.analyze_domnisoru.pca import perform_PCA
-import scipy as sc
-import scipy.spatial
-import scipy.cluster
+from analyze_in_vivo.analyze_domnisoru.pca import perform_PCA, ward_clustering
 pl.style.use('paper')
 
 
@@ -96,10 +93,10 @@ def plot_pca_projection_for_paper(save_dir_img):
                           projected_domnisoru[labels_domnisoru == 2, 1], cell_ids_domnisoru[labels_domnisoru == 2],
                           get_celltype_dict(save_dir_domnisoru), theta_cells=theta_cells, edgecolor='r', legend=False)
 
-    # for cell_idx, cell_id in enumerate(cell_ids_latuske):
-    #     ax.annotate(cell_id, xy=(projected_latuske[cell_idx, 0], projected_latuske[cell_idx, 1]))
-    #for cell_idx, cell_id in enumerate(cell_ids_domnisoru):
-    #    ax.annotate(cell_id, xy=(projected_domnisoru[cell_idx, 0], projected_domnisoru[cell_idx, 1]), fontsize=8)
+    #for cell_idx, cell_id in enumerate(cell_ids_latuske):
+    #    ax.annotate(cell_id, xy=(projected_latuske[cell_idx, 0], projected_latuske[cell_idx, 1]))
+    for cell_idx, cell_id in enumerate(cell_ids_domnisoru):
+        ax.annotate(cell_id, xy=(projected_domnisoru[cell_idx, 0], projected_domnisoru[cell_idx, 1]), fontsize=8)
 
     fig_fake, ax_fake = pl.subplots()
     handle_latuske = [ax_fake.scatter(0, 0, marker='d', edgecolor='k', facecolor='None', label='Latuske')]
@@ -201,6 +198,7 @@ if __name__ == '__main__':
         raise ValueError('Either Domnisoru or Latuske must be selected!')
 
     projected, components, explained_var = perform_PCA(autocorr_cells_for_pca, n_components)
+    components[1, :] *= -1
 
     # project autocorr onto components
     projected_latuske = np.dot(autocorr_cells_latuske - np.mean(autocorr_cells_for_pca, 0), components[:n_components, :].T)
@@ -228,34 +226,8 @@ if __name__ == '__main__':
     # labels = kmeans.labels_
 
     # dendrogram
-    from collections import defaultdict
-    def get_cluster_classes(dend, cell_ids, label='ivl'):
-        cluster_idxs = defaultdict(list)
-        for c, pi in zip(dend['color_list'], dend['icoord']):
-            for leg in pi[1:3]:
-                i = (leg - 5.0) / 10.0
-                if abs(i - int(i)) < 1e-5:
-                    cluster_idxs[c].append(int(i))
-
-        color_label_dict = {'b': 0, 'g': 1, 'r': 2}
-        cluster_labels_dict = {}
-        for c, l in cluster_idxs.items():
-            for i in l:
-                cluster_labels_dict[dend[label][i]] = color_label_dict[c]
-
-        cluster_labels = np.array([cluster_labels_dict[cell_id] for cell_id in cell_ids])
-        return cluster_labels, color_label_dict
-
-    dist_mat = sc.spatial.distance.pdist(projected_all, metric='euclidean')
-    #dist_mat = sc.spatial.distance.pdist(projected_latuske, metric='euclidean')
-    linkage = sc.cluster.hierarchy.linkage(dist_mat, method='ward')
-    sc.cluster.hierarchy.set_link_color_palette(['b', 'r', 'g'])
-    dend = sc.cluster.hierarchy.dendrogram(linkage, labels=np.hstack((cell_ids_latuske, cell_ids_domnisoru)),
-                                           above_threshold_color="grey")
-    #dend = sc.cluster.hierarchy.dendrogram(linkage, labels=cell_ids_latuske, above_threshold_color="grey")
+    labels, dend = ward_clustering(projected_all, np.hstack((cell_ids_latuske, cell_ids_domnisoru)))
     pl.ylabel('Distance')
-    labels, _ = get_cluster_classes(dend, np.hstack((cell_ids_latuske, cell_ids_domnisoru)), label='ivl')
-    #labels, _ = get_cluster_classes(dend, cell_ids_latuske, label='ivl')
     pl.savefig(os.path.join(save_dir_img, 'dendrogram.png'))
 
     labels_latuske = labels[:len(autocorr_cells_latuske)]

@@ -90,6 +90,23 @@ def get_cell_ids_bursty():
                      's82_0002', 's95_0006', 's101_0009', 's104_0007', 's109_0002',
                      's110_0002', 's117_0002', 's118_0002', 's119_0004', 's120_0002'], dtype=str)
 
+def get_cell_ids_burstgroups():
+    return {'B': ['s76_0002', 's82_0002', 's95_0006', 's101_0009', 's117_0002', 's118_0002', 's120_0002', 's120_0023'],
+            'B+D': ['s43_0003', 's67_0000', 's73_0004', 's79_0003', 's104_0007', 's109_0002', 's110_0002', 's119_0004'],
+            'NB': ['s74_0006', 's81_0004', 's84_0002', 's85_0007', 's90_0006', 's96_0009', 's100_0006', 's115_0018',
+                   's115_0024', 's115_0030']}
+
+def get_label_burstgroups(save_dir='/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'):
+    cell_ids_burstgroups = get_cell_ids_burstgroups()
+    cell_ids_grid = load_cell_ids(save_dir, 'grid_cells')
+    return {'B': np.array([True if cell_id in cell_ids_burstgroups['B'] else False for cell_id in cell_ids_grid]),
+            'B+D': np.array([True if cell_id in cell_ids_burstgroups['B+D'] else False for cell_id in cell_ids_grid]),
+            'NB': np.array([True if cell_id in cell_ids_burstgroups['NB'] else False for cell_id in cell_ids_grid])}
+
+
+def get_colors_burstgroups():
+    return {'B': 'y', 'B+D': 'r', 'NB': 'b'}
+
 
 def get_cell_ids_good_recording():
     return ['s74_0006', 's79_0003', 's82_0002', 's84_0002', 's85_0007', 's104_0007', 's109_0002', 's110_0002',
@@ -133,7 +150,6 @@ def get_last_bin_edge(cell_id):
     # bin edges in Domnisoru
     # units VR: -1140 : 28.94973617378945 : 1209 (2430 for 6 m tracks)
     # units cm: -196.8929860286835 : 5.0 : 208.81019307778803 (419.69294390324643 for 6 m tracks)
-
 
 
 def get_cell_groups():

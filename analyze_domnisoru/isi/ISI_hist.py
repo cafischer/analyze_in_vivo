@@ -45,7 +45,7 @@ if __name__ == '__main__':
         os.makedirs(save_dir_img)
 
     # over cells
-    ISIs_per_cell = [0] * len(cell_ids)
+    ISIs_cells = [0] * len(cell_ids)
     n_ISIs = [0] * len(cell_ids)
     ISI_hist_cells = np.zeros((len(cell_ids), len(bins) - 1))
     ISI_kde_cells = np.zeros((len(cell_ids), int(max_ISI / dt_kde) + 1))
@@ -74,7 +74,7 @@ if __name__ == '__main__':
             fraction_ISIs_filtered[cell_idx] = np.sum(ISIs <= max_ISI) / float(len(ISIs))
             ISIs = ISIs[ISIs <= max_ISI]
         n_ISIs[cell_idx] = len(ISIs)
-        ISIs_per_cell[cell_idx] = ISIs
+        ISIs_cells[cell_idx] = ISIs
         fraction_burst[cell_idx] = np.sum(ISIs < burst_ISI) / float(len(ISIs))
 
         # compute KDE
@@ -120,6 +120,9 @@ if __name__ == '__main__':
         np.save(os.path.join(save_dir_img, 'fraction_burst.npy'), fraction_burst)
         np.save(os.path.join(save_dir_img, 'peak_ISI_hist.npy'), peak_ISI_hist)
         np.save(os.path.join(save_dir_img, 'ISI_hist.npy'), ISI_hist_cells)
+        np.save(os.path.join(save_dir_img, 'cum_ISI_hist_y.npy'), cum_ISI_hist_y)
+        np.save(os.path.join(save_dir_img, 'cum_ISI_hist_x.npy'), cum_ISI_hist_x)
+        np.save(os.path.join(save_dir_img, 'ISIs.npy'), ISIs_cells)
     np.save(os.path.join(save_dir_img, 'shortest_ISI.npy'), shortest_ISI)
     np.save(os.path.join(save_dir_img, 'CV_ISIs.npy'), CV_ISIs)
 

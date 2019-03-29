@@ -79,15 +79,18 @@ sta_mean_cells = np.load(os.path.join(save_dir_sta, folder_name, 'sta_mean.npy')
 t_sta = np.arange(-before_AP, after_AP+dt, dt)
 sta_std_before_AP = np.array([np.std(sta_mean[:to_idx(before_AP-t_vref, dt)]) for sta_mean in sta_mean_cells])
 sta_derivative_cells = np.array([np.diff(sta_mean) / dt for sta_mean in sta_mean_cells])
-AP_thresh_derivative = 3.0
+AP_thresh_derivative = 15
 AP_thresh_idx = np.array([get_AP_onset_idxs(sta_derivative[:to_idx(before_AP, dt)], AP_thresh_derivative)[-1] for sta_derivative in sta_derivative_cells])
 v_onset = np.array([sta_mean_cells[i][AP_thresh_idx[i]] for i in range(len(sta_mean_cells))])
 t_onset = np.array([t_sta[AP_thresh_idx[i]] + before_AP for i in range(len(sta_mean_cells))])
 v_start = np.array([sta_mean_cells[i][0] for i in range(len(sta_mean_cells))])
 vdiff_onset_start = (v_onset - v_start) / t_onset
 
-v_rest_fAHP = np.load(os.path.join(save_dir_delta_DAP, 'avg_times', 'v_rest_fAHP.npy'))
+v_onset_fAHP = np.load(os.path.join(save_dir_delta_DAP, 'avg_times', 'v_onset_fAHP.npy'))
 v_DAP_fAHP = np.load(os.path.join(save_dir_delta_DAP, 'avg_times', 'v_DAP_fAHP.npy'))
+v_onset = np.load(os.path.join(save_dir_delta_DAP, 'avg_times', 'v_onset.npy'))
+v_fAHP = np.load(os.path.join(save_dir_delta_DAP, 'avg_times', 'v_fAHP.npy'))
+v_DAP = np.load(os.path.join(save_dir_delta_DAP, 'avg_times', 'v_DAP.npy'))
 
 cell_ids = np.array(load_cell_ids(save_dir, 'grid_cells'))
 burst_label = np.array([True if cell_id in get_cell_ids_bursty() else False for cell_id in cell_ids])
@@ -102,52 +105,38 @@ ylabels = ['Fraction ISIs $\leq$ 8ms', 'Fraction single spikes', 'Fraction ISI[n
            'Width of the ISI hist. (ms)', 'ISI hist. peak (ms)',
            'Firing rate (Hz)', 'Mean 10% shortest ISIs', 'CV of ISIs', 'Linear slope before AP (mV/ms)']
 
+
+def plot_against(x, x_label):
+    fig, axes = pl.subplots(3, 3, figsize=(10, 8))
+    i_row = 0
+    i_col = 0
+    for i in range(9):
+        if i_col == 3:
+            i_row += 1
+            i_col = 0
+        plot_with_markers(axes[i_row, i_col], x[burst1_label], data[i][burst1_label], cell_ids[burst1_label],
+                          cell_type_dict, edgecolor=color_burst1, legend=False)
+        plot_with_markers(axes[i_row, i_col], x[burst2_label], data[i][burst2_label], cell_ids[burst2_label],
+                          cell_type_dict, edgecolor=color_burst2, legend=False)
+        plot_with_markers(axes[i_row, i_col], x[~burst_label], data[i][~burst_label], cell_ids[~burst_label],
+                          cell_type_dict, edgecolor=color_nonburst, legend=False)
+        axes[i_row, i_col].set_xlabel(x_label)
+        axes[i_row, i_col].set_ylabel(ylabels[i])
+
+        if i < 3:
+            axes[i_row, i_col].set_ylim([0, 1.1])
+        else:
+            axes[i_row, i_col].set_ylim([0, None])
+
+        i_col += 1
+    pl.tight_layout()
+    pl.show()
+
+
 # plot
-fig, axes = pl.subplots(3, 3, figsize=(10, 8))
-i_row = 0
-i_col = 0
-for i in range(9):
-    if i_col == 3:
-        i_row += 1
-        i_col = 0
-    plot_with_markers(axes[i_row, i_col], v_rest_fAHP[burst1_label], data[i][burst1_label], cell_ids[burst1_label],
-                      cell_type_dict, edgecolor=color_burst1, legend=False)
-    plot_with_markers(axes[i_row, i_col], v_rest_fAHP[burst2_label], data[i][burst2_label], cell_ids[burst2_label],
-                      cell_type_dict, edgecolor=color_burst2, legend=False)
-    plot_with_markers(axes[i_row, i_col], v_rest_fAHP[~burst_label], data[i][~burst_label], cell_ids[~burst_label],
-                      cell_type_dict, edgecolor=color_nonburst, legend=False)
-    axes[i_row, i_col].set_xlabel('delta fAHP')
-    axes[i_row, i_col].set_ylabel(ylabels[i])
-
-    if i < 3:
-        axes[i_row, i_col].set_ylim([0, 1.1])
-    else:
-        axes[i_row, i_col].set_ylim([0, None])
-
-    i_col += 1
-pl.tight_layout()
-#pl.show()
-
-fig, axes = pl.subplots(3, 3, figsize=(10, 8))
-i_row = 0
-i_col = 0
-for i in range(9):
-    if i_col == 3:
-        i_row += 1
-        i_col = 0
-    plot_with_markers(axes[i_row, i_col], v_DAP_fAHP[burst1_label], data[i][burst1_label], cell_ids[burst1_label],
-                      cell_type_dict, edgecolor=color_burst1, legend=False)
-    plot_with_markers(axes[i_row, i_col], v_DAP_fAHP[burst2_label], data[i][burst2_label], cell_ids[burst2_label],
-                      cell_type_dict, edgecolor=color_burst2, legend=False)
-    plot_with_markers(axes[i_row, i_col], v_DAP_fAHP[~burst_label], data[i][~burst_label], cell_ids[~burst_label],
-                      cell_type_dict, edgecolor=color_nonburst, legend=False)
-    axes[i_row, i_col].set_xlabel('delta DAP')
-    axes[i_row, i_col].set_ylabel(ylabels[i])
-
-    if i < 3:
-        axes[i_row, i_col].set_ylim([0, 1.1])
-    else:
-        axes[i_row, i_col].set_ylim([0, None])
-    i_col += 1
-pl.tight_layout()
+plot_against(v_onset_fAHP, 'delta fAHP')
+plot_against(v_DAP_fAHP, 'delta DAP')
+plot_against(v_onset, 'V at AP onset')
+plot_against(v_fAHP, 'V fAHP')
+plot_against(v_DAP, 'V DAP')
 pl.show()
