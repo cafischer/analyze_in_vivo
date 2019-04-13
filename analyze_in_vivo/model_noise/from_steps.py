@@ -2,12 +2,12 @@ from __future__ import division
 import numpy as np
 import matplotlib.pyplot as pl
 import os
-from tmp.load import load_VI
+from analyze_in_vivo.load import load_VI
 from scipy.optimize import curve_fit
 from grid_cell_stimuli.remove_APs import remove_APs
 from grid_cell_stimuli.downsample import antialias_and_downsample
 from grid_cell_stimuli.ramp_and_theta import get_ramp_and_theta, plot_spectrum
-from tmp.model_noise import estimate_passive_parameters
+from analyze_in_vivo.model_noise import estimate_passive_parameters
 
 
 def remove_theta(v_mat, t):

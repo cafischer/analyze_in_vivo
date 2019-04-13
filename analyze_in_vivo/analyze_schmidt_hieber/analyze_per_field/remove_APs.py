@@ -2,7 +2,7 @@ from __future__ import division
 import numpy as np
 import os
 import json
-from tmp.load import load_field_crossings, get_stellate_info
+from analyze_in_vivo.load import load_field_crossings, get_stellate_info
 from grid_cell_stimuli.remove_APs import remove_APs, plot_v_APs_removed
 
 

@@ -1,11 +1,12 @@
 import numpy as np
 import matplotlib.pyplot as pl
 import os
+from spike_shape import get_first_spikes, split_first_and_other_spikes
 from cell_fitting.data import set_v_rest
 from cell_fitting.optimization.evaluation import get_spike_characteristics_dict
-from cell_characteristics.analyze_APs import get_spike_characteristics, get_AP_onset_idxs
+from cell_characteristics.analyze_APs import get_spike_characteristics
 from cell_characteristics import to_idx
-from tmp.load import load_VI
+from analyze_in_vivo.load import load_VI
 
 
 if __name__ == '__main__':
@@ -16,43 +17,40 @@ if __name__ == '__main__':
     cell_ids = ["10o31005", "11513000", "11910001002", "11d07006", "11d13006", "12213002"]
     protocol = 'IV'
 
+    AP_threshold = -30  # mV
     ISI_doublet = 15  # ms
-    v_rest = -60
+    v_rest = -60  # TODO
 
     all_spikes = []
     for cell_id in cell_ids:
         v_mat, t, i_inj = load_VI(data_dir, cell_id)
 
-        dt = t[1] - t[0]
-        start_step = np.where(np.diff(np.abs(i_inj[0, :])) > 0.05)[0][0] + 1
-        start_step += to_idx(3, dt)  # to cut off transient in the beginning
-        end_step = np.where(-np.diff(np.abs(i_inj[0, :])) > 0.05)[0][0]
-        after_onset = to_idx(30, dt)
-        before_onset = to_idx(5, dt)
-
-        v_mat_step = np.zeros((len(v_mat), end_step-start_step))
-        for i in range(len(v_mat)):
-            v_mat_step[i, :] = set_v_rest(v_mat[i, start_step:end_step], np.mean(v_mat[i, start_step:end_step]), v_rest)
-
-        spikes_cell = []
-        for v in v_mat_step:
-            AP_threshold = np.min(v) + np.abs(np.max(v) - np.min(v)) * (2./3)
-            print AP_threshold
-            onsets = get_AP_onset_idxs(v, AP_threshold)
-            for onset in onsets:
-                if onset - before_onset >= 0 and onset + after_onset <= len(v):
-                    spikes_cell.append(v[onset - before_onset:onset + after_onset])
-        spikes_cell = np.vstack(spikes_cell)
-
         pl.figure()
         for v in v_mat:
-            pl.plot(np.arange(len(v))*dt, v)
+            pl.plot(t, v)
         pl.show()
 
-        pl.figure()
-        for v in spikes_cell:
-            pl.plot(np.arange(len(v))*dt, v)
-        pl.show()
+        dt = t[1] - t[0]
+        start_step = np.where(np.diff(np.abs(i_inj[0, :])) > 0.05)[0][0] + 1
+        end_step = np.where(-np.diff(np.abs(i_inj[0, :])) > 0.05)[0][0]
+        spike_len = int(round(30 / dt))
+
+        first_spikes_there = get_first_spikes(v_mat, start_step, end_step, AP_threshold)
+        if first_spikes_there is None:
+            continue
+        v_trace, AP_onset_idxs = first_spikes_there
+        first_spikes, other_spikes = split_first_and_other_spikes(v_trace, dt, AP_onset_idxs, ISI_doublet, end_step,
+                                                                  before_onset=5)
+        other_spikes_tmp = []
+        for spike in other_spikes:
+            if len(spike) >= spike_len:
+                other_spikes_tmp.append(spike[:spike_len])
+        if len(other_spikes_tmp) == 0:
+            continue
+        other_spikes = np.vstack(other_spikes_tmp)
+        other_spikes = set_v_rest(other_spikes, np.array([other_spikes[:, -1]]).T,
+                                  np.ones((np.shape(other_spikes)[0], 1)) * v_rest)
+        all_spikes.append(other_spikes)
 
     # get spike characteristics
     spike_characteristics_dict = get_spike_characteristics_dict(for_data=True)

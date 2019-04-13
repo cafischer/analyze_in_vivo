@@ -1,9 +1,9 @@
 from __future__ import division
 import numpy as np
 import matplotlib.pyplot as pl
-from tmp.load import load_full_runs
+from analyze_in_vivo.load import load_full_runs
 from cell_characteristics.analyze_APs import get_AP_onset_idxs
-from tmp.spatial_firing_rate import get_spatial_firing_rate, identify_firing_fields, get_start_end_idxs_in_out_field_in_time
+from analyze_in_vivo.spatial_firing_rate import get_spatial_firing_rate, identify_firing_fields, get_start_end_idxs_in_out_field_in_time
 from scipy.interpolate import interp1d
 from grid_cell_stimuli.remove_APs import remove_APs
 

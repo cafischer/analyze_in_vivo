@@ -2,7 +2,7 @@ from __future__ import division
 import matplotlib.pyplot as pl
 import numpy as np
 import os
-from tmp.load import load_field_crossings, get_stellate_info
+from analyze_in_vivo.load import load_field_crossings, get_stellate_info
 from cell_characteristics.analyze_APs import get_AP_onset_idxs
 from grid_cell_stimuli.spike_phase import get_spike_phases
 from cell_characteristics import to_idx
