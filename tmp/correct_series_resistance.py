@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as pl
 import os
-from load import load_VI
+from tmp.load import load_VI
 from cell_characteristics.analyze_APs import get_AP_onset_idxs
 
 if __name__ == '__main__':

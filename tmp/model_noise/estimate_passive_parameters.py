@@ -2,7 +2,7 @@ from scipy.optimize import curve_fit
 from scipy.signal import argrelmin
 import numpy as np
 import matplotlib.pyplot as pl
-from load import load_VI
+from tmp.load import load_VI
 from cell_characteristics import to_idx
 from cell_fitting.util import convert_from_unit
 

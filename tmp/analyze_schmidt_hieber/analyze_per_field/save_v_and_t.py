@@ -2,7 +2,7 @@ from __future__ import division
 import numpy as np
 import os
 import matplotlib.pyplot as pl
-from load import load_field_crossings, get_stellate_info
+from tmp.load import load_field_crossings, get_stellate_info
 
 
 if __name__ == '__main__':
