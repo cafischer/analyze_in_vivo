@@ -14,14 +14,18 @@ pl.style.use('paper')
 
 
 if __name__ == '__main__':
-    #save_dir_img_paper = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/paper'
-    #save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/STA'
-    #save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
+    save_dir_img_paper = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/paper'
+    save_dir_img = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/STA'
+    save_dir_data = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/delta_DAP_delta_fAHP'
+    save_dir = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
 
-    save_dir_img_paper = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/paper'
-    save_dir_img = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/STA'
-    save_dir_data = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/delta_DAP_delta_fAHP'
-    save_dir = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
+    #save_dir_img_paper = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/paper'
+    #save_dir_img = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/STA'
+    #save_dir_data = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/delta_DAP_delta_fAHP'
+    #save_dir = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
+
+    if not os.path.exists(save_dir_img_paper):
+        os.makedirs(save_dir_img_paper)
 
     cell_type = 'grid_cells'
     cell_ids = np.array(load_cell_ids(save_dir, cell_type))
@@ -30,7 +34,7 @@ if __name__ == '__main__':
 
     # parameters
     with_selection = True
-    use_avg_times = False
+    use_avg_times = True
     thresh = '1der'
     AP_thresh_derivative = 15
     do_detrend = False
@@ -63,6 +67,7 @@ if __name__ == '__main__':
     AP_max_idx_cells = init_nan(len(cell_ids))
     fAHP_min_idx_cells = init_nan(len(cell_ids))
     DAP_max_idx_cells = init_nan(len(cell_ids))
+    DAP_time_cells = init_nan(len(cell_ids))
     for cell_idx, cell_id in enumerate(cell_ids):
         print cell_id
 
@@ -86,8 +91,9 @@ if __name__ == '__main__':
         spike_characteristics_dict = get_spike_characteristics_dict()
         spike_characteristics_dict['AP_max_idx'] = before_AP_idx
         spike_characteristics_dict['AP_onset'] = before_AP_idx - to_idx(1.0, dt)
-        AP_max_idx_cells[cell_idx], fAHP_min_idx_cells[cell_idx], DAP_max_idx_cells[cell_idx] = np.array(get_spike_characteristics(sta_mean_cells[cell_idx], t_AP,
-                                                                          ['AP_max_idx', 'fAHP_min_idx', 'DAP_max_idx'],
+        (AP_max_idx_cells[cell_idx], fAHP_min_idx_cells[cell_idx],
+         DAP_max_idx_cells[cell_idx], DAP_time_cells[cell_idx]) = np.array(get_spike_characteristics(sta_mean_cells[cell_idx], t_AP,
+                                                                          ['AP_max_idx', 'fAHP_min_idx', 'DAP_max_idx', 'DAP_time'],
                                                                           v_rest, check=False,
                                                                           **spike_characteristics_dict)).astype(float)
 
@@ -240,3 +246,4 @@ if __name__ == '__main__':
     np.save(os.path.join(save_dir_data, name_add2, 'v_fAHP.npy'), v_fAHP)
     np.save(os.path.join(save_dir_data, name_add2, 'v_DAP.npy'), v_DAP)
     np.save(os.path.join(save_dir_data, name_add2, 'v_onset.npy'), v_onset)
+    np.save(os.path.join(save_dir_data, name_add2, 'DAP_time.npy'), DAP_time_cells)

@@ -5,7 +5,8 @@ import matplotlib.gridspec as gridspec
 import numpy as np
 import os
 from scipy.stats import ttest_ind
-from analyze_in_vivo.load.load_domnisoru import load_cell_ids, get_celltype_dict, get_cell_ids_bursty, get_cell_ids_DAP_cells
+from analyze_in_vivo.load.load_domnisoru import load_cell_ids, get_celltype_dict, get_cell_ids_DAP_cells, \
+    get_label_burstgroups, get_colors_burstgroups
 from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_with_markers
 from analyze_in_vivo.analyze_domnisoru.plot_utils import horizontal_square_bracket, get_star_from_p_val
 from cell_characteristics import to_idx
@@ -16,28 +17,31 @@ from analyze_in_vivo.analyze_domnisoru import perform_kde, evaluate_kde
 pl.style.use('paper')
 
 
-#save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/paper'
-#save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
-#save_dir_ISI_hist = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/ISI_hist'
-#save_dir_spike_events = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/bursting/grid_cells'
-#save_dir_ISI_return_map = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/ISI_return_map/cut_ISIs_at_200/grid_cells'
-#save_dir_sta = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/STA/good_AP_criterion/not_detrended'
-#save_dir_ISI_hist_latuske = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/latuske/ISI/ISI_hist'
-#save_dir_spike_events_latuske = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/latuske/spike_events'
-#save_dir_ISI_return_map_latuske = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/latuske/ISI/ISI_return_map'
+save_dir_img = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/paper'
+save_dir = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
+save_dir_ISI_hist = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/ISI_hist'
+save_dir_spike_events = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/bursting/grid_cells'
+save_dir_ISI_return_map = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/ISI_return_map'
+save_dir_firing_rate = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/firing_rate'
+save_dir_sta = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/STA/good_AP_criterion/not_detrended'
+save_dir_ISI_hist_latuske = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/latuske/ISI/ISI_hist'
+save_dir_spike_events_latuske = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/latuske/spike_events'
+save_dir_ISI_return_map_latuske = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/latuske/ISI/ISI_return_map'
+save_dir_firing_rate_latuske = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/latuske/firing_rate'
+save_dir_delta_DAP = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/delta_DAP_delta_fAHP'
 
-save_dir_img = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/paper'
-save_dir = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
-save_dir_ISI_hist = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/ISI_hist'
-save_dir_spike_events = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/bursting/grid_cells'
-save_dir_ISI_return_map = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/ISI_return_map'
-save_dir_firing_rate = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/firing_rate'
-save_dir_sta = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/STA/good_AP_criterion/not_detrended'
-save_dir_ISI_hist_latuske = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/latuske/ISI/ISI_hist'
-save_dir_spike_events_latuske = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/latuske/spike_events'
-save_dir_ISI_return_map_latuske = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/latuske/ISI/ISI_return_map'
-save_dir_firing_rate_latuske = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/latuske/firing_rate'
-save_dir_delta_DAP = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/delta_DAP_delta_fAHP'
+# save_dir_img = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/paper'
+# save_dir = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
+# save_dir_ISI_hist = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/ISI_hist'
+# save_dir_spike_events = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/bursting/grid_cells'
+# save_dir_ISI_return_map = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/ISI_return_map'
+# save_dir_firing_rate = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/firing_rate'
+# save_dir_sta = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/STA/good_AP_criterion/not_detrended'
+# save_dir_ISI_hist_latuske = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/latuske/ISI/ISI_hist'
+# save_dir_spike_events_latuske = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/latuske/spike_events'
+# save_dir_ISI_return_map_latuske = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/latuske/ISI/ISI_return_map'
+# save_dir_firing_rate_latuske = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/latuske/firing_rate'
+# save_dir_delta_DAP = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/delta_DAP_delta_fAHP'
 
 cell_type_dict = get_celltype_dict(save_dir)
 theta_cells = load_cell_ids(save_dir, 'giant_theta')
@@ -46,9 +50,6 @@ DAP_cells = get_cell_ids_DAP_cells(new=True)
 if not os.path.exists(save_dir_img):
     os.makedirs(save_dir_img)
 
-color_burst1 = 'y'
-color_burst2 = 'r'
-color_nonburst = 'b'
 max_ISI = 200
 bin_width = 1
 sigma_smooth = 1
@@ -91,12 +92,14 @@ v_DAP_fAHP = np.load(os.path.join(save_dir_delta_DAP, 'avg_times', 'v_DAP_fAHP.n
 v_onset = np.load(os.path.join(save_dir_delta_DAP, 'avg_times', 'v_onset.npy'))
 v_fAHP = np.load(os.path.join(save_dir_delta_DAP, 'avg_times', 'v_fAHP.npy'))
 v_DAP = np.load(os.path.join(save_dir_delta_DAP, 'avg_times', 'v_DAP.npy'))
+DAP_time = np.load(os.path.join(save_dir_delta_DAP, 'avg_times', 'DAP_time.npy'))
 
 cell_ids = np.array(load_cell_ids(save_dir, 'grid_cells'))
-burst_label = np.array([True if cell_id in get_cell_ids_bursty() else False for cell_id in cell_ids])
-cell_ids_burst1 = DAP_cells + ['s43_0003']  # ['s76_0002', 's117_0002', 's118_0002', 's120_0002']
-burst1_label = np.array([True if cell_id in cell_ids_burst1 else False for cell_id in cell_ids])
-burst2_label = np.logical_and(burst_label, ~burst1_label)
+labels_burstgroups = get_label_burstgroups(save_dir)
+colors_burstgroups = get_colors_burstgroups()
+NB_label = labels_burstgroups['NB']
+BD_label = labels_burstgroups['B+D']
+B_label = labels_burstgroups['B']
 
 
 data = [fraction_burst, fraction_single, fraction_ISI_or_ISI_next_burst,  width_ISI_hist,
@@ -114,14 +117,15 @@ def plot_against(x, x_label):
         if i_col == 3:
             i_row += 1
             i_col = 0
-        plot_with_markers(axes[i_row, i_col], x[burst1_label], data[i][burst1_label], cell_ids[burst1_label],
-                          cell_type_dict, edgecolor=color_burst1, legend=False)
-        plot_with_markers(axes[i_row, i_col], x[burst2_label], data[i][burst2_label], cell_ids[burst2_label],
-                          cell_type_dict, edgecolor=color_burst2, legend=False)
-        plot_with_markers(axes[i_row, i_col], x[~burst_label], data[i][~burst_label], cell_ids[~burst_label],
-                          cell_type_dict, edgecolor=color_nonburst, legend=False)
+        plot_with_markers(axes[i_row, i_col], x[BD_label], data[i][BD_label], cell_ids[BD_label],
+                          cell_type_dict, edgecolor=colors_burstgroups['B+D'], legend=False)
+        plot_with_markers(axes[i_row, i_col], x[B_label], data[i][B_label], cell_ids[B_label],
+                          cell_type_dict, edgecolor=colors_burstgroups['B'], legend=False)
+        plot_with_markers(axes[i_row, i_col], x[NB_label], data[i][NB_label], cell_ids[NB_label],
+                          cell_type_dict, edgecolor=colors_burstgroups['NB'], legend=False)
         axes[i_row, i_col].set_xlabel(x_label)
         axes[i_row, i_col].set_ylabel(ylabels[i])
+        #axes[i_row, i_col].set_xlim(0, None)
 
         if i < 3:
             axes[i_row, i_col].set_ylim([0, 1.1])
@@ -134,9 +138,39 @@ def plot_against(x, x_label):
 
 
 # plot
-plot_against(v_onset_fAHP, 'delta fAHP')
-plot_against(v_DAP_fAHP, 'delta DAP')
-plot_against(v_onset, 'V at AP onset')
-plot_against(v_fAHP, 'V fAHP')
-plot_against(v_DAP, 'V DAP')
+plot_against(DAP_time, '$Time_{AP-DAP}$')
+# plot_against(v_onset_fAHP, 'delta fAHP')
+# plot_against(v_DAP_fAHP, 'delta DAP')
+# plot_against(v_onset, 'V at AP onset')
+# plot_against(v_fAHP, 'V fAHP')
+# plot_against(v_DAP, 'V DAP')
+# pl.show()
+
+fig, ax = pl.subplots()
+#plot_with_markers(ax, v_onset_fAHP, peak_ISI_hist, cell_ids, cell_type_dict, legend=False)
+plot_with_markers(ax, v_onset_fAHP[BD_label], peak_ISI_hist[BD_label], cell_ids[BD_label],
+                  cell_type_dict, edgecolor=colors_burstgroups['B+D'], legend=False)
+plot_with_markers(ax, v_onset_fAHP[B_label], peak_ISI_hist[B_label], cell_ids[B_label],
+                  cell_type_dict, edgecolor=colors_burstgroups['B'], legend=False)
+plot_with_markers(ax, v_onset_fAHP[NB_label], peak_ISI_hist[NB_label], cell_ids[NB_label],
+                  cell_type_dict, edgecolor=colors_burstgroups['NB'], legend=False)
+pl.semilogy()
+pl.xlabel('Delta fAHP')
+pl.ylabel('Peak ISI hist.')
+pl.tight_layout()
 pl.show()
+
+fig, ax = pl.subplots()
+#plot_with_markers(ax, v_DAP_fAHP, peak_ISI_hist, cell_ids, cell_type_dict, legend=False)
+plot_with_markers(ax, v_DAP_fAHP[BD_label], peak_ISI_hist[BD_label], cell_ids[BD_label],
+                  cell_type_dict, edgecolor=colors_burstgroups['B+D'], legend=False)
+plot_with_markers(ax, v_DAP_fAHP[B_label], peak_ISI_hist[B_label], cell_ids[B_label],
+                  cell_type_dict, edgecolor=colors_burstgroups['B'], legend=False)
+plot_with_markers(ax, v_DAP_fAHP[NB_label], peak_ISI_hist[NB_label], cell_ids[NB_label],
+                  cell_type_dict, edgecolor=colors_burstgroups['NB'], legend=False)
+pl.semilogy()
+pl.xlabel('Delta DAP')
+pl.ylabel('Peak ISI hist.')
+pl.tight_layout()
+pl.show()
+

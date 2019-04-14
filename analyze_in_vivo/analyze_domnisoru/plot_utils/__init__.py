@@ -100,7 +100,7 @@ def get_handles_all_markers():
 
 
 def get_handles_for_cell_id(cell_id, cell_type_dict, color='k'):
-    save_dir = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
+    save_dir = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
     theta_cells = load_cell_ids(save_dir, 'giant_theta')
     DAP_cells, DAP_cells_additional = get_cell_ids_DAP_cells()
 

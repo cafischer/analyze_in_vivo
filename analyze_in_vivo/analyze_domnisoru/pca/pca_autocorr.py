@@ -13,7 +13,7 @@ from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_with_markers
 from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_for_all_grid_cells
 from analyze_in_vivo.analyze_domnisoru.autocorr.spiketime_autocorr import plot_autocorrelation
 from analyze_in_vivo.analyze_domnisoru.pca import perform_PCA, ward_clustering
-#pl.style.use('paper_subplots')
+pl.style.use('paper')
 
 
 def plot_PCs(n_components, x, PCs, explained_var, max_lag, bin_width, save_dir_img=None):
@@ -284,13 +284,13 @@ def plot_backtransformed(save_dir_img=None):
                             save_dir_img=save_dir_img_file)
 
 if __name__ == '__main__':
-    #save_dir_img_paper = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/paper'
-    #save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
-    #save_dir_autocorr = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/autocorr'
+    save_dir_img_paper = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/paper'
+    save_dir = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
+    save_dir_autocorr = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/autocorr'
 
-    save_dir_img_paper = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/paper'
-    save_dir = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
-    save_dir_autocorr = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/autocorr'
+    # save_dir_img_paper = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/paper'
+    # save_dir = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
+    # save_dir_autocorr = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/autocorr'
 
     if not os.path.exists(save_dir_img_paper):
         os.makedirs(save_dir_img_paper)

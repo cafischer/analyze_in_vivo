@@ -6,26 +6,24 @@ from analyze_in_vivo.load.load_domnisoru import load_cell_ids
 from cell_characteristics import to_idx
 from analyze_in_vivo.analyze_domnisoru.sta import get_sta_criterion_all_cells
 from cell_characteristics.analyze_APs import get_spike_characteristics
-from cell_fitting.optimization.evaluation import get_spike_characteristics_dict
+from analyze_in_vivo.analyze_domnisoru.spike_characteristics import get_spike_characteristics_dict
 from cell_fitting.util import init_nan
 pl.style.use('paper')
 
 
 if __name__ == '__main__':
     #save_dir_characteristics = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/AP_characteristics/'
-    #save_dir_characteristics = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/STA/good_AP_criterion/'
-    #save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
+    save_dir_characteristics = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/STA/good_AP_criterion/'
+    save_dir = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
 
-    save_dir_characteristics = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/STA/good_AP_criterion/'
-    save_dir = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
+    #save_dir_characteristics = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/STA/good_AP_criterion/'
+    #save_dir = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
 
     cell_type = 'grid_cells'
     cell_ids = load_cell_ids(save_dir, cell_type)
     param_list = ['Vm_ljpc', 'spiketimes', 'vel_100ms']
 
     # parameters
-    kind = 'all'
-    use_AP_max_idxs_domnisoru = True
     do_detrend = False
     before_AP = 25
     after_AP = 25

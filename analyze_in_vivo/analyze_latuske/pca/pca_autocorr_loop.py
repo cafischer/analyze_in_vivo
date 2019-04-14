@@ -11,19 +11,19 @@ from analyze_in_vivo.analyze_domnisoru.autocorr import *
 
 
 if __name__ == '__main__':
-    #save_dir_domnisoru = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
-    #save_dir_autocorr_domnisoru = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/autocorr'
-    save_dir_domnisoru =  '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
-    save_dir_autocorr_domnisoru = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/autocorr'
+    save_dir_domnisoru = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
+    save_dir_autocorr_domnisoru = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/autocorr'
+    #save_dir_domnisoru =  '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
+    #save_dir_autocorr_domnisoru = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/autocorr'
 
-    max_lags = np.arange(2, 200+1, 1)  # ms
+    max_lags = np.arange(1, 150+1, 1)  # ms
     bin_width = 1  # ms
     sigma_smooth = None
     dt_kde = 0.05
-    n_components = 5
+    n_components = 3
     remove_cells = True  # take out autocorrelation for cell s104_0007 and s110_0002
-    use_latuske = True
-    use_domnisoru = False
+    use_latuske = False
+    use_domnisoru = True
     normalization = 'sum'
 
     explained_vars = np.zeros((len(max_lags), n_components))
@@ -79,6 +79,12 @@ if __name__ == '__main__':
 
         explained_vars[idx, :] = explained_var
 
+    # save
+    folder = 'explained_var_for_max_lags'
+    if not os.path.exists(os.path.join(save_dir_autocorr_domnisoru, folder)):
+        os.makedirs(os.path.join(save_dir_autocorr_domnisoru, folder))
+    np.save(os.path.join(save_dir_autocorr_domnisoru, folder), max_lags)
+    np.save(os.path.join(save_dir_autocorr_domnisoru, folder), explained_vars)
 
     # plot
     pl.figure()
@@ -87,9 +93,9 @@ if __name__ == '__main__':
     pl.plot(max_lags, explained_vars[:, 0] + explained_vars[:, 1], label='PC1+PC2', linestyle='--')
     pl.plot(max_lags, explained_vars[:, 0] + explained_vars[:, 1] + explained_vars[:, 2], label='PC1+PC2+PC3', linestyle='--')
     pl.ylabel('Explained variance')
-    pl.xlabel('Max lag')
+    pl.xlabel('Max lag (ms)')
     pl.ylim(0, 1)
     pl.legend()
     pl.tight_layout()
-    pl.savefig(os.path.join(save_dir_autocorr_domnisoru, 'exp_var_latuske.png'))
+    pl.savefig(os.path.join(save_dir_autocorr_domnisoru, folder, 'explained_var.png'))
     pl.show()

@@ -1,6 +1,5 @@
 
 
-
 def get_spike_characteristics_dict(for_data=False):
     spike_characteristics_dict = {
         'AP_threshold': -10,  # mV

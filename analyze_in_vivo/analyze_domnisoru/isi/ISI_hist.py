@@ -12,18 +12,18 @@ from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_for_all_grid_cells
 from analyze_in_vivo.analyze_domnisoru import perform_kde, evaluate_kde
 import scipy.stats as st
 import pandas as pd
-#pl.style.use('paper_subplots')
+pl.style.use('paper')
 
 
 if __name__ == '__main__':
     # Note: not all APs are captured as the spikes are so small and noise is high and depth of hyperpolarization
     # between successive spikes varies
     #save_dir_img2 = '/home/cf/Dropbox/thesis/figures_results'
-    #save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/ISI_hist'
-    #save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
+    save_dir_img = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/ISI_hist'
+    save_dir = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
 
-    save_dir_img = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/ISI_hist'
-    save_dir = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
+    #save_dir_img = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/ISI_hist'
+    #save_dir = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
 
     cell_type_dict = get_celltype_dict(save_dir)
     cell_type = 'grid_cells'
@@ -35,7 +35,7 @@ if __name__ == '__main__':
     burst_ISI = 8  # ms
     bin_width = 1  # ms
     bins = np.arange(0, max_ISI+bin_width, bin_width)
-    sigma_smooth = None  # ms  None for no smoothing
+    sigma_smooth = 1  # ms  None for no smoothing
     dt_kde = 0.05  # ms
     t_kde = np.arange(0, max_ISI + dt_kde, dt_kde)
 

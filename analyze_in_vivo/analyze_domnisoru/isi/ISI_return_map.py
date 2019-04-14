@@ -9,16 +9,16 @@ from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data, get_ce
 from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_for_all_grid_cells
 from analyze_in_vivo.analyze_domnisoru.isi import plot_ISI_return_map
 from cell_fitting.util import init_nan
-#pl.style.use('paper_subplots')
+pl.style.use('paper')
 
 
 if __name__ == '__main__':
     #save_dir_img2 = '/home/cf/Dropbox/thesis/figures_results'
-    #save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/ISI_return_map'
-    #save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
+    save_dir_img = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/ISI_return_map'
+    save_dir = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
 
-    save_dir_img = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/ISI_return_map'
-    save_dir = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
+    #save_dir_img = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/ISI_return_map'
+    #save_dir = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
 
     cell_type = 'grid_cells'
     cell_ids = load_cell_ids(save_dir, cell_type)
@@ -148,7 +148,7 @@ if __name__ == '__main__':
         pl.rcParams.update(params)
 
         # plot return maps
-        plot_kwargs = dict(ISIs_per_cell=ISIs_cells, max_ISI=max_ISI)
+        plot_kwargs = dict(ISIs_cells=ISIs_cells, max_ISI=max_ISI)
         plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_ISI_return_map, plot_kwargs,
                                 xlabel='ISI[n] (ms)', ylabel='ISI[n+1] (ms)',
                                 save_dir_img=os.path.join(save_dir_img, 'ISI_return_map.png'))
@@ -156,12 +156,12 @@ if __name__ == '__main__':
         #                        xlabel='ISI[n] (ms)', ylabel='ISI[n+1] (ms)', colors_marker=colors_marker,
         #                        wspace=0.18, save_dir_img=os.path.join(save_dir_img2, 'ISI_return_map.png'))
 
-        plot_kwargs = dict(ISIs_per_cell=ISIs_cells, max_ISI=max_ISI, log_scale=True)
+        plot_kwargs = dict(ISIs_cells=ISIs_cells, max_ISI=max_ISI, log_scale=True)
         plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_ISI_return_map, plot_kwargs,
                                 xlabel='ISI[n] (ms)', ylabel='ISI[n+1] (ms)', colors_marker=colors_marker,
                                 save_dir_img=os.path.join(save_dir_img, 'return_map_log_scale.png'))
 
-        plot_kwargs = dict(ISIs_per_cell=ISIs_cells, max_ISI=max_ISI, median_cells=median_cells,
+        plot_kwargs = dict(ISIs_cells=ISIs_cells, max_ISI=max_ISI, median_cells=median_cells,
                            steps_median=steps_median)
         plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_ISI_return_map, plot_kwargs,
                                 xlabel='ISI[n] (ms)', ylabel='ISI[n+1] (ms)',

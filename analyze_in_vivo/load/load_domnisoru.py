@@ -96,7 +96,7 @@ def get_cell_ids_burstgroups():
             'NB': ['s74_0006', 's81_0004', 's84_0002', 's85_0007', 's90_0006', 's96_0009', 's100_0006', 's115_0018',
                    's115_0024', 's115_0030']}
 
-def get_label_burstgroups(save_dir='/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'):
+def get_label_burstgroups(save_dir='/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'):
     cell_ids_burstgroups = get_cell_ids_burstgroups()
     cell_ids_grid = load_cell_ids(save_dir, 'grid_cells')
     return {'B': np.array([True if cell_id in cell_ids_burstgroups['B'] else False for cell_id in cell_ids_grid]),
@@ -171,7 +171,7 @@ def get_cell_groups():
 
 
 if __name__ == '__main__':
-    save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
+    save_dir = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
     cell_ids = load_cell_ids(save_dir, 'grid_cells')
 
     # grid_cell_name = grid_cell_names[3]
@@ -186,7 +186,7 @@ if __name__ == '__main__':
     # pl.tight_layout()
     # pl.show()
 
-    # import json
-    # cell_type_dict = {cell_id: get_celltype(cell_id, save_dir) for cell_id in cell_ids}
-    # with open(os.path.join(save_dir, 'cell_types.json'), 'w') as f:
-    #     json.dump(cell_type_dict, f, indent=4)
+    import json
+    cell_type_dict = {cell_id: get_celltype(cell_id, save_dir) for cell_id in cell_ids}
+    with open(os.path.join(save_dir, 'cell_types.json'), 'w') as f:
+        json.dump(cell_type_dict, f, indent=4)
