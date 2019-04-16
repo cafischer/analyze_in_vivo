@@ -83,8 +83,8 @@ if __name__ == '__main__':
     folder = 'explained_var_for_max_lags'
     if not os.path.exists(os.path.join(save_dir_autocorr_domnisoru, folder)):
         os.makedirs(os.path.join(save_dir_autocorr_domnisoru, folder))
-    np.save(os.path.join(save_dir_autocorr_domnisoru, folder), max_lags)
-    np.save(os.path.join(save_dir_autocorr_domnisoru, folder), explained_vars)
+    np.save(os.path.join(save_dir_autocorr_domnisoru, folder, 'max_lags.npy'), max_lags)
+    np.save(os.path.join(save_dir_autocorr_domnisoru, folder, 'explained_vars.npy'), explained_vars)
 
     # plot
     pl.figure()

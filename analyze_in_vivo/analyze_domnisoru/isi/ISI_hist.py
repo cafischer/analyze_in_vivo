@@ -35,7 +35,7 @@ if __name__ == '__main__':
     burst_ISI = 8  # ms
     bin_width = 1  # ms
     bins = np.arange(0, max_ISI+bin_width, bin_width)
-    sigma_smooth = 1  # ms  None for no smoothing
+    sigma_smooth = None  # ms  None for no smoothing
     dt_kde = 0.05  # ms
     t_kde = np.arange(0, max_ISI + dt_kde, dt_kde)
 
@@ -45,6 +45,7 @@ if __name__ == '__main__':
         os.makedirs(save_dir_img)
 
     # over cells
+    spiketimes = np.zeros(len(cell_ids), dtype=object)
     ISIs_cells = [0] * len(cell_ids)
     n_ISIs = [0] * len(cell_ids)
     ISI_hist_cells = np.zeros((len(cell_ids), len(bins) - 1))
@@ -68,6 +69,8 @@ if __name__ == '__main__':
         dt = t[1] - t[0]
         AP_max_idxs = data['spiketimes']
 
+        spiketimes[cell_idx] = t[AP_max_idxs]
+
         # ISIs
         ISIs = get_ISIs(AP_max_idxs, t)
         if max_ISI is not None:
@@ -85,7 +88,7 @@ if __name__ == '__main__':
 
         # ISI histograms
         ISI_hist_cells[cell_idx, :] = get_ISI_hist(ISIs, bins)
-        cum_ISI_hist_y[cell_idx], cum_ISI_hist_x[cell_idx] = get_cumulative_ISI_hist(ISIs)
+        cum_ISI_hist_y[cell_idx], cum_ISI_hist_x[cell_idx] = get_cumulative_ISI_hist(ISIs, max_ISI)
 
         if sigma_smooth is None:
             peak_ISI_hist[cell_idx] = (bins[:-1][np.argmax(ISI_hist_cells[cell_idx, :])],
@@ -111,6 +114,8 @@ if __name__ == '__main__':
         # pl.close('all')
 
     # save
+    #np.save(os.path.join('/home/cfischer', 'spiketimes.npy'), spiketimes)
+    #np.save(os.path.join('/home/cfischer', 'cell_ids.npy'), np.array(cell_ids))
     if sigma_smooth is not None:
         np.save(os.path.join(save_dir_img, 'fraction_burst.npy'), fraction_burst)
         np.save(os.path.join(save_dir_img, 'peak_ISI_hist.npy'), peak_ISI_hist)

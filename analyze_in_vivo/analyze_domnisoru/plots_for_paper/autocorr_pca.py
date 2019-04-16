@@ -152,23 +152,23 @@ if __name__ == '__main__':
         ax.set_xticks([-max_lag_for_pca, 0, max_lag_for_pca])
 
     # D
-    # max_lags = np.load(os.path.join(save_dir_autocorr, 'explained_var_for_max_lags'))
-    # explained_vars = np.load(os.path.join(save_dir_autocorr, 'explained_var_for_max_lags'))
-    # linestyles = ['-', '--', '.']
-    #
-    # inner = gridspec.GridSpecFromSubplotSpec(1, 1, subplot_spec=outer[2, 2])
-    # ax = pl.Subplot(fig, inner[0])
-    # fig.add_subplot(ax)
-    # ax.text(-0.6, 1.0, 'D', transform=ax.transAxes, size=18)
-    # for i in range(n_components):
-    #     pl.plot(max_lags, explained_vars[:, i], label='PC'+str(i+1), color='k', linestyle=linestyles[i])
-    # ax.plot(max_lags, explained_vars[:, 0] + explained_vars[:, 1], label='PC1+PC2', color='g', linestyle='--')
-    # ax.plot(max_lags, explained_vars[:, 0] + explained_vars[:, 1] + explained_vars[:, 2], label='PC1+PC2+PC3',
-    #         color='g', linestyle='.')
-    # ax.set_ylabel('Explained variance')
-    # ax.set_xlabel('Maximal lag (ms)')
-    # ax.ylim(0, 1)
-    # ax.legend()
+    max_lags = np.load(os.path.join(save_dir_autocorr, 'explained_var_for_max_lags', 'max_lags.npy'))
+    explained_vars = np.load(os.path.join(save_dir_autocorr, 'explained_var_for_max_lags', 'explained_vars.npy'))
+    linestyles = ['-', '--', '.']
+
+    inner = gridspec.GridSpecFromSubplotSpec(1, 1, subplot_spec=outer[2, 2])
+    ax = pl.Subplot(fig, inner[0])
+    fig.add_subplot(ax)
+    ax.text(-0.6, 1.0, 'D', transform=ax.transAxes, size=18)
+    for i in range(n_components):
+        pl.plot(max_lags, explained_vars[:, i], label='PC'+str(i+1), color='k', linestyle=linestyles[i])
+    ax.plot(max_lags, explained_vars[:, 0] + explained_vars[:, 1], label='PC1+PC2', color='g', linestyle='--')
+    ax.plot(max_lags, explained_vars[:, 0] + explained_vars[:, 1] + explained_vars[:, 2], label='PC1+PC2+PC3',
+            color='g', linestyle='.')
+    ax.set_ylabel('Explained variance')
+    ax.set_xlabel('Maximal lag (ms)')
+    ax.ylim(0, 1)
+    ax.legend()
 
     # other stuff
     pl.tight_layout()
