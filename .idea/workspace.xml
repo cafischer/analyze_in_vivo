@@ -1,15 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="e49bf97b-9320-4073-96c0-0e1e0d553c29" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/analyze_in_vivo/analyze_domnisoru/group_averages/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/analyze_in_vivo/analyze_domnisoru/group_averages/group_averages.py" afterDir="false" />
+    <list default="true" id="e49bf97b-9320-4073-96c0-0e1e0d553c29" name="Default Changelist" comment="started group average plots">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analyze_in_vivo/analyze_domnisoru/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/analyze_in_vivo/analyze_domnisoru/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analyze_in_vivo/analyze_domnisoru/group_averages/group_averages.py" beforeDir="false" afterPath="$PROJECT_DIR$/analyze_in_vivo/analyze_domnisoru/group_averages/group_averages.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/analyze_in_vivo/analyze_domnisoru/isi/ISI_hist.py" beforeDir="false" afterPath="$PROJECT_DIR$/analyze_in_vivo/analyze_domnisoru/isi/ISI_hist.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analyze_in_vivo/analyze_domnisoru/pca/pca_autocorr.py" beforeDir="false" afterPath="$PROJECT_DIR$/analyze_in_vivo/analyze_domnisoru/pca/pca_autocorr.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analyze_in_vivo/analyze_domnisoru/plots_for_paper/autocorr_pca.py" beforeDir="false" afterPath="$PROJECT_DIR$/analyze_in_vivo/analyze_domnisoru/plots_for_paper/autocorr_pca.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analyze_in_vivo/analyze_latuske/pca/pca_autocorr_loop.py" beforeDir="false" afterPath="$PROJECT_DIR$/analyze_in_vivo/analyze_latuske/pca/pca_autocorr_loop.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analyze_in_vivo/load/load_domnisoru.py" beforeDir="false" afterPath="$PROJECT_DIR$/analyze_in_vivo/load/load_domnisoru.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analyze_in_vivo/analyze_domnisoru/isi/ISI_return_map.py" beforeDir="false" afterPath="$PROJECT_DIR$/analyze_in_vivo/analyze_domnisoru/isi/ISI_return_map.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -22,8 +19,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/analyze_in_vivo/analyze_domnisoru/group_averages/group_averages.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="153">
-              <caret line="99" column="20" selection-start-line="99" selection-start-column="20" selection-end-line="99" selection-end-column="20" />
+            <state relative-caret-position="120">
+              <caret line="8" column="27" lean-forward="true" selection-start-line="8" selection-start-column="27" selection-end-line="8" selection-end-column="27" />
               <folding>
                 <element signature="e#0#9#0" expanded="true" />
               </folding>
@@ -34,8 +31,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/analyze_in_vivo/analyze_domnisoru/plots_for_thesis/sig_tests_bursty_nonbursty_paper4.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="135">
-              <caret line="30" selection-start-line="30" selection-end-line="30" selection-end-column="123" />
+            <state relative-caret-position="882">
+              <caret line="210" column="84" selection-start-line="210" selection-start-column="78" selection-end-line="210" selection-end-column="84" />
               <folding>
                 <element signature="e#0#31#0" expanded="true" />
               </folding>
@@ -46,29 +43,11 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/analyze_in_vivo/analyze_domnisoru/isi/ISI_hist.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="160">
-              <caret line="127" column="58" selection-start-line="127" selection-start-column="44" selection-end-line="127" selection-end-column="58" />
+            <state relative-caret-position="260">
+              <caret line="235" column="64" lean-forward="true" selection-start-line="235" selection-start-column="64" selection-end-line="235" selection-end-column="64" />
               <folding>
                 <element signature="e#0#31#0" expanded="true" />
               </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/../grid_cell_stimuli/grid_cell_stimuli/ISI_hist/__init__.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="179">
-              <caret line="25" column="29" selection-start-line="25" selection-start-column="29" selection-end-line="25" selection-end-column="29" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/analyze_in_vivo/analyze_domnisoru/isi/__init__.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="153">
-              <caret line="32" column="2" selection-start-line="32" selection-start-column="2" selection-end-line="33" selection-end-column="101" />
             </state>
           </provider>
         </entry>
@@ -84,9 +63,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>save_dir_img_paper</find>
-      <find>save_dir_ISI_return_map</find>
-      <find>use_AP_max_idxs_domnisoru</find>
       <find>kind</find>
       <find>do_detrend</find>
       <find>cell_ids_burst1</find>
@@ -106,6 +82,17 @@
       <find>folder</find>
       <find>cum_ISI</find>
       <find>get_cumulative_ISI_hist</find>
+      <find>kde</find>
+      <find>perform_kde</find>
+      <find>np.sa</find>
+      <find>np.save</find>
+      <find>mesh</find>
+      <find>ISI_hist_cell</find>
+      <find>s110</find>
+      <find>cell_ids</find>
+      <find>alpha</find>
+      <find>cumula</find>
+      <find>spike_charac</find>
     </findStrings>
     <dirStrings>
       <dir>$PROJECT_DIR$/analyze_in_vivo/analyze_domnisoru</dir>
@@ -119,7 +106,6 @@
       <list>
         <option value="$PROJECT_DIR$/analyze_in_vivo/analyze_domnisoru/sta/sta_best_criterion_for_good_APs.py" />
         <option value="$PROJECT_DIR$/analyze_in_vivo/analyze_domnisoru/plot_utils/__init__.py" />
-        <option value="$PROJECT_DIR$/analyze_in_vivo/analyze_domnisoru/isi/ISI_return_map.py" />
         <option value="$PROJECT_DIR$/analyze_in_vivo/analyze_domnisoru/spike_events/spike_events.py" />
         <option value="$PROJECT_DIR$/analyze_in_vivo/analyze_domnisoru/firing_rate.py" />
         <option value="$PROJECT_DIR$/analyze_in_vivo/analyze_domnisoru/delta_fAHP_delta_DAP.py" />
@@ -133,14 +119,16 @@
         <option value="$PROJECT_DIR$/analyze_in_vivo/analyze_domnisoru/plots_for_paper/autocorr_pca.py" />
         <option value="$PROJECT_DIR$/analyze_in_vivo/load/load_domnisoru.py" />
         <option value="$PROJECT_DIR$/analyze_in_vivo/analyze_domnisoru/pca/pca_autocorr.py" />
-        <option value="$PROJECT_DIR$/analyze_in_vivo/analyze_domnisoru/isi/ISI_hist.py" />
+        <option value="$PROJECT_DIR$/analyze_in_vivo/analyze_domnisoru/isi/ISI_return_map.py" />
         <option value="$PROJECT_DIR$/../grid_cell_stimuli/grid_cell_stimuli/ISI_hist/__init__.py" />
+        <option value="$PROJECT_DIR$/analyze_in_vivo/analyze_domnisoru/isi/ISI_hist.py" />
+        <option value="$PROJECT_DIR$/analyze_in_vivo/analyze_domnisoru/__init__.py" />
         <option value="$PROJECT_DIR$/analyze_in_vivo/analyze_domnisoru/group_averages/group_averages.py" />
       </list>
     </option>
   </component>
   <component name="ProjectFrameBounds" extendedState="6">
-    <option name="x" value="715" />
+    <option name="x" value="65" />
     <option name="y" value="24" />
     <option name="width" value="650" />
     <option name="height" value="744" />
@@ -150,7 +138,6 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
-      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
@@ -174,34 +161,7 @@
               <item name="analyze_in_vivo" type="462c0819:PsiDirectoryNode" />
               <item name="analyze_in_vivo" type="462c0819:PsiDirectoryNode" />
               <item name="analyze_domnisoru" type="462c0819:PsiDirectoryNode" />
-              <item name="autocorr" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="analyze_in_vivo" type="b2602c69:ProjectViewProjectNode" />
-              <item name="analyze_in_vivo" type="462c0819:PsiDirectoryNode" />
-              <item name="analyze_in_vivo" type="462c0819:PsiDirectoryNode" />
-              <item name="analyze_domnisoru" type="462c0819:PsiDirectoryNode" />
-              <item name="group_averages" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="analyze_in_vivo" type="b2602c69:ProjectViewProjectNode" />
-              <item name="analyze_in_vivo" type="462c0819:PsiDirectoryNode" />
-              <item name="analyze_in_vivo" type="462c0819:PsiDirectoryNode" />
-              <item name="analyze_domnisoru" type="462c0819:PsiDirectoryNode" />
-              <item name="isi" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="analyze_in_vivo" type="b2602c69:ProjectViewProjectNode" />
-              <item name="analyze_in_vivo" type="462c0819:PsiDirectoryNode" />
-              <item name="analyze_in_vivo" type="462c0819:PsiDirectoryNode" />
-              <item name="analyze_domnisoru" type="462c0819:PsiDirectoryNode" />
               <item name="plots_for_thesis" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="analyze_in_vivo" type="b2602c69:ProjectViewProjectNode" />
-              <item name="analyze_in_vivo" type="462c0819:PsiDirectoryNode" />
-              <item name="analyze_in_vivo" type="462c0819:PsiDirectoryNode" />
-              <item name="analyze_latuske" type="462c0819:PsiDirectoryNode" />
             </path>
             <path>
               <item name="analyze_in_vivo" type="b2602c69:ProjectViewProjectNode" />
@@ -213,6 +173,7 @@
           <select />
         </subPane>
       </pane>
+      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -238,7 +199,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Python.ISI_hist">
+  <component name="RunManager" selected="Python.group_averages">
     <configuration name="ISI_hist" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <module name="analyze_in_vivo" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -260,7 +221,7 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="autocorr_pca" type="PythonConfigurationType" factoryName="Python" temporary="true">
+    <configuration name="ISI_return_map" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <module name="analyze_in_vivo" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -268,11 +229,11 @@
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
       <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/analyze_in_vivo/analyze_domnisoru/plots_for_paper" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/analyze_in_vivo/analyze_domnisoru/isi" />
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/analyze_in_vivo/analyze_domnisoru/plots_for_paper/autocorr_pca.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/analyze_in_vivo/analyze_domnisoru/isi/ISI_return_map.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -346,11 +307,11 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.ISI_hist" />
         <item itemvalue="Python.group_averages" />
+        <item itemvalue="Python.ISI_hist" />
+        <item itemvalue="Python.ISI_return_map" />
         <item itemvalue="Python.pca_autocorr" />
         <item itemvalue="Python.pca_autocorr_loop" />
-        <item itemvalue="Python.autocorr_pca" />
       </list>
     </recent_temporary>
   </component>
@@ -386,27 +347,34 @@
       <option name="project" value="LOCAL" />
       <updated>1555269347397</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="started group average plots">
+      <created>1555433899045</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1555433899045</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="64" y="-4" width="1303" height="773" extended-state="6" />
+    <frame x="65" y="-4" width="1301" height="772" extended-state="6" />
     <editor active="true" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.17449139" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.17449139" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" />
-      <window_info active="true" anchor="bottom" id="Run" order="2" visible="true" weight="0.3542601" />
-      <window_info anchor="bottom" id="Debug" order="3" weight="0.27503738" />
+      <window_info anchor="bottom" id="Run" order="2" weight="0.245142" />
+      <window_info anchor="bottom" id="Debug" order="3" visible="true" weight="0.27503738" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
       <window_info anchor="bottom" id="TODO" order="6" />
       <window_info anchor="bottom" id="Version Control" order="7" />
       <window_info anchor="bottom" id="Terminal" order="8" />
       <window_info anchor="bottom" id="Event Log" order="9" side_tool="true" />
-      <window_info anchor="bottom" id="Python Console" order="10" />
+      <window_info anchor="bottom" id="Python Console" order="10" weight="0.32884902" />
       <window_info anchor="right" id="Commander" order="0" weight="0.4" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
@@ -417,57 +385,79 @@
     <MESSAGE value="make to python package (part1)" />
     <MESSAGE value="make to python package (part2)" />
     <MESSAGE value="started plots for paper" />
-    <option name="LAST_COMMIT_MESSAGE" value="started plots for paper" />
+    <MESSAGE value="started group average plots" />
+    <option name="LAST_COMMIT_MESSAGE" value="started group average plots" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/analyze_in_vivo/analyze_domnisoru/isi/ISI_return_map.py</url>
+          <line>74</line>
+          <option name="timeStamp" value="9" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/analyze_in_vivo/analyze_domnisoru/group_averages/group_averages.py</url>
+          <line>84</line>
+          <option name="timeStamp" value="13" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
   <component name="debuggerHistoryManager">
+    <expressions id="evaluateCodeFragment">
+      <expression>
+        <expression-string>pl.figure()
+pl.pcolor(X, Y, kde_mat)
+pl.scatter(ISIs_cells[cell_idx][:-1], ISIs_cells[cell_idx][1:], color='k')
+pl.show()</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>CODE_FRAGMENT</evaluation-mode>
+      </expression>
+    </expressions>
     <expressions id="evaluateExpression">
       <expression>
-        <expression-string>ISI_hist_cells[0]</expression-string>
+        <expression-string>np.sum(ISI_return_map_kde_cells[i] / (np.sum(ISI_return_map_kde_cells[i]) * dt_kde ** 2))</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>ISI_hist_cells</expression-string>
+        <expression-string>np.sum(ISI_return_map[i] / (np.sum(ISI_return_map[i]) * dt_kde ** 2))</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>np.mean(ISI_hist_cells[label_burstgroups[group]], 0)</expression-string>
+        <expression-string>i=1</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>bins[:-1]</expression-string>
+        <expression-string>np.sum(ISI_return_map_kde_cells[0] / np.sum(ISI_return_map_kde_cells[0])) / dt_kde**2</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>bins[-1]</expression-string>
+        <expression-string>np.sum(ISI_return_map_kde_cells[0] / np.sum(ISI_return_map_kde_cells[0])) / 1**2</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>projected[~np.isnan(projected[:, 0])]</expression-string>
+        <expression-string>np.sum(ISI_return_map_kde_cells[6])</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>projected[~np.isnan(projected[:, 0]), :]</expression-string>
+        <expression-string>np.sum(ISI_return_map_kde_cells[0])</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>projected[~np.isnan(projected), :]</expression-string>
+        <expression-string>np.sum(ISI_return_map_kde_cells)</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>projected[~np.isnan(projected)]</expression-string>
-        <language-id>Python</language-id>
-        <evaluation-mode>EXPRESSION</evaluation-mode>
-      </expression>
-      <expression>
-        <expression-string>projected[~np.isnan(projected)</expression-string>
+        <expression-string>np.sum(autocorr_cells[9])</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
@@ -512,16 +502,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/analyze_in_vivo/analyze_domnisoru/isi/ISI_return_map.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="203">
-          <caret line="168" selection-start-line="168" selection-end-line="168" />
-          <folding>
-            <element signature="e#0#31#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/analyze_in_vivo/analyze_domnisoru/delta_fAHP_delta_DAP.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="252">
@@ -557,16 +537,6 @@
     <entry file="file://$PROJECT_DIR$/analyze_in_vivo/analyze_domnisoru/spike_characteristics/__init__.py">
       <provider selected="true" editor-type-id="text-editor" />
     </entry>
-    <entry file="file://$PROJECT_DIR$/analyze_in_vivo/analyze_domnisoru/spike_characteristics/AP_characteristics.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="90">
-          <caret line="12" selection-start-line="12" selection-end-line="12" />
-          <folding>
-            <element signature="e#0#31#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file:///usr/local/lib/python2.7/dist-packages/numpy/lib/npyio.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="159">
@@ -595,15 +565,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="1230">
           <caret line="90" column="33" selection-start-line="90" selection-start-column="33" selection-end-line="90" selection-end-column="33" />
-          <folding>
-            <element signature="e#0#18#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/analyze_in_vivo/analyze_latuske/pca/pca_autocorr.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state>
           <folding>
             <element signature="e#0#18#0" expanded="true" />
           </folding>
@@ -643,16 +604,6 @@
     <entry file="file://$PROJECT_DIR$/analyze_in_vivo/analyze_domnisoru/group_averages/__init__.py">
       <provider selected="true" editor-type-id="text-editor" />
     </entry>
-    <entry file="file://$PROJECT_DIR$/analyze_in_vivo/analyze_domnisoru/autocorr/spiketime_autocorr.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="210">
-          <caret line="87" column="11" selection-start-line="87" selection-start-column="11" selection-end-line="87" selection-end-column="105" />
-          <folding>
-            <element signature="e#0#31#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/analyze_in_vivo/analyze_domnisoru/pca/pca_autocorr.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="195">
@@ -663,24 +614,78 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/analyze_in_vivo/analyze_domnisoru/isi/__init__.py">
+    <entry file="file:///usr/local/lib/python2.7/dist-packages/scipy/stats/kde.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="153">
-          <caret line="32" column="2" selection-start-line="32" selection-start-column="2" selection-end-line="33" selection-end-column="101" />
+        <state relative-caret-position="151">
+          <caret line="240" selection-start-line="240" selection-end-line="240" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/../grid_cell_stimuli/grid_cell_stimuli/ISI_hist/__init__.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="179">
-          <caret line="25" column="29" selection-start-line="25" selection-start-column="29" selection-end-line="25" selection-end-column="29" />
+        <state relative-caret-position="180">
+          <caret line="20" column="65" selection-start-line="20" selection-start-column="65" selection-end-line="20" selection-end-column="65" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/analyze_in_vivo/analyze_domnisoru/__init__.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="75">
+          <caret line="7" selection-start-line="7" selection-end-line="7" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/analyze_in_vivo/analyze_domnisoru/isi/ISI_return_map.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="143">
+          <caret line="74" selection-start-line="74" selection-end-line="74" />
+          <folding>
+            <element signature="e#0#31#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/analyze_in_vivo/analyze_domnisoru/autocorr/spiketime_autocorr.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="795">
+          <caret line="87" column="11" selection-start-line="87" selection-start-column="11" selection-end-line="87" selection-end-column="105" />
+          <folding>
+            <element signature="e#0#31#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/analyze_in_vivo/analyze_latuske/pca/pca_autocorr.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="117">
+          <caret line="153" column="61" selection-start-line="153" selection-start-column="61" selection-end-line="153" selection-end-column="84" />
+          <folding>
+            <element signature="e#0#18#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/analyze_in_vivo/analyze_domnisoru/isi/ISI_hist.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="160">
-          <caret line="127" column="58" selection-start-line="127" selection-start-column="44" selection-end-line="127" selection-end-column="58" />
+        <state relative-caret-position="260">
+          <caret line="235" column="64" lean-forward="true" selection-start-line="235" selection-start-column="64" selection-end-line="235" selection-end-column="64" />
+          <folding>
+            <element signature="e#0#31#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/analyze_in_vivo/analyze_domnisoru/isi/__init__.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="255">
+          <caret line="33" column="11" lean-forward="true" selection-start-line="33" selection-start-column="11" selection-end-line="33" selection-end-column="101" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/analyze_in_vivo/analyze_domnisoru/spike_characteristics/AP_characteristics.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-664">
+          <caret line="12" selection-start-line="12" selection-end-line="12" />
           <folding>
             <element signature="e#0#31#0" expanded="true" />
           </folding>
@@ -689,8 +694,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/analyze_in_vivo/analyze_domnisoru/plots_for_thesis/sig_tests_bursty_nonbursty_paper4.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="135">
-          <caret line="30" selection-start-line="30" selection-end-line="30" selection-end-column="123" />
+        <state relative-caret-position="882">
+          <caret line="210" column="84" selection-start-line="210" selection-start-column="78" selection-end-line="210" selection-end-column="84" />
           <folding>
             <element signature="e#0#31#0" expanded="true" />
           </folding>
@@ -699,8 +704,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/analyze_in_vivo/analyze_domnisoru/group_averages/group_averages.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="153">
-          <caret line="99" column="20" selection-start-line="99" selection-start-column="20" selection-end-line="99" selection-end-column="20" />
+        <state relative-caret-position="120">
+          <caret line="8" column="27" lean-forward="true" selection-start-line="8" selection-start-column="27" selection-end-line="8" selection-end-column="27" />
           <folding>
             <element signature="e#0#9#0" expanded="true" />
           </folding>

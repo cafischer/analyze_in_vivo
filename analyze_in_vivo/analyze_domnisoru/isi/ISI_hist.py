@@ -35,7 +35,7 @@ if __name__ == '__main__':
     burst_ISI = 8  # ms
     bin_width = 1  # ms
     bins = np.arange(0, max_ISI+bin_width, bin_width)
-    sigma_smooth = None  # ms  None for no smoothing
+    sigma_smooth = 1  # ms  None for no smoothing
     dt_kde = 0.05  # ms
     t_kde = np.arange(0, max_ISI + dt_kde, dt_kde)
 
@@ -87,7 +87,7 @@ if __name__ == '__main__':
             ISI_kde_cells[cell_idx] = evaluate_kde(t_kde, kde)
 
         # ISI histograms
-        ISI_hist_cells[cell_idx, :] = get_ISI_hist(ISIs, bins)
+        ISI_hist_cells[cell_idx, :] = get_ISI_hist(ISIs, bins, norm='sum')
         cum_ISI_hist_y[cell_idx], cum_ISI_hist_x[cell_idx] = get_cumulative_ISI_hist(ISIs, max_ISI)
 
         if sigma_smooth is None:

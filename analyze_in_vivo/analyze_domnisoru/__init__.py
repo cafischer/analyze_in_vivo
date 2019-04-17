@@ -4,7 +4,10 @@ import matplotlib.pyplot as pl
 
 
 def perform_kde(x, sigma):
-    kde = st.gaussian_kde(x, bw_method=np.sqrt(sigma**2 / np.cov(x)))
+    if len(np.shape(x)) == 1:
+        kde = st.gaussian_kde(x, bw_method=np.sqrt(sigma**2 / np.cov(x)))
+    else:
+        kde = st.gaussian_kde(x, bw_method=np.sqrt(sigma ** 2 / np.cov(x)[0, 0]))
     return kde
 
 

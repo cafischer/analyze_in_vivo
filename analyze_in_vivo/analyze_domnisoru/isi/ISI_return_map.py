@@ -9,6 +9,7 @@ from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data, get_ce
 from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_for_all_grid_cells
 from analyze_in_vivo.analyze_domnisoru.isi import plot_ISI_return_map
 from cell_fitting.util import init_nan
+from analyze_in_vivo.analyze_domnisoru import perform_kde, evaluate_kde
 pl.style.use('paper')
 
 
@@ -27,6 +28,8 @@ if __name__ == '__main__':
     max_ISI = 200  # None if you want to take all ISIs
     ISI_burst = 8  # ms
     bin_width = 1  # ms
+    sigma_smooth = 5  # ms
+    dt_kde = 1
     steps_median = np.arange(0, max_ISI + bin_width, bin_width)
 
     folder = 'max_ISI_' + str(max_ISI) + '_bin_width_' + str(bin_width)
@@ -41,6 +44,7 @@ if __name__ == '__main__':
     prob_next_ISI_burst = init_nan((len(cell_ids), len(steps_median)))
     area_under_curve_cum_prob_next_ISI_burst = np.zeros(len(cell_ids))
     fraction_ISI_or_ISI_next_burst = np.zeros(len(cell_ids))
+    ISI_return_map_kde_cells = np.zeros(len(cell_ids), dtype=object)
 
     for cell_idx, cell_id in enumerate(cell_ids):
         print cell_id
@@ -60,6 +64,20 @@ if __name__ == '__main__':
 
         fraction_ISI_or_ISI_next_burst[cell_idx] = float(sum(np.logical_or(ISIs[:-1] < ISI_burst,
                                                                            ISIs[1:] < ISI_burst))) / len(ISIs[1:])
+
+        # compute KDE
+        if sigma_smooth is not None:
+            kde = perform_kde(np.vstack([ISIs_cells[cell_idx][:-1], ISIs_cells[cell_idx][1:]]), sigma_smooth)
+            t_kde = np.arange(0, max_ISI + dt_kde, dt_kde)
+            X, Y = np.meshgrid(t_kde, t_kde)
+            kde_mat = evaluate_kde(np.vstack([X.flatten(), Y.flatten()]), kde)
+            kde_mat = kde_mat.reshape(len(t_kde), len(t_kde))
+            ISI_return_map_kde_cells[cell_idx] = kde_mat
+
+            # pl.figure()
+            # pl.pcolor(X, Y, kde_mat)
+            # pl.scatter(ISIs_cells[cell_idx][:-1], ISIs_cells[cell_idx][1:], color='k', s=3, alpha=0.3)
+            # pl.show()
 
         # running median
         window_size = 5.0  # ms
@@ -137,6 +155,10 @@ if __name__ == '__main__':
 
     # save and plot
     np.save(os.path.join(save_dir_img, 'fraction_ISI_or_ISI_next_burst.npy'), fraction_ISI_or_ISI_next_burst)
+    folder = 'sigma_smooth_' + str(sigma_smooth) + '_dt_kde_' + str(dt_kde)
+    if not os.path.exists(os.path.join(save_dir_img, folder)):
+        os.makedirs(os.path.join(save_dir_img, folder))
+    np.save(os.path.join(save_dir_img, folder, 'ISI_return_map_kde.npy'), ISI_return_map_kde_cells)
 
     if cell_type == 'grid_cells':
         burst_label = np.array([True if cell_id in get_cell_ids_bursty() else False for cell_id in cell_ids])
