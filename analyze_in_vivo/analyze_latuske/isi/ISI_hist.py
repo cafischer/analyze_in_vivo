@@ -13,8 +13,8 @@ from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_for_all_grid_cells
 
 
 if __name__ == '__main__':
-    #save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/latuske/ISI/ISI_hist'
-    save_dir_img = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/latuske/ISI/ISI_hist'
+    save_dir_img = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/latuske/ISI/ISI_hist'
+    #save_dir_img = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/latuske/ISI/ISI_hist'
     ISIs_cells = load_ISIs()
     max_ISI = 200  # None if you want to take all ISIs
     burst_ISI = 8  # ms
@@ -54,8 +54,8 @@ if __name__ == '__main__':
             ISI_kde_cells[cell_idx] = evaluate_kde(t_kde, kde_cells[cell_idx])
 
         # ISI histograms
-        ISI_hist_cells[cell_idx, :] = get_ISI_hist(ISIs, bins)
-        cum_ISI_hist_y[cell_idx], cum_ISI_hist_x[cell_idx] = get_cumulative_ISI_hist(ISIs)
+        ISI_hist_cells[cell_idx, :] = get_ISI_hist(ISIs, bins, norm='sum')
+        cum_ISI_hist_y[cell_idx], cum_ISI_hist_x[cell_idx] = get_cumulative_ISI_hist(ISIs, max_ISI)
 
         if sigma_smooth is None:
             peak_ISI_hist[cell_idx] = (bins[:-1][np.argmax(ISI_hist_cells[cell_idx, :])],

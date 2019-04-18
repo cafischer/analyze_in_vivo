@@ -5,7 +5,7 @@ from analyze_in_vivo.load.mec_classes import mec_classes as mec_classes
 
 
 
-def load_ISIs(save_dir='/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/data/latuske/grid_cells_withfields_vt_0.pkl'):
+def load_ISIs(save_dir='/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/latuske/grid_cells_withfields_vt_0.pkl'):
     sys.modules['mec_classes'] = mec_classes  # pickle needs the same module structure see:
     # https://stackoverflow.com/questions/2121874/python-pickling-after-changing-a-modules-directory
 

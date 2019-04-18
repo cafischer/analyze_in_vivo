@@ -5,13 +5,13 @@ import os
 from analyze_in_vivo.load.load_latuske import load_ISIs
 from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_for_all_grid_cells
 from analyze_in_vivo.analyze_domnisoru.isi import plot_ISI_return_map
-#pl.style.use('paper_subplots')
+pl.style.use('paper')
 
 
 if __name__ == '__main__':
-    #save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/latuske/ISI/ISI_return_map'
+    save_dir_img = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/latuske/ISI/ISI_return_map'
 
-    save_dir_img = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/latuske/ISI/ISI_return_map'
+    #save_dir_img = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/latuske/ISI/ISI_return_map'
 
     ISIs_cells = load_ISIs()
 
@@ -58,7 +58,7 @@ if __name__ == '__main__':
         end = (n+1)*27
         if end >= len(ISIs_cells):
             end = len(ISIs_cells)
-        plot_kwargs = dict(ISIs_per_cell=ISIs_cells[n*27:end], max_ISI=max_ISI)
+        plot_kwargs = dict(ISIs_cells=ISIs_cells[n*27:end], max_ISI=max_ISI)
         cell_ids = [str(i) for i in range(len(ISIs_cells))]
         cell_type_dict = {str(i): 'not known' for i in cell_ids}
         plot_for_all_grid_cells(cell_ids[n*27:end], cell_type_dict, plot_ISI_return_map, plot_kwargs,

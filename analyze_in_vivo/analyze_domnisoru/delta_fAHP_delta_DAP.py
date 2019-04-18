@@ -34,7 +34,7 @@ if __name__ == '__main__':
 
     # parameters
     with_selection = True
-    use_avg_times = True
+    use_avg_times = False
     thresh = '1der'
     AP_thresh_derivative = 15
     do_detrend = False
@@ -68,6 +68,7 @@ if __name__ == '__main__':
     fAHP_min_idx_cells = init_nan(len(cell_ids))
     DAP_max_idx_cells = init_nan(len(cell_ids))
     DAP_time_cells = init_nan(len(cell_ids))
+    time_AP_fAHP_cells = init_nan(len(cell_ids))
     for cell_idx, cell_id in enumerate(cell_ids):
         print cell_id
 
@@ -96,6 +97,8 @@ if __name__ == '__main__':
                                                                           ['AP_max_idx', 'fAHP_min_idx', 'DAP_max_idx', 'DAP_time'],
                                                                           v_rest, check=False,
                                                                           **spike_characteristics_dict)).astype(float)
+        if not np.isnan(fAHP_min_idx_cells[cell_idx]):
+            time_AP_fAHP_cells[cell_idx] = t_AP[int(fAHP_min_idx_cells[cell_idx])] - t_AP[int(AP_max_idx_cells[cell_idx])]
 
     # compute average Time_AP-fAHP and Time_AP-DAP
     time_AP_fAHP_avg = np.nanmean((fAHP_min_idx_cells - AP_max_idx_cells) * dt)
@@ -247,3 +250,4 @@ if __name__ == '__main__':
     np.save(os.path.join(save_dir_data, name_add2, 'v_DAP.npy'), v_DAP)
     np.save(os.path.join(save_dir_data, name_add2, 'v_onset.npy'), v_onset)
     np.save(os.path.join(save_dir_data, name_add2, 'DAP_time.npy'), DAP_time_cells)
+    np.save(os.path.join(save_dir_data, name_add2, 'time_AP_fAHP.npy'), time_AP_fAHP_cells)
