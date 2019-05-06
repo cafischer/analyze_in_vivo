@@ -6,39 +6,36 @@ import os
 from analyze_in_vivo.load.load_domnisoru import get_celltype_dict, get_cell_ids_DAP_cells, load_cell_ids
 from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_with_markers
 
-pl.style.use('paper_subplots')
+pl.style.use('paper')
 
 
 if __name__ == '__main__':
-    save_dir_img = '/home/cf/Dropbox/thesis/figures_results'
-    save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
-    save_dir_sta = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/STA/not_detrended/all/grid_cells'
-    save_dir_sta_good_APs = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/STA/good_AP/not_detrended/all/grid_cells'
-    save_dir_characteristics = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/AP_characteristics/all'
-    cell_type = 'DAP_cells'
-    cell_ids, _ = get_cell_ids_DAP_cells()
+    save_dir_img = '/home/cfischer/Dropbox/thesis/figures_results'
+    save_dir = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
+    save_dir_sta = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/STA/good_AP_criterion/not_detrended'
+
     cell_type_dict = get_celltype_dict(save_dir)
+    grid_cells = load_cell_ids(save_dir, 'grid_cells')
+    theta_cells = load_cell_ids(save_dir, 'giant_theta')
+    DAP_cells, DAP_cells_additional = get_cell_ids_DAP_cells()
 
     # parameters
-    use_AP_max_idxs_domnisoru = True
-    param_list = ['Vm_ljpc', 'spiketimes']
+    before_AP = 10
+    after_AP = 25
+    t_vref = 5
+    dt = 0.05
+    AP_criterion = {'None': None}
+    folder = AP_criterion.keys()[0] + str(AP_criterion.values()[0]) \
+             + '_before_after_AP_' + str((before_AP, after_AP)) + '_t_vref_' + str(t_vref)
     if not os.path.exists(save_dir_img):
         os.makedirs(save_dir_img)
 
     # main
-    sta_mean_cells = np.zeros(len(cell_ids), dtype=object)
-    sta_std_cells = np.zeros(len(cell_ids), dtype=object)
-    v_hist_cells = np.zeros(len(cell_ids), dtype=object)
-    for cell_idx, cell_id in enumerate(cell_ids):
-        print cell_id
-
-        save_dir_cell = os.path.join(save_dir_sta, cell_id)
-
-        sta_mean_cells[cell_idx] = np.load(os.path.join(save_dir_cell, 'sta_mean.npy'))
-        sta_std_cells[cell_idx] = np.load(os.path.join(save_dir_cell, 'sta_std.npy'))
-        v_hist_cells[cell_idx] = np.load(os.path.join(save_dir_cell, 'v_hist.npy'))
-        t_AP = np.load(os.path.join(save_dir_cell, 't_AP.npy'))
-        bins_v = np.load(os.path.join(save_dir_cell, 'bins_v.npy'))
+    sta_mean_cells = np.load(os.path.join(save_dir_sta, folder, 'sta_mean.npy'))
+    #sta_std_cells = np.load(os.path.join(save_dir_sta, folder, 'sta_std.npy'))
+    #v_hist_cells = np.load(os.path.join(save_dir_sta, folder, 'v_hist.npy'))
+    t_AP = np.arange(len(sta_mean_cells[0])) * dt
+    #bins_v = np.load(os.path.join(save_dir_cell, 'bins_v.npy'))
         # sta_mean_cells[cell_idx], sta_std_cells[cell_idx], v_hist_cells[cell_idx], t_AP = get_sta_for_cell_id(cell_id,
         #                                                                                                      param_list,
         #                                                                                                      save_dir)
@@ -60,12 +57,9 @@ if __name__ == '__main__':
     # ax.set_zlabel('DAP deflection (mV)')
     # ax.view_init(azim=45, elev=20)
 
-    grid_cells = load_cell_ids(save_dir, 'grid_cells')
-    theta_cells = load_cell_ids(save_dir, 'giant_theta')
-    DAP_cells, DAP_cells_additional = get_cell_ids_DAP_cells()
-    AP_width = np.load(os.path.join(save_dir_characteristics, 'grid_cells', 'AP_width.npy'))
-    AP_amp = np.load(os.path.join(save_dir_characteristics, 'grid_cells', 'AP_amp.npy'))
-    DAP_deflection = np.load(os.path.join(save_dir_characteristics, 'grid_cells', 'DAP_deflection.npy'))
+    AP_width = np.load(os.path.join(save_dir_sta, folder, 'AP_width.npy'))
+    AP_amp = np.load(os.path.join(save_dir_sta, folder, 'AP_amp.npy'))
+    DAP_deflection = np.load(os.path.join(save_dir_sta, folder, 'DAP_deflection.npy'))
     DAP_deflection[np.isnan(DAP_deflection)] = 0
 
     # preparation
@@ -216,13 +210,17 @@ if __name__ == '__main__':
     # new plot
     fig, ax = pl.subplots()
     fig.add_subplot(ax)
-    plot_with_markers(ax, AP_width[labels_predicted], AP_amp[labels_predicted], np.array(grid_cells)[labels_predicted],
-                      cell_type_dict, edgecolor='#A11E22', theta_cells=theta_cells, DAP_cells=DAP_cells,
-                      DAP_cells_additional=DAP_cells_additional, legend=False)
-    handles = plot_with_markers(ax, AP_width[~labels_predicted],
-                                AP_amp[~labels_predicted], np.array(grid_cells)[~labels_predicted],
-                                cell_type_dict, edgecolor='#EBA631', theta_cells=theta_cells, DAP_cells=DAP_cells,
-                                DAP_cells_additional=DAP_cells_additional, legend=False)
+    # plot_with_markers(ax, AP_width[labels_predicted], AP_amp[labels_predicted], np.array(grid_cells)[labels_predicted],
+    #                   cell_type_dict, edgecolor='#A11E22', theta_cells=theta_cells, DAP_cells=DAP_cells,
+    #                   DAP_cells_additional=DAP_cells_additional, legend=False)
+    # handles = plot_with_markers(ax, AP_width[~labels_predicted],
+    #                             AP_amp[~labels_predicted], np.array(grid_cells)[~labels_predicted],
+    #                             cell_type_dict, edgecolor='#EBA631', theta_cells=theta_cells, DAP_cells=DAP_cells,
+    #                             DAP_cells_additional=DAP_cells_additional, legend=False)
+    # without edge color
+    handles = plot_with_markers(ax, AP_width, AP_amp, np.array(grid_cells),
+                      cell_type_dict, theta_cells=theta_cells, DAP_cells=DAP_cells, legend=False)
+
     # for i, cell_id in enumerate(grid_cells):
     #     ax.annotate(cell_id, xy=(AP_width[i], AP_amp[i]))
 
@@ -230,13 +228,13 @@ if __name__ == '__main__':
     #                   cell_type_dict, edgecolor='y',
     #                   theta_cells=theta_cells, DAP_cells=DAP_cells)
     ax.set_xlim(0.5, None)
-    pl.axvline(threshold_AP_width)
-    pl.axhline(threshold_AP_amp)
+    #pl.axvline(threshold_AP_width, color='k')
+    #pl.axhline(threshold_AP_amp, color='k')
     ax.set_xlabel('AP width (ms)')
     ax.set_ylabel('AP amp. (mV)')
     ax.set_ylim(15, 83)
-    handles_extra = [Patch(color='#A11E22', label='Good rec.'), Patch(color='#EBA631', label='Bad rec.')]
-    ax.legend(handles=handles+handles_extra,
+    #handles_extra = [Patch(color='#A11E22', label='Good rec.'), Patch(color='#EBA631', label='Bad rec.')]
+    ax.legend(handles=handles,  #+handles_extra,
               loc='upper right')
     pl.tight_layout()
     pl.savefig(os.path.join(save_dir_img, 'good_recordings.png'))

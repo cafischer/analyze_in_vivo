@@ -53,7 +53,7 @@ def get_autocorrelation_by_ISIs(ISIs, max_lag=50, bin_width=1, remove_zero=True,
         autocorr[to_idx(max_lag, bin_width)] = 0
     if normalization == 'sum':
         if np.sum(autocorr) > 0:
-            autocorr = autocorr / float(np.sum(autocorr) * bin_width)
+            autocorr = autocorr / float(np.sum(autocorr) * bin_width) * 2  # normalize to just one half of the autocorrelation
     elif normalization == 'max':
         if np.max(autocorr) > 0:
             autocorr = autocorr / float(np.max(autocorr))

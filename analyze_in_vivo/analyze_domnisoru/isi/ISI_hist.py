@@ -35,7 +35,7 @@ if __name__ == '__main__':
     burst_ISI = 8  # ms
     bin_width = 1  # ms
     bins = np.arange(0, max_ISI+bin_width, bin_width)
-    sigma_smooth = None  # ms  None for no smoothing
+    sigma_smooth = 1  # ms  None for no smoothing
     dt_kde = 0.05  # ms
     t_kde = np.arange(0, max_ISI + dt_kde, dt_kde)
 
@@ -60,6 +60,9 @@ if __name__ == '__main__':
     CV_ISIs = np.zeros(len(cell_ids))
     kde_cells = np.zeros(len(cell_ids), dtype=object)
 
+    fraction_ISIs_8_16 = np.zeros(len(cell_ids))
+    fraction_ISIs_8_25 = np.zeros(len(cell_ids))
+
     for cell_idx, cell_id in enumerate(cell_ids):
         print cell_id
         # load
@@ -79,6 +82,9 @@ if __name__ == '__main__':
         n_ISIs[cell_idx] = len(ISIs)
         ISIs_cells[cell_idx] = ISIs
         fraction_burst[cell_idx] = np.sum(ISIs < burst_ISI) / float(len(ISIs))
+
+        fraction_ISIs_8_16[cell_idx] = np.sum(np.logical_and(8 < ISIs, ISIs < 16)) / float(len(ISIs))
+        fraction_ISIs_8_25[cell_idx] = np.sum(np.logical_and(8 < ISIs, ISIs < 25)) / float(len(ISIs))
 
         # compute KDE
         if sigma_smooth is not None:
@@ -130,6 +136,8 @@ if __name__ == '__main__':
         np.save(os.path.join(save_dir_img, 'ISIs.npy'), ISIs_cells)
     np.save(os.path.join(save_dir_img, 'shortest_ISI.npy'), shortest_ISI)
     np.save(os.path.join(save_dir_img, 'CV_ISIs.npy'), CV_ISIs)
+    np.save(os.path.join(save_dir_img, 'fraction_ISIs_8_16.npy'), fraction_ISIs_8_16)
+    np.save(os.path.join(save_dir_img, 'fraction_ISIs_8_25.npy'), fraction_ISIs_8_25)
 
     # table of ISI
     cell_ids_bursty = get_cell_ids_bursty()

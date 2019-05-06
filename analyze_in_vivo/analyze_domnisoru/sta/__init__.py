@@ -74,15 +74,18 @@ def get_AP_amps_and_widths(v_APs, t_AP, dt, before_AP_idx, t_vref):
 
 
 def select_APs(AP_amps, AP_widths, AP_criterion, v_APs):
-    if AP_criterion.keys()[0] == 'quantile':
+    if AP_criterion.keys()[0] == 'None':  # selects all APs
+        good_APs = np.ones(len(v_APs)).astype(bool)
+    elif AP_criterion.keys()[0] == 'quantile':
         AP_amp_thresh = np.nanpercentile(AP_amps, 100 - AP_criterion.values()[0])
         AP_width_thresh = np.nanpercentile(AP_widths, AP_criterion.values()[0])
+        good_APs = np.logical_and(AP_amps >= AP_amp_thresh, AP_widths <= AP_width_thresh)
     elif AP_criterion.keys()[0] == 'AP_amp_and_width':
         AP_amp_thresh = AP_criterion.values()[0][0]
         AP_width_thresh = AP_criterion.values()[0][1]
+        good_APs = np.logical_and(AP_amps >= AP_amp_thresh, AP_widths <= AP_width_thresh)
     else:
         raise ValueError('AP criterion does not exist!')
-    good_APs = np.logical_and(AP_amps >= AP_amp_thresh, AP_widths <= AP_width_thresh)
     v_APs_good = v_APs[good_APs]
     return v_APs_good
 

@@ -12,7 +12,6 @@ pl.style.use('paper')
 
 
 if __name__ == '__main__':
-    #save_dir_characteristics = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/AP_characteristics/'
     save_dir_characteristics = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/STA/good_AP_criterion/'
     save_dir = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
 
@@ -25,11 +24,17 @@ if __name__ == '__main__':
 
     # parameters
     do_detrend = False
-    before_AP = 25
+    # before_AP = 25
+    # after_AP = 25
+    # t_vref = 10
+    # dt = 0.05
+    # AP_criterion = {'AP_amp_and_width': (40, 1)}
+    before_AP = 10
     after_AP = 25
-    t_vref = 10
+    t_vref = 5
     dt = 0.05
-    AP_criterion = {'AP_amp_and_width': (40, 1)}
+    AP_criterion = {'None': None}
+
     folder_detrend = {True: 'detrended', False: 'not_detrended'}
     folder_name = AP_criterion.keys()[0] + str(AP_criterion.values()[0]) \
                   + '_before_after_AP_' + str((before_AP, after_AP)) + '_t_vref_' + str(t_vref)

@@ -51,8 +51,8 @@ if not os.path.exists(save_dir_img):
     os.makedirs(save_dir_img)
 
 max_ISI = 200
-bin_width = 1
-sigma_smooth = 1
+bin_width = 1  # ms
+sigma_smooth = 1  # ms
 burst_ISI = 8  # ms
 before_AP = 25
 after_AP = 25
@@ -69,6 +69,8 @@ width_ISI_hist = np.load(os.path.join(save_dir_ISI_hist, folder, 'width_at_half_
 fraction_burst = np.load(os.path.join(save_dir_ISI_hist, folder, 'fraction_burst.npy'))
 shortest_ISI = np.load(os.path.join(save_dir_ISI_hist, folder, 'shortest_ISI.npy'))
 CV_ISIs = np.load(os.path.join(save_dir_ISI_hist, folder, 'CV_ISIs.npy'))
+fraction_ISIs_8_16 = np.load(os.path.join(save_dir_ISI_hist, folder, 'fraction_ISIs_8_16.npy'))
+fraction_ISIs_8_25 = np.load(os.path.join(save_dir_ISI_hist, folder, 'fraction_ISIs_8_25.npy'))
 fraction_single = np.load(os.path.join(save_dir_spike_events, 'fraction_single_' + str(burst_ISI) + '.npy'))
 fraction_ISI_or_ISI_next_burst = np.load(os.path.join(save_dir_ISI_return_map,
                                                       'max_ISI_' + str(max_ISI) + '_bin_width_' + str(bin_width),
@@ -102,11 +104,17 @@ BD_label = labels_burstgroups['B+D']
 B_label = labels_burstgroups['B']
 
 
-data = [fraction_burst, fraction_single, fraction_ISI_or_ISI_next_burst,  width_ISI_hist,
+# data = [fraction_burst, fraction_single, fraction_ISI_or_ISI_next_burst,  width_ISI_hist,
+#         peak_ISI_hist, firing_rate, shortest_ISI, CV_ISIs, vdiff_onset_start]
+# ylabels = ['Fraction ISIs $\leq$ 8ms', 'Fraction single spikes', 'Fraction ISI[n] or ISI[n+1] $\leq$ 8ms',
+#            'Width of the ISI hist. (ms)', 'ISI hist. peak (ms)',
+#            'Firing rate (Hz)', 'Mean 10% shortest ISIs', 'CV of ISIs', 'Linear slope before AP (mV/ms)']
+
+data = [fraction_burst, fraction_ISIs_8_16, fraction_ISIs_8_25,  width_ISI_hist,
         peak_ISI_hist, firing_rate, shortest_ISI, CV_ISIs, vdiff_onset_start]
-ylabels = ['Fraction ISIs $\leq$ 8ms', 'Fraction single spikes', 'Fraction ISI[n] or ISI[n+1] $\leq$ 8ms',
-           'Width of the ISI hist. (ms)', 'ISI hist. peak (ms)',
-           'Firing rate (Hz)', 'Mean 10% shortest ISIs', 'CV of ISIs', 'Linear slope before AP (mV/ms)']
+ylabels = ['Fraction ISIs $\leq$ 8ms', 'Fraction 8 < ISI < 16', 'Fraction 8 < ISI < 25',
+           'Width of the ISI hist. (ms)', 'ISI hist. peak (ms)', 'Firing rate (Hz)',
+           'Mean 10% shortest ISIs', 'CV of ISIs', 'Linear slope before AP (mV/ms)']
 
 
 def plot_against(x, x_label):
@@ -133,14 +141,18 @@ def plot_against(x, x_label):
             axes[i_row, i_col].set_ylim([0, None])
 
         i_col += 1
+    handles_bursty = [Patch(color=colors_burstgroups['B'], label='B-D'),
+                      Patch(color=colors_burstgroups['B+D'], label='B+D'),
+                      Patch(color=colors_burstgroups['NB'], label='NB')]
+    axes[0, 0].legend(handles=handles_bursty, loc='upper right', fontsize=8)
     pl.tight_layout()
     pl.show()
 
 
 # plot
-plot_against(DAP_time, '$Time_{AP-DAP}$')
-# plot_against(v_onset_fAHP, 'delta fAHP')
-# plot_against(v_DAP_fAHP, 'delta DAP')
+# plot_against(DAP_time, '$Time_{AP-DAP}$')
+plot_against(v_onset_fAHP, 'delta fAHP')
+plot_against(v_DAP_fAHP, 'delta DAP')
 # plot_against(v_onset, 'V at AP onset')
 # plot_against(v_fAHP, 'V fAHP')
 # plot_against(v_DAP, 'V DAP')

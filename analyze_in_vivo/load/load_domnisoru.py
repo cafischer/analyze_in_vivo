@@ -84,16 +84,17 @@ def get_cell_ids_DAP_cells(new=False):
         return ['s79_0003', 's104_0007', 's109_0002', 's110_0002', 's119_0004'], ['s73_0004', 's85_0007']
 
 
-def get_cell_ids_bursty():
+def get_cell_ids_bursty():  # for thesis
     return np.array(['s43_0003', 's67_0000', 's73_0004', 's76_0002', 's79_0003',
                      's82_0002', 's95_0006', 's101_0009', 's104_0007', 's109_0002',
                      's110_0002', 's117_0002', 's118_0002', 's119_0004', 's120_0002'], dtype=str)
 
 def get_cell_ids_burstgroups():
-    return {'B': ['s76_0002', 's82_0002', 's95_0006', 's101_0009', 's117_0002', 's118_0002', 's120_0002', 's120_0023'],
+    return {'B': ['s76_0002', 's82_0002', 's95_0006', 's101_0009', 's117_0002', 's118_0002', 's120_0002'],
             'B+D': ['s43_0003', 's67_0000', 's73_0004', 's79_0003', 's104_0007', 's109_0002', 's110_0002', 's119_0004'],
-            'NB': ['s74_0006', 's81_0004', 's84_0002', 's85_0007', 's90_0006', 's96_0009', 's100_0006', 's115_0018',
-                   's115_0024', 's115_0030']}
+            'NB': ['s74_0006', 's84_0002', 's85_0007', 's90_0006', 's96_0009', 's100_0006', 's120_0023', 's115_0018',
+                   's115_0024']}  # NB: 's81_0004', 's115_0030'
+
 
 def get_label_burstgroups(save_dir='/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'):
     cell_ids_burstgroups = get_cell_ids_burstgroups()
@@ -150,23 +151,6 @@ def get_last_bin_edge(cell_id):
     # units VR: -1140 : 28.94973617378945 : 1209 (2430 for 6 m tracks)
     # units cm: -196.8929860286835 : 5.0 : 208.81019307778803 (419.69294390324643 for 6 m tracks)
 
-
-def get_cell_groups():
-    """
-    Cell groups based on ISI return maps.
-    """
-    # TODO: proper criterion for recognition of groups
-    edge_accumulating = ['s66_0003', 's76_0002', 's79_0003', 's101_0009', 's117_0002', 's119_0004', 's120_0002']
-    edge_avoiding = ['s81_0004', 's84_0002', 's85_0007', 's90_0006', 's96_0009', 's100_0006', 's115_0018', 's115_0024',
-                's115_0030', 's120_0023']
-    theta = ['s67_0000', 's73_0004', 's109_0002', 's118_0002']
-    dap = ['s79_0003', 's104_0007', 's109_0002', 's110_0002', 's119_0004']
-    all = ['s43_0003', 's66_0003', 's67_0000', 's73_0004', 's74_0006', 's76_0002', 's79_0003', 's81_0004', 's82_0002',
-           's84_0002', 's85_0007', 's90_0006', 's95_0006', 's96_0009', 's100_0006', 's101_0009', 's104_0007',
-           's109_0002',  's110_0002', 's115_0018', 's115_0024', 's115_0030', 's117_0002', 's118_0002', 's119_0004',
-           's120_0002', 's120_0023']
-    return {'edge-accumulating': edge_accumulating, 'edge-avoiding': edge_avoiding, 'theta': theta, 'DAP': dap,
-            'all': all}
 
 
 if __name__ == '__main__':

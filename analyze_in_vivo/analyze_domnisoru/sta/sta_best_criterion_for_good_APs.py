@@ -125,11 +125,6 @@ def test_osculating_circle(scale=1):
 
 
 if __name__ == '__main__':
-    # test_osculating_circle(1)
-    # test_osculating_circle(8)
-    # test_osculating_circle(0.05)
-    # pl.show()
-
     save_dir_img = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/STA/good_AP_criterion'
     save_dir = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
     cell_type = 'grid_cells'
@@ -137,7 +132,6 @@ if __name__ == '__main__':
     param_list = ['Vm_ljpc', 'spiketimes']
 
     # parameters
-    t_vref = 10  # ms
     dt = 0.05  # ms
     do_detrend = False
     folder_detrend = {True: 'detrended', False: 'not_detrended'}
@@ -148,11 +142,16 @@ if __name__ == '__main__':
     # AP_criterions = [{'quantile': 20}, {'quantile': 10}, {'AP_amp_and_width': (40, 1)}]
     # time_before_after_AP = [(20, 25), (25, 20), (25, 25), (25, 30), (30, 25), (30, 30)]  # (before_AP, after_AP)
 
-    AP_criterions = [{'AP_amp_and_width': (40, 1)}]
-    time_before_after_AP = [(25, 25)]  # (before_AP, after_AP)
+    # for paper
+    # t_vref = 10  # ms
+    #AP_criterions = [{'AP_amp_and_width': (40, 1)}]
+    #time_before_after_AP = [(25, 25)]  # (before_AP, after_AP)
 
-    # AP_criterions = [{'AP_amp_and_width': (51.8, 0.72)}]
-    # time_before_after_AP = [(10, 25)]  # (before_AP, after_AP)
+    # for thesis
+    t_vref = 5  # ms
+    #AP_criterions = [{'AP_amp_and_width': (51.8, 0.72)}]
+    AP_criterions = [{'None': None}]
+    time_before_after_AP = [(10, 25)]  # (before_AP, after_AP)
 
     # main
     for AP_criterion in AP_criterions:
@@ -163,11 +162,11 @@ if __name__ == '__main__':
                                                                       AP_criterion, t_vref, cell_ids, save_dir)
 
             # save
-            folder_name = AP_criterion.keys()[0] + str(AP_criterion.values()[0]) \
-                       + '_before_after_AP_' + str((before_AP, after_AP)) + '_t_vref_' + str(t_vref)
-            if not os.path.exists(os.path.join(save_dir_img, folder_name)):
-                os.makedirs(os.path.join(save_dir_img, folder_name))
-            np.save(os.path.join(save_dir_img, folder_name, 'sta_mean.npy'), sta_mean_good_APs_cells)
+            folder = AP_criterion.keys()[0] + str(AP_criterion.values()[0]) \
+                     + '_before_after_AP_' + str((before_AP, after_AP)) + '_t_vref_' + str(t_vref)
+            if not os.path.exists(os.path.join(save_dir_img, folder)):
+                os.makedirs(os.path.join(save_dir_img, folder))
+            np.save(os.path.join(save_dir_img, folder, 'sta_mean.npy'), sta_mean_good_APs_cells)
 
             t_AP = np.arange(-before_AP, after_AP + dt, dt)
             plot_kwargs = dict(t_AP=t_AP,
@@ -185,7 +184,7 @@ if __name__ == '__main__':
             plot_for_all_grid_cells_grid(cell_ids, get_celltype_dict(save_dir), plot_sta_grid_on_ax, plot_kwargs,
                                          xlabel='Time (ms)', ylabel='Mem. pot. \n(mV)', n_subplots=2,
                                          fig_title=fig_title,
-                                         save_dir_img=os.path.join(save_dir_img, folder_name, 'sta.png'))
+                                         save_dir_img=os.path.join(save_dir_img, folder, 'sta.png'))
 
             #pl.show()
             sta_1derivative_cells = np.zeros((len(cell_ids), len(sta_mean_good_APs_cells[0])-2))
