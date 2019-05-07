@@ -77,6 +77,25 @@ def load_cell_ids(save_dir, cell_type='grid_cells'):
     return cell_ids
 
 
+def get_cell_layer_dict(save_dir):
+    cell_layer_dict = {}
+    file = loadmat(os.path.join(save_dir, 'cl_ah.mat'))['cl_ah']
+    grid_cells_tmp = file['gridlist']
+    grid_cells = [str(x[0]) for x in grid_cells_tmp[0][0][0]]
+    layer2_cells_tmp = file['l2_grid']
+    layer2_cells = [str(x[0]) for x in layer2_cells_tmp[0, 0][0]]
+    layer3_cells_tmp = file['l3_grid']
+    layer3_cells = [str(x[0]) for x in layer3_cells_tmp[0, 0][0]]
+    for cell_id in grid_cells:
+        if cell_id in layer2_cells:
+            cell_layer_dict[cell_id] = 'LII'
+        elif cell_id in layer3_cells:
+            cell_layer_dict[cell_id] = 'LIII'
+        else:
+            cell_layer_dict[cell_id] = 'niL'
+    return cell_layer_dict
+
+
 def get_cell_ids_DAP_cells(new=False):
     if new:
         return ['s67_0000', 's73_0004', 's79_0003', 's104_0007', 's109_0002', 's110_0002', 's119_0004']
