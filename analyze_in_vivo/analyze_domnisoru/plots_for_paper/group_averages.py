@@ -8,6 +8,7 @@ from cell_characteristics.analyze_APs import get_AP_onset_idxs
 from scipy.interpolate import interp1d
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import matplotlib.colors as colors
+pl.style.use('paper')
 
 
 save_dir_img = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/group_averages'
@@ -63,7 +64,7 @@ for i, ISI_return_map in enumerate(ISI_return_map_kde_cells):  # norm again beca
     ISI_return_map_kde_cells[i] = ISI_return_map / (np.sum(ISI_return_map) * dt_kde ** 2)
 
 # plot
-fig, axes = pl.subplots(3, 3, figsize=(6, 5))
+fig, axes = pl.subplots(3, 3, figsize=(6.05, 5))
 
 # A
 for i, group in enumerate(groups):
@@ -76,13 +77,13 @@ for i, group in enumerate(groups):
                    color=colors_burstgroups[group],
                    align='center', alpha=0.4)
     axes[0, i].plot(t_autocorr, np.mean(autocorr_cells[label_burstgroups[group]], 0), color='k', drawstyle='steps-mid',
-                    linewidth=0.5)
+                    linewidth=0.4)
     axes[0, i].set_xlabel('Lag (ms)')
     axes[0, i].set_xlim(-max_lag, max_lag)
     if i == 0:
         axes[0, i].yaxis.set_label_coords(-0.46, 0.5)
         axes[0, i].set_ylabel('Autocorr. (norm.)')
-        axes[0, i].annotate('', xy=(4.0, 0.04), xytext=(28.0, 0.08),
+        axes[0, i].annotate('', xy=(4.0, 0.04), xytext=(27, 0.075),
                             arrowprops=dict(facecolor='black', shrink=0.1, width=0.5, headwidth=5, headlength=5))
         axes[0, i].text(-0.8, 1.0, 'A', transform=axes[0, i].transAxes, size=18)
 
@@ -95,13 +96,15 @@ for i, group in enumerate(groups):
                    bottom=np.mean(ISI_hist_cells[label_burstgroups[group]], 0),
                    color=colors_burstgroups[group], align='edge', alpha=0.4)
     axes[1, i].plot(bins[:-1], np.mean(ISI_hist_cells[label_burstgroups[group]], 0), color='k', drawstyle='steps-post',
-                    linewidth=0.5)
+                    linewidth=0.4)
     axes[1, i].set_xlabel('ISI (ms)')
     axes[1, i].set_xlim(0, max_ISI)
+    axes[1, i].set_ylim(0, np.max(np.mean(ISI_hist_cells[label_burstgroups[group]], 0)
+                        + np.std(ISI_hist_cells[label_burstgroups[group]], 0))+0.005)
     if i == 0:
         axes[1, i].yaxis.set_label_coords(-0.46, 0.5)
         axes[1, i].set_ylabel('Freq. (norm.)')
-        axes[1, i].annotate('', xy=(4., 0.008), xytext=(45, 0.014),
+        axes[1, i].annotate('', xy=(4., 0.008), xytext=(47, 0.0145),
                             arrowprops=dict(facecolor='black', shrink=0.1, width=0.5, headwidth=5, headlength=5))
         axes[1, i].text(-0.82, 1.0, 'B', transform=axes[1, i].transAxes, size=18)
 

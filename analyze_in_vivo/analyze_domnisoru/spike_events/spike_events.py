@@ -8,7 +8,14 @@ from grid_cell_stimuli import get_AP_max_idxs
 from grid_cell_stimuli.ISI_hist import get_ISIs
 from analyze_in_vivo.analyze_domnisoru.check_basic.in_out_field import get_starts_ends_group_of_ones
 from analyze_in_vivo.analyze_domnisoru.spike_events import get_starts_ends_burst, get_idxs_single, get_burst_lengths
-#pl.style.use('paper_subplots')
+from statsmodels.stats.diagnostic import lilliefors
+from scipy.stats import chisquare
+from scipy.optimize import curve_fit
+pl.style.use('paper')
+
+
+def exp_dist(x, rate):
+    return rate * np.exp(-x * rate)
 
 
 def plot_n_spikes_in_burst_all_cells(cell_type_dict, bins, count_spikes):
@@ -101,6 +108,48 @@ if __name__ == '__main__':
         count_spikes[cell_idx, 0] = len(AP_max_idxs_single)
         assert bins[0] == 1
         fraction_single[cell_idx] = count_spikes[cell_idx, 0] / np.sum(count_spikes[cell_idx, :])
+
+        # test for exponential distribution
+        # problematic because data are discrete!
+        #spike_events = np.concatenate((get_burst_lengths(starts_burst, ends_burst), np.ones(len(AP_max_idxs_single))))
+        # spike_events = np.round(np.random.exponential(scale=3, size=100), 0)
+        # _, p_val = lilliefors(spike_events, dist='exp')
+        # print 'p-val: %.5f' % p_val
+        # print 'Refute exp. distr.: ', p_val < 0.05
+        #
+        # pl.figure()
+        # pl.hist(spike_events, bins=50)
+        # pl.show()
+
+        # test for exponential distribution with chi squared
+        observed = count_spikes[cell_idx]
+
+        # fit rate of exponential distribution
+        p_opt, _ = curve_fit(exp_dist, bins[:-1], observed / np.sum(observed), p0=2.)
+        rate_est = p_opt[0]
+        n_estimated_parameters = 1
+
+        # compute expected values
+        expected = exp_dist(bins[:-1], rate_est) * np.sum(observed)
+
+        # compute statistic
+        idxs_enough_data = observed >= 4
+        observed = observed[idxs_enough_data]
+        expected = expected[idxs_enough_data]
+        bins_reduced = bins[:-1][idxs_enough_data]
+
+        chisquared, p = chisquare(observed, expected, n_estimated_parameters)
+
+        print 'rate est.: ', rate_est
+        print 'chi-squared: %.2f' % chisquared
+        print 'p-val: %.5f' % p
+
+        if len(bins_reduced) > 1:
+            pl.figure()
+            pl.bar(bins_reduced, observed, width=bins_reduced[1] - bins_reduced[0])
+            pl.plot(bins_reduced, expected, 'or')
+            pl.show()
+
 
         # pl.close('all')
         # pl.figure()
