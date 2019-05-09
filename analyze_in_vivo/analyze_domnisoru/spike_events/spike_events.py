@@ -14,10 +14,6 @@ from scipy.optimize import curve_fit
 pl.style.use('paper')
 
 
-def exp_dist(x, rate):
-    return rate * np.exp(-x * rate)
-
-
 def plot_n_spikes_in_burst_all_cells(cell_type_dict, bins, count_spikes):
     params = {'legend.fontsize': 9}
     pl.rcParams.update(params)
@@ -60,6 +56,51 @@ def plot_n_spikes_in_burst_all_cells(cell_type_dict, bins, count_spikes):
         #                         save_dir_img=os.path.join(save_dir_img2, 'count_spikes.png'))
 
 
+def geom_dist(x, rate):
+    p = 1 - np.exp(-rate)
+    return (1-p)**(x-1) * p
+
+
+def test_geom_dist_with_chi_square(count_events, x_events):
+    observed = count_events
+    x = x_events
+    # sample data for testing
+    # samples = np.random.geometric(1 - np.exp(-2.), 1000)
+    # observed = np.histogram(samples, bins)[0]
+
+    # fit geometric distribution to the data
+    n_estimated_parameters = 1
+    p_opt, _ = curve_fit(geom_dist, x, observed / np.sum(observed))
+    rate_est = p_opt[0]
+    expected = geom_dist(x, rate_est) * np.sum(observed)
+
+    # add to the first bin with expected count per bin < 4 the counts from the following bins
+    if not np.all(expected >= 4):
+        idx = np.where(expected < 4)[0][0] - 1
+        observed = np.append(observed[:idx], np.sum(observed[idx:]))
+        expected = np.append(expected[:idx], np.sum(expected[idx:]))
+
+    # compute statistic
+    chisquared, p_val = chisquare(observed, expected, n_estimated_parameters)
+
+    # print 'rate est.: ', rate_est
+    # print 'chi-squared: %.2f' % chisquared
+    # print 'p-val: %.5f' % p_val
+    # if len(observed) > 1:
+    #     pl.figure()
+    #     pl.bar(np.arange(len(observed_)), observed_, width=1)
+    #     pl.plot(np.arange(len(expected_)), expected_, 'or')
+    #     pl.show()
+    return p_val
+
+
+# not sig. different with alpha 0.05
+# s79_0003
+# s101_0009
+# s118_0002
+# s119_0004
+# s120_0002
+
 if __name__ == '__main__':
     #save_dir_img2 = '/home/cf/Dropbox/thesis/figures_results'
     save_dir_img = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/bursting'
@@ -84,7 +125,7 @@ if __name__ == '__main__':
     fraction_single = np.zeros(len(cell_ids))
 
     for cell_idx, cell_id in enumerate(cell_ids):
-        print cell_id
+        #print cell_id
         save_dir_cell = os.path.join(save_dir_img, cell_id)
         if not os.path.exists(save_dir_cell):
             os.makedirs(save_dir_cell)
@@ -121,35 +162,10 @@ if __name__ == '__main__':
         # pl.hist(spike_events, bins=50)
         # pl.show()
 
-        # test for exponential distribution with chi squared
-        observed = count_spikes[cell_idx]
-
-        # fit rate of exponential distribution
-        p_opt, _ = curve_fit(exp_dist, bins[:-1], observed / np.sum(observed), p0=2.)
-        rate_est = p_opt[0]
-        n_estimated_parameters = 1
-
-        # compute expected values
-        expected = exp_dist(bins[:-1], rate_est) * np.sum(observed)
-
-        # compute statistic
-        idxs_enough_data = observed >= 4
-        observed = observed[idxs_enough_data]
-        expected = expected[idxs_enough_data]
-        bins_reduced = bins[:-1][idxs_enough_data]
-
-        chisquared, p = chisquare(observed, expected, n_estimated_parameters)
-
-        print 'rate est.: ', rate_est
-        print 'chi-squared: %.2f' % chisquared
-        print 'p-val: %.5f' % p
-
-        if len(bins_reduced) > 1:
-            pl.figure()
-            pl.bar(bins_reduced, observed, width=bins_reduced[1] - bins_reduced[0])
-            pl.plot(bins_reduced, expected, 'or')
-            pl.show()
-
+        p_val = test_geom_dist_with_chi_square(count_spikes[cell_idx], bins[:-1])
+        #print 'p-val: %.5f' % p_val
+        if p_val >= 0.05:
+            print cell_id
 
         # pl.close('all')
         # pl.figure()

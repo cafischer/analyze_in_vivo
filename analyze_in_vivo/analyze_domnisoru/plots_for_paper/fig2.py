@@ -1,17 +1,13 @@
 from __future__ import division
 import numpy as np
 import matplotlib.pyplot as pl
-import os
-from analyze_in_vivo.load.load_domnisoru import load_cell_ids, get_cell_ids_DAP_cells, get_celltype_dict, \
-    get_label_burstgroups, get_colors_burstgroups, get_cell_layer_dict
-from cell_characteristics.analyze_APs import get_spike_characteristics, get_AP_onset_idxs
-from cell_characteristics import to_idx
-from analyze_in_vivo.analyze_domnisoru.spike_characteristics import get_spike_characteristics_dict
-from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_with_markers
-from cell_fitting.util import init_nan
 from matplotlib.patches import Patch
 import matplotlib.gridspec as gridspec
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes, mark_inset
+import os
+from analyze_in_vivo.load.load_domnisoru import load_cell_ids, get_cell_ids_DAP_cells, get_celltype_dict, \
+    get_label_burstgroups, get_colors_burstgroups, get_cell_layer_dict
+from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_with_markers
 pl.style.use('paper')
 
 
@@ -23,18 +19,12 @@ def center_STA_to_AP_onset(sta_mean_cells, v_onset_cells):
 
 
 if __name__ == '__main__':
-    save_dir_img_paper = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/paper'
-    save_dir_img = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/STA'
-    save_dir_data = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/delta_DAP_delta_fAHP'
-    save_dir = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
-
-    #save_dir_img_paper = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/paper'
-    #save_dir_img = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/STA'
-    #save_dir_data = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/delta_DAP_delta_fAHP'
-    #save_dir = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
-
-    if not os.path.exists(save_dir_img_paper):
-        os.makedirs(save_dir_img_paper)
+    save_dir_img = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/paper'
+    save_dir = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/paper/extra'
+    save_dir_fig2 = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/paper/fig2'
+    
+    if not os.path.exists(save_dir_img):
+        os.makedirs(save_dir_img)
 
     cell_type = 'grid_cells'
     grid_cells = np.array(load_cell_ids(save_dir, cell_type))
@@ -53,120 +43,22 @@ if __name__ == '__main__':
     after_AP = 25  # ms
     t_vref = 10  # ms
     AP_criterion = {'AP_amp_and_width': (40, 1)}
-    t_AP = np.arange(0, after_AP + before_AP + dt, dt) - before_AP
-    before_AP_idx = to_idx(before_AP, dt)
-    after_AP_idx = to_idx(after_AP, dt)
-    param_list = ['Vm_ljpc', 'spiketimes', 'vel_100ms', 'fY_cm', 'fvel_100ms']
-    folder_detrend = {True: 'detrended', False: 'not_detrended'}
-    folder_name = AP_criterion.keys()[0] + str(AP_criterion.values()[0]) \
-                  + '_before_after_AP_' + str((before_AP, after_AP)) + '_t_vref_' + str(t_vref)
-    if with_selection:
-        save_dir_img = os.path.join(save_dir_img, 'good_AP_criterion')
-    save_dir_img = os.path.join(save_dir_img, folder_detrend[do_detrend], folder_name)
-    if not os.path.exists(save_dir_img):
-        os.makedirs(save_dir_img)
-
     theta_cells = load_cell_ids(save_dir, 'giant_theta')
     DAP_cells = get_cell_ids_DAP_cells(new=True)
     cell_type_dict = get_celltype_dict(save_dir)
 
-    # main
-    sta_mean_cells = np.load(os.path.join(save_dir_img, 'sta_mean.npy'))
+    # load
+    sta_mean_cells = np.load(os.path.join(save_dir_fig2, 'sta_mean_cells.npy'))
     t_sta = np.arange(-before_AP, after_AP+dt, dt)
-
-    AP_max_idx_cells = init_nan(len(grid_cells))
-    fAHP_min_idx_cells = init_nan(len(grid_cells))
-    DAP_max_idx_cells = init_nan(len(grid_cells))
-    DAP_time_cells = init_nan(len(grid_cells))
-    time_AP_fAHP_cells = init_nan(len(grid_cells))
-    for cell_idx, cell_id in enumerate(grid_cells):
-        print cell_id
-
-        if np.isnan(sta_mean_cells[cell_idx][0]):
-            continue
-
-        # get spike_characteristics
-        sta_derivative = np.diff(sta_mean_cells[cell_idx]) / dt
-        sta_2derivative = np.diff(sta_derivative) / dt
-        if thresh == '1der':
-            AP_thresh_idx = get_AP_onset_idxs(sta_derivative[:before_AP_idx], AP_thresh_derivative)[-1]
-        elif thresh == '2der':
-            AP_thresh_idx = np.argmax(sta_2derivative[:before_AP_idx])
-        # pl.figure()
-        # pl.plot(t_AP, sta_mean_cells[cell_idx])
-        # pl.plot(t_AP[AP_thresh_idx:], sta_mean_cells[cell_idx][AP_thresh_idx:])
-        # pl.show()
-
-        # v_rest = sta_mean_cells[cell_idx][before_AP_idx - to_idx(time_rest_AP, dt)]
-        v_AP_onset = sta_mean_cells[cell_idx][AP_thresh_idx]
-        spike_characteristics_dict = get_spike_characteristics_dict()
-        spike_characteristics_dict['AP_max_idx'] = before_AP_idx
-        spike_characteristics_dict['AP_onset'] = before_AP_idx - to_idx(1.0, dt)
-        (AP_max_idx_cells[cell_idx], fAHP_min_idx_cells[cell_idx],
-         DAP_max_idx_cells[cell_idx], DAP_time_cells[cell_idx]) = np.array(get_spike_characteristics(sta_mean_cells[cell_idx], t_AP,
-                                                                                                     ['AP_max_idx', 'fAHP_min_idx', 'DAP_max_idx', 'DAP_time'],
-                                                                                                     v_AP_onset, check=False,
-                                                                                                     **spike_characteristics_dict)).astype(float)
-        if not np.isnan(fAHP_min_idx_cells[cell_idx]):
-            time_AP_fAHP_cells[cell_idx] = t_AP[int(fAHP_min_idx_cells[cell_idx])] - t_AP[int(AP_max_idx_cells[cell_idx])]
-
-    # compute average Time_AP-fAHP and Time_AP-DAP
-    time_AP_fAHP_avg = np.nanmean((fAHP_min_idx_cells - AP_max_idx_cells) * dt)
-    time_AP_DAP_avg = np.nanmean((DAP_max_idx_cells - AP_max_idx_cells) * dt)
-    time_AP_fAHP_std = np.nanstd((fAHP_min_idx_cells - AP_max_idx_cells) * dt)
-    time_AP_DAP_std = np.nanstd((DAP_max_idx_cells - AP_max_idx_cells) * dt)
-
-    print 'Time_AP-fAHP: %.2f +- %.2f' % (time_AP_fAHP_avg, time_AP_fAHP_std)
-    print 'Time_AP-fAHP: %.2f +- %.2f' % (time_AP_DAP_avg, time_AP_DAP_std)
-
-    # compute v_rest_fAHP, delta_DAP
-    v_onset_fAHP = np.zeros(len(grid_cells))
-    v_DAP_fAHP = np.zeros(len(grid_cells))
-    v_fAHP = np.zeros(len(grid_cells))
-    v_DAP = np.zeros(len(grid_cells))
-    v_onset = np.zeros(len(grid_cells))
-    AP_onset_idx = np.zeros(len(grid_cells), dtype=int)
-    for cell_idx, cell_id in enumerate(grid_cells):
-        print cell_id
-        if np.isnan(sta_mean_cells[cell_idx][0]):
-            v_onset_fAHP[cell_idx] = np.nan
-            v_DAP_fAHP[cell_idx] = np.nan
-            continue
-
-        sta_derivative = np.diff(sta_mean_cells[cell_idx]) / dt
-        if thresh == '1der':
-            AP_thresh_idx = get_AP_onset_idxs(sta_derivative[:before_AP_idx], AP_thresh_derivative)[-1]
-        elif thresh == '2der':
-            AP_thresh_idx = np.argmax(sta_2derivative[:before_AP_idx])
-
-        if not use_avg_times and cell_id in DAP_cells:
-            fAHP_idx = int(fAHP_min_idx_cells[cell_idx])
-            DAP_idx = int(DAP_max_idx_cells[cell_idx])
-        else:
-            time_AP_fAHP_avg_rounded = round(time_AP_fAHP_avg * 2.0 * 10.0) / 2.0 / 10.0
-            time_AP_DAP_avg_rounded = round(time_AP_DAP_avg * 2.0 * 10.0) / 2.0 / 10.0
-            fAHP_idx = to_idx(before_AP + time_AP_fAHP_avg_rounded, dt, 2)
-            DAP_idx = to_idx(before_AP + time_AP_DAP_avg_rounded, dt, 2)
-        v_onset_fAHP[cell_idx] = sta_mean_cells[cell_idx][fAHP_idx] - sta_mean_cells[cell_idx][AP_thresh_idx]
-        v_DAP_fAHP[cell_idx] = sta_mean_cells[cell_idx][DAP_idx] - sta_mean_cells[cell_idx][fAHP_idx]
-        v_fAHP[cell_idx] = sta_mean_cells[cell_idx][fAHP_idx]
-        v_DAP[cell_idx] = sta_mean_cells[cell_idx][DAP_idx]
-        v_onset[cell_idx] = sta_mean_cells[cell_idx][AP_thresh_idx]
-        AP_onset_idx[cell_idx] = AP_thresh_idx
-
-        #pl.figure()
-        #pl.title(cell_id)
-        #pl.plot(t_AP, sta_mean_cells[cell_idx], 'k')
-        #pl.plot(t_AP[AP_thresh_idx], sta_mean_cells[cell_idx][AP_thresh_idx], 'oy')
-        #pl.plot(t_AP[fAHP_idx], sta_mean_cells[cell_idx][fAHP_idx], 'ob')
-        #pl.plot(t_AP[DAP_idx], sta_mean_cells[cell_idx][DAP_idx], 'or')
-        #pl.show()
-
-    # correlation between delta DAP and delta fAHP
-    from scipy.stats import pearsonr
-    corr, p = pearsonr(v_onset_fAHP, v_DAP_fAHP)
-    print 'Correlation: %.2f' % corr
-    print 'p-val: %.5f' % p
+    v_onset_fAHP = np.load(os.path.join(save_dir_fig2, 'v_onset_fAHP.npy'))
+    v_DAP_fAHP = np.load(os.path.join(save_dir_fig2, 'v_DAP_fAHP.npy'))
+    AP_onset_idx_cells = np.load(os.path.join(save_dir_fig2, 'AP_onset_idx_cells.npy'))
+    DAP_max_idx_cells = np.load(os.path.join(save_dir_fig2, 'DAP_max_idx_cells.npy'))
+    fAHP_min_idx_cells = np.load(os.path.join(save_dir_fig2, 'fAHP_min_idx_cells.npy'))
+    AP_max_idx_cells = np.load(os.path.join(save_dir_fig2, 'AP_max_idx_cells.npy'))
+    v_onset = np.load(os.path.join(save_dir_fig2, 'v_onset.npy'))
+    v_fAHP = np.load(os.path.join(save_dir_fig2, 'v_fAHP.npy'))
+    v_DAP = np.load(os.path.join(save_dir_fig2, 'v_DAP.npy'))
 
     # plot
     fig = pl.figure(figsize=(6, 7.5))
@@ -231,8 +123,8 @@ if __name__ == '__main__':
     axin = inset_axes(ax, width='40%', height='45%', loc='lower left')
     cell_id = 's104_0007'
     cell_idx = np.where(cell_id == grid_cells)[0]
-    idx1 = to_idx(12, dt)
-    idx2 = to_idx(5, dt)
+    idx1 = int(round(12 / dt))
+    idx2 = int(round(5 / dt))
     axin.plot(t_sta[idx1:-idx2], sta_mean_cells[cell_idx][0][idx1:-idx2], color='k')
     axin.set_ylim(-69.5, -55)
     axin.set_xlim(-15, t_sta[-1])
@@ -241,7 +133,7 @@ if __name__ == '__main__':
     axin.set_xlabel('Time', horizontalalignment='right', x=1.0, fontsize=10)
     axin.set_ylabel('Voltage', horizontalalignment='right', y=1.0, fontsize=10)
 
-    axin.plot([t_sta[0], t_sta[AP_onset_idx[cell_idx]]], [v_onset[cell_idx], v_onset[cell_idx]], color='g')  # AP onset line
+    axin.plot([t_sta[0], t_sta[AP_onset_idx_cells[cell_idx]]], [v_onset[cell_idx], v_onset[cell_idx]], color='g')  # AP onset line
     axin.plot([t_sta[0], t_sta[-1]+5], [v_fAHP[cell_idx], v_fAHP[cell_idx]], color='g')  # fAHP min. line
     axin.plot([t_sta[int(DAP_max_idx_cells[cell_idx])], t_sta[-1]+5], [v_DAP[cell_idx], v_DAP[cell_idx]], color='g')  # DAP max. line
     # annotate delta fAHP
@@ -249,14 +141,14 @@ if __name__ == '__main__':
     #               xy=(t_sta[to_idx(6.5, dt)], v_onset[cell_idx]),
     #               arrowprops=dict(arrowstyle="<->", shrinkA=0.0, shrinkB=0.0))
     axin.annotate(r'$\mathrm{\Delta V_{fAHP}}$',
-                  xy=(t_sta[to_idx(10.2, dt)], (v_fAHP[cell_idx] - v_onset[cell_idx])/2. + v_onset[cell_idx]),
+                  xy=(t_sta[int(round(10.2 / dt))], (v_fAHP[cell_idx] - v_onset[cell_idx])/2. + v_onset[cell_idx]),
                   ha='left', va='center')
     # annotate delta DAP
     # axin.annotate('', xytext=(t_sta[-to_idx(6.5, dt)], v_fAHP[cell_idx]),
     #               xy=(t_sta[-to_idx(6.5, dt)], v_DAP[cell_idx]),
     #               arrowprops=dict(arrowstyle="<->", shrinkA=0.0, shrinkB=0.0))
     axin.annotate(r'$\mathrm{\Delta V_{DAP}}$',
-                  xy=(t_sta[-to_idx(8.5, dt)], (v_DAP[cell_idx] - v_fAHP[cell_idx])/2. + v_fAHP[cell_idx]-0.3),
+                  xy=(t_sta[-int(round(8.5 / dt))], (v_DAP[cell_idx] - v_fAHP[cell_idx])/2. + v_fAHP[cell_idx]-0.3),
                   ha='left', va='center')
 
     axin.plot([t_sta[int(DAP_max_idx_cells[cell_idx])], t_sta[int(DAP_max_idx_cells[cell_idx])]],
@@ -351,5 +243,5 @@ if __name__ == '__main__':
 
     pl.tight_layout()
     pl.subplots_adjust(wspace=0.3, hspace=0.35, left=0.14, right=0.98, top=0.96, bottom=0.12)
-    pl.savefig(os.path.join(save_dir_img_paper, 'delta_fAHP_delta_DAP.png'))
+    pl.savefig(os.path.join(save_dir_img, 'fig2.png'))
     pl.show()

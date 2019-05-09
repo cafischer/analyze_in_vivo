@@ -14,6 +14,7 @@ from cell_characteristics.analyze_APs import get_AP_onset_idxs
 from scipy.stats import f_oneway, ttest_ind, kruskal
 import pandas as pd
 from analyze_in_vivo.analyze_domnisoru import perform_kde, evaluate_kde
+from scipy.stats import pearsonr
 pl.style.use('paper')
 
 
@@ -110,41 +111,48 @@ B_label = labels_burstgroups['B']
 #            'Width of the ISI hist. (ms)', 'ISI hist. peak (ms)',
 #            'Firing rate (Hz)', 'Mean 10% shortest ISIs', 'CV of ISIs', 'Linear slope before AP (mV/ms)']
 
-data = [fraction_burst, fraction_ISIs_8_16, fraction_ISIs_8_25,  width_ISI_hist,
-        peak_ISI_hist, firing_rate, shortest_ISI, CV_ISIs, vdiff_onset_start]
-ylabels = ['Fraction ISIs $\leq$ 8ms', 'Fraction 8 < ISI < 16', 'Fraction 8 < ISI < 25',
-           'Width of the ISI hist. (ms)', 'ISI hist. peak (ms)', 'Firing rate (Hz)',
-           'Mean 10% shortest ISIs', 'CV of ISIs', 'Linear slope before AP (mV/ms)']
-
+data = [firing_rate, fraction_burst, fraction_ISIs_8_25,
+        peak_ISI_hist, CV_ISIs]
+ylabels = ['Firing rate (Hz)', 'P(ISIs $\leq$ 8ms)', 'P(8 < ISI < 25)',
+           'ISI hist. peak (ms)', 'CV of ISIs']
 
 def plot_against(x, x_label):
-    fig, axes = pl.subplots(3, 3, figsize=(10, 8))
+    fig, axes = pl.subplots(5, 1, figsize=(3.5, 8), squeeze=False) # pl.subplots(3, 3, figsize=(10, 8))
     i_row = 0
     i_col = 0
-    for i in range(9):
-        if i_col == 3:
-            i_row += 1
-            i_col = 0
+    for i in range(5):  #9
+        #if i_col == 3:
+        #    i_row += 1
+        #    i_col = 0
+        corr_BD = pearsonr(x[BD_label], data[i][BD_label])[0]
+        corr_B = pearsonr(x[B_label], data[i][B_label])[0]
+        corr_BD_B = pearsonr(x[np.logical_or(B_label, BD_label)], data[i][np.logical_or(B_label, BD_label)])[0]
+        axes[i_row, i_col].annotate('corr (B+D): %.2f' % corr_BD, xy=(0.6, 0.9), xycoords='axes fraction')
+        axes[i_row, i_col].annotate('corr (B-D): %.2f' % corr_B, xy=(0.6, 0.7), xycoords='axes fraction')
+        axes[i_row, i_col].annotate('corr (B): %.2f' % corr_BD_B, xy=(0.6, 0.5), xycoords='axes fraction')
+
         plot_with_markers(axes[i_row, i_col], x[BD_label], data[i][BD_label], cell_ids[BD_label],
                           cell_type_dict, edgecolor=colors_burstgroups['B+D'], legend=False)
         plot_with_markers(axes[i_row, i_col], x[B_label], data[i][B_label], cell_ids[B_label],
                           cell_type_dict, edgecolor=colors_burstgroups['B'], legend=False)
         plot_with_markers(axes[i_row, i_col], x[NB_label], data[i][NB_label], cell_ids[NB_label],
                           cell_type_dict, edgecolor=colors_burstgroups['NB'], legend=False)
-        axes[i_row, i_col].set_xlabel(x_label)
-        axes[i_row, i_col].set_ylabel(ylabels[i])
+        axes[i_row, i_col].set_xlabel(x_label, fontsize=9)
+        axes[i_row, i_col].set_ylabel(ylabels[i], fontsize=9)
         #axes[i_row, i_col].set_xlim(0, None)
 
-        if i < 3:
-            axes[i_row, i_col].set_ylim([0, 1.1])
-        else:
-            axes[i_row, i_col].set_ylim([0, None])
+        #if i < 3:
+        #    axes[i_row, i_col].set_ylim([0, 1.1])
+        #else:
+        #    axes[i_row, i_col].set_ylim([0, None])
+        axes[i_row, i_col].set_ylim([0, None])
 
-        i_col += 1
+        #i_col += 1
+        i_row += 1
     handles_bursty = [Patch(color=colors_burstgroups['B'], label='B-D'),
                       Patch(color=colors_burstgroups['B+D'], label='B+D'),
                       Patch(color=colors_burstgroups['NB'], label='NB')]
-    axes[0, 0].legend(handles=handles_bursty, loc='upper right', fontsize=8)
+    #axes[0, 0].legend(handles=handles_bursty, loc='upper right', fontsize=8)
     pl.tight_layout()
     pl.show()
 

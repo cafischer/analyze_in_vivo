@@ -11,57 +11,36 @@ import matplotlib.colors as colors
 pl.style.use('paper')
 
 
-save_dir_img = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/group_averages'
-if not os.path.exists(save_dir_img):
-    os.makedirs(save_dir_img)
-cell_ids_remove = ['s104_0007', 's110_0002']
+save_dir_fig3 = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/paper/fig3'
+save_dir = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/paper/extra'
+if not os.path.exists(save_dir_fig3):
+    os.makedirs(save_dir_fig3)
 
 # burst groups
 groups = ['NB', 'B', 'B+D']
 group_names = ['Non-bursty', 'Bursty with DAP', 'Bursty without DAP']
-cell_ids = np.array(load_cell_ids('/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru',
-                         'grid_cells'))
+cell_ids = np.array(load_cell_ids(save_dir, 'grid_cells'))
 cell_ids_burstgroups = get_cell_ids_burstgroups()
 label_burstgroups = get_label_burstgroups()
 colors_burstgroups = get_colors_burstgroups()
 
-# remove s104, s110
+# remove s104, s110  TODO
+cell_ids_remove = ['s104_0007', 's110_0002']
 for cell_id in cell_ids_remove:
     idx = np.where(cell_id == cell_ids)[0]
     label_burstgroups['B+D'][idx] = False
 
-# spiketime autocorrelation
-max_lag = 50  # ms
-bin_width = 1  # ms
-sigma_smooth = None
-normalization = 'sum'
-folder = 'max_lag_' + str(max_lag) + '_bin_width_' + str(bin_width) + '_sigma_smooth_' + str(
-    sigma_smooth) + '_normalization_' + str(normalization)
-save_dir_autocorr = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/autocorr'
-autocorr_cells = np.load(os.path.join(save_dir_autocorr, folder, 'autocorr.npy'))
-autocorr_cells = 2 * autocorr_cells  # *2 to normalize it to the positive half (instead of the whole) autocorrelation
-t_autocorr = np.arange(-max_lag, max_lag + bin_width, bin_width)
-
-# ISI hist
-max_ISI = 200
+# load
 bin_width = 1
-sigma_smooth = None
-folder = 'max_ISI_' + str(max_ISI) + '_bin_width_' + str(bin_width) + '_sigma_smooth_' + str(sigma_smooth)
-save_dir_ISI_hist = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/ISI_hist'
-ISI_hist_cells = np.load(os.path.join(save_dir_ISI_hist, folder, 'ISI_hist.npy'))
-bins = np.arange(0, max_ISI + bin_width, bin_width)
-
-# ISI return maps
-sigma_smooth = 5  # ms
-dt_kde = 1  # ms
-folder1 = 'max_ISI_' + str(max_ISI) + '_bin_width_' + str(bin_width)
-folder2 = 'sigma_smooth_' + str(sigma_smooth) + '_dt_kde_' + str(dt_kde)
-save_dir_ISI_return_map = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/ISI_return_map'
-ISI_return_map_kde_cells = np.load(os.path.join(save_dir_ISI_return_map, folder1, folder2, 'ISI_return_map_kde.npy'))
-t_kde = np.arange(0, max_ISI + dt_kde, dt_kde)
-X_kde, Y_kde = np.meshgrid(t_kde, t_kde)
-for i, ISI_return_map in enumerate(ISI_return_map_kde_cells):  # norm again because of discretization
-    ISI_return_map_kde_cells[i] = ISI_return_map / (np.sum(ISI_return_map) * dt_kde ** 2)
+max_lag = 50
+autocorr_cells = np.load(os.path.join(save_dir_fig3, 'autocorr_cells.npy'))
+t_autocorr = np.load(os.path.join(save_dir_fig3, 't_autocorr.npy'))
+max_ISI = 200
+ISI_hist_cells = np.load(os.path.join(save_dir_fig3, 'ISI_hist_cells.npy'))
+bins_ISI_hist = np.load(os.path.join(save_dir_fig3, 'bins_ISI_hist.npy'))
+ISI_return_map_kde_cells = np.load(os.path.join(save_dir_fig3, 'ISI_return_map_kde_cells.npy'))
+X_kde = np.load(os.path.join(save_dir_fig3, 'X_kde.npy'))
+Y_kde = np.load(os.path.join(save_dir_fig3, 'Y_kde.npy'))
 
 # plot
 fig, axes = pl.subplots(3, 3, figsize=(6.05, 5))
@@ -89,13 +68,13 @@ for i, group in enumerate(groups):
 
 # B
 for i, group in enumerate(groups):
-    axes[1, i].bar(bins[:-1], np.mean(ISI_hist_cells[label_burstgroups[group]], 0),
-                   bins[1] - bins[0],
+    axes[1, i].bar(bins_ISI_hist[:-1], np.mean(ISI_hist_cells[label_burstgroups[group]], 0),
+                   bins_ISI_hist[1] - bins_ISI_hist[0],
                    color=colors_burstgroups[group], align='edge')
-    axes[1, i].bar(bins[:-1], np.std(ISI_hist_cells[label_burstgroups[group]], 0), bins[1] - bins[0],
+    axes[1, i].bar(bins_ISI_hist[:-1], np.std(ISI_hist_cells[label_burstgroups[group]], 0), bins_ISI_hist[1] - bins_ISI_hist[0],
                    bottom=np.mean(ISI_hist_cells[label_burstgroups[group]], 0),
                    color=colors_burstgroups[group], align='edge', alpha=0.4)
-    axes[1, i].plot(bins[:-1], np.mean(ISI_hist_cells[label_burstgroups[group]], 0), color='k', drawstyle='steps-post',
+    axes[1, i].plot(bins_ISI_hist[:-1], np.mean(ISI_hist_cells[label_burstgroups[group]], 0), color='k', drawstyle='steps-post',
                     linewidth=0.4)
     axes[1, i].set_xlabel('ISI (ms)')
     axes[1, i].set_xlim(0, max_ISI)
@@ -128,5 +107,5 @@ for i, group in enumerate(groups):
 
 pl.tight_layout()
 pl.subplots_adjust(top=0.96, bottom=0.12, right=0.92, left=0.14, wspace=0.78, hspace=0.43)
-pl.savefig(os.path.join(save_dir_img, 'group_avg.png'))
+pl.savefig(os.path.join(save_dir_fig3, 'fig3.png'))
 pl.show()
