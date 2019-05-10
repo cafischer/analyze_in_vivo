@@ -15,7 +15,35 @@ from scipy.stats import f_oneway, ttest_ind, kruskal
 import pandas as pd
 from analyze_in_vivo.analyze_domnisoru import perform_kde, evaluate_kde
 from scipy.stats import pearsonr
+import scipy.stats as st
 pl.style.use('paper')
+
+
+def check_sig_corr(x, y, fun, n_shuffles=1000000):
+    statistic = np.zeros(n_shuffles)
+    for i in range(n_shuffles):
+        x_shuffle = np.random.choice(x, len(x))
+        y_shuffle = np.random.choice(y, len(y))
+        statistic[i] = np.abs(fun(x_shuffle, y_shuffle)[0])
+        while np.isnan(statistic[i]):
+            x_shuffle = np.random.choice(x, len(x))
+            y_shuffle = np.random.choice(y, len(y))
+            statistic[i] = np.abs(fun(x_shuffle, y_shuffle)[0])
+
+    z_low = np.quantile(statistic, .05)
+    z_high = np.quantile(statistic, .95)
+    p_val = np.mean(np.abs(fun(x, y)[0]) <= statistic)
+
+    # print p_val
+    # pl.figure()
+    # pl.hist(statistic, bins=50, color='0.5')
+    # pl.axvline(np.abs(fun(x, y)[0]), color='r')
+    # pl.axvline(z_low, color='g')
+    # pl.axvline(z_high, color='g')
+    # pl.show()
+
+    return p_val
+
 
 
 save_dir_img = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/paper'
@@ -31,18 +59,6 @@ save_dir_ISI_return_map_latuske = '/home/cfischer/Phd/programming/projects/analy
 save_dir_firing_rate_latuske = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/latuske/firing_rate'
 save_dir_delta_DAP = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/delta_DAP_delta_fAHP'
 
-# save_dir_img = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/paper'
-# save_dir = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
-# save_dir_ISI_hist = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/ISI_hist'
-# save_dir_spike_events = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/bursting/grid_cells'
-# save_dir_ISI_return_map = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/ISI_return_map'
-# save_dir_firing_rate = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/firing_rate'
-# save_dir_sta = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/STA/good_AP_criterion/not_detrended'
-# save_dir_ISI_hist_latuske = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/latuske/ISI/ISI_hist'
-# save_dir_spike_events_latuske = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/latuske/spike_events'
-# save_dir_ISI_return_map_latuske = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/latuske/ISI/ISI_return_map'
-# save_dir_firing_rate_latuske = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/latuske/firing_rate'
-# save_dir_delta_DAP = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/delta_DAP_delta_fAHP'
 
 cell_type_dict = get_celltype_dict(save_dir)
 theta_cells = load_cell_ids(save_dir, 'giant_theta')
@@ -117,6 +133,7 @@ ylabels = ['Firing rate (Hz)', 'P(ISIs $\leq$ 8ms)', 'P(8 < ISI < 25)',
            'ISI hist. peak (ms)', 'CV of ISIs']
 
 def plot_against(x, x_label):
+    print x_label
     fig, axes = pl.subplots(5, 1, figsize=(3.5, 8), squeeze=False) # pl.subplots(3, 3, figsize=(10, 8))
     i_row = 0
     i_col = 0
@@ -124,12 +141,19 @@ def plot_against(x, x_label):
         #if i_col == 3:
         #    i_row += 1
         #    i_col = 0
-        corr_BD = pearsonr(x[BD_label], data[i][BD_label])[0]
-        corr_B = pearsonr(x[B_label], data[i][B_label])[0]
-        corr_BD_B = pearsonr(x[np.logical_or(B_label, BD_label)], data[i][np.logical_or(B_label, BD_label)])[0]
-        axes[i_row, i_col].annotate('corr (B+D): %.2f' % corr_BD, xy=(0.6, 0.9), xycoords='axes fraction')
-        axes[i_row, i_col].annotate('corr (B-D): %.2f' % corr_B, xy=(0.6, 0.7), xycoords='axes fraction')
-        axes[i_row, i_col].annotate('corr (B): %.2f' % corr_BD_B, xy=(0.6, 0.5), xycoords='axes fraction')
+        #corr_BD = pearsonr(x[BD_label], data[i][BD_label])[0]
+        #corr_B = pearsonr(x[B_label], data[i][B_label])[0]
+        #corr_BD_B = pearsonr(x[np.logical_or(B_label, BD_label)], data[i][np.logical_or(B_label, BD_label)])[0]
+        #axes[i_row, i_col].annotate('corr (B+D): %.2f' % corr_BD, xy=(0.6, 0.9), xycoords='axes fraction')
+        #axes[i_row, i_col].annotate('corr (B-D): %.2f' % corr_B, xy=(0.6, 0.7), xycoords='axes fraction')
+        #axes[i_row, i_col].annotate('corr (B): %.2f' % corr_BD_B, xy=(0.6, 0.5), xycoords='axes fraction')
+        print ylabels[i]
+        p_val = check_sig_corr(x[BD_label], data[i][BD_label], pearsonr)
+        print 'B+D %.3f' % p_val
+        p_val = check_sig_corr(x[B_label], data[i][B_label], pearsonr)
+        print 'B-D %.3f' % p_val
+        p_val = check_sig_corr(x[np.logical_or(B_label, BD_label)], data[i][np.logical_or(B_label, BD_label)], pearsonr)
+        print 'B %.3f' % p_val
 
         plot_with_markers(axes[i_row, i_col], x[BD_label], data[i][BD_label], cell_ids[BD_label],
                           cell_type_dict, edgecolor=colors_burstgroups['B+D'], legend=False)
@@ -154,7 +178,6 @@ def plot_against(x, x_label):
                       Patch(color=colors_burstgroups['NB'], label='NB')]
     #axes[0, 0].legend(handles=handles_bursty, loc='upper right', fontsize=8)
     pl.tight_layout()
-    pl.show()
 
 
 # plot
@@ -164,7 +187,7 @@ plot_against(v_DAP_fAHP, 'delta DAP')
 # plot_against(v_onset, 'V at AP onset')
 # plot_against(v_fAHP, 'V fAHP')
 # plot_against(v_DAP, 'V DAP')
-# pl.show()
+pl.show()
 
 fig, ax = pl.subplots()
 #plot_with_markers(ax, v_onset_fAHP, peak_ISI_hist, cell_ids, cell_type_dict, legend=False)
@@ -194,3 +217,46 @@ pl.ylabel('Peak ISI hist.')
 pl.tight_layout()
 pl.show()
 
+
+# delta fAHP
+# Firing rate (Hz)
+# B+D 0.880
+# B-D 0.243
+# B 0.913
+# P(ISIs $\leq$ 8ms)
+# B+D 0.350
+# B-D 0.763
+# B 0.003
+# P(8 < ISI < 25)
+# B+D 0.325
+# B-D 0.093
+# B 0.002
+# ISI hist. peak (ms)
+# B+D 0.507
+# B-D 0.731
+# B 0.038
+# CV of ISIs
+# B+D 0.594
+# B-D 0.052
+# B 0.053
+# delta DAP
+# Firing rate (Hz)
+# B+D 0.612
+# B-D 0.904
+# B 0.620
+# P(ISIs $\leq$ 8ms)
+# B+D 0.239
+# B-D 0.005
+# B 0.015
+# P(8 < ISI < 25)
+# B+D 0.285
+# B-D 0.930
+# B 0.012
+# ISI hist. peak (ms)
+# B+D 0.038
+# B-D 0.092
+# B 0.010
+# CV of ISIs
+# B+D 0.224
+# B-D 0.028
+# B 0.075

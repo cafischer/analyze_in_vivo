@@ -8,9 +8,9 @@ from grid_cell_stimuli import get_AP_max_idxs
 from grid_cell_stimuli.ISI_hist import get_ISIs
 from analyze_in_vivo.analyze_domnisoru.check_basic.in_out_field import get_starts_ends_group_of_ones
 from analyze_in_vivo.analyze_domnisoru.spike_events import get_starts_ends_burst, get_idxs_single, get_burst_lengths
-from statsmodels.stats.diagnostic import lilliefors
 from scipy.stats import chisquare
 from scipy.optimize import curve_fit
+import pandas as pd
 pl.style.use('paper')
 
 
@@ -94,6 +94,12 @@ def test_geom_dist_with_chi_square(count_events, x_events):
     return p_val
 
 
+def doublet_prevalence_assuming_geometric(count_events):
+    p1 = count_events[0] / float(np.sum(count_events))
+    p2 = count_events[1] / float(np.sum(count_events))
+    p3 = count_events[2] / float(np.sum(count_events))
+    return p2**2 - p1 * p3
+
 # not sig. different with alpha 0.05
 # s79_0003
 # s101_0009
@@ -124,12 +130,10 @@ if __name__ == '__main__':
     count_spikes = np.zeros((len(cell_ids), len(bins)-1))
     fraction_single = np.zeros(len(cell_ids))
 
-    for cell_idx, cell_id in enumerate(cell_ids):
-        #print cell_id
-        save_dir_cell = os.path.join(save_dir_img, cell_id)
-        if not os.path.exists(save_dir_cell):
-            os.makedirs(save_dir_cell)
+    p_vals = np.zeros(len(cell_ids))
+    prevalence_doublets = np.zeros(len(cell_ids))
 
+    for cell_idx, cell_id in enumerate(cell_ids):
         # load
         data = load_data(cell_id, param_list, save_dir)
         v = data['Vm_ljpc']
@@ -150,22 +154,12 @@ if __name__ == '__main__':
         assert bins[0] == 1
         fraction_single[cell_idx] = count_spikes[cell_idx, 0] / np.sum(count_spikes[cell_idx, :])
 
-        # test for exponential distribution
-        # problematic because data are discrete!
-        #spike_events = np.concatenate((get_burst_lengths(starts_burst, ends_burst), np.ones(len(AP_max_idxs_single))))
-        # spike_events = np.round(np.random.exponential(scale=3, size=100), 0)
-        # _, p_val = lilliefors(spike_events, dist='exp')
-        # print 'p-val: %.5f' % p_val
-        # print 'Refute exp. distr.: ', p_val < 0.05
-        #
-        # pl.figure()
-        # pl.hist(spike_events, bins=50)
-        # pl.show()
-
-        p_val = test_geom_dist_with_chi_square(count_spikes[cell_idx], bins[:-1])
-        #print 'p-val: %.5f' % p_val
-        if p_val >= 0.05:
-            print cell_id
+        # test for geometric distribution
+        p_vals[cell_idx] = test_geom_dist_with_chi_square(count_spikes[cell_idx], bins[:-1])
+        print cell_id
+        print 'p-val: %.3f' % p_vals[cell_idx]
+        prevalence_doublets[cell_idx] = doublet_prevalence_assuming_geometric(count_spikes[cell_idx])
+        print '[p(2)]^2-p(1)*p(3): %.2f' % prevalence_doublets[cell_idx]
 
         # pl.close('all')
         # pl.figure()
@@ -191,4 +185,10 @@ if __name__ == '__main__':
 
     pl.close('all')
     plot_n_spikes_in_burst_all_cells(cell_type_dict, bins, count_spikes)
-    pl.show()
+    #pl.show()
+
+df = pd.DataFrame(data=np.vstack((p_vals, prevalence_doublets)).T,
+                  columns=['p-val (chi-square)', '[p(2)]^2-p(1)*p(3)'], index=cell_ids)
+df.index.name = 'Cell ID'
+df = df.astype(float).round(3)
+df.to_csv(os.path.join(save_dir_img, 'spike_events.csv'))
