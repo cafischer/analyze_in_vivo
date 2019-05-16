@@ -34,6 +34,19 @@ def get_sta_criterion_all_cells(do_detrend, before_AP, after_AP, AP_criterion, t
 
 
 def get_sta_criterion(v, dt, AP_max_idxs, do_detrend, before_AP, after_AP, AP_criterion, t_vref):
+    v_APs, v_APs_good = get_v_APs(v, dt, AP_max_idxs, do_detrend, before_AP, after_AP, AP_criterion, t_vref)
+
+    sta_mean, sta_std = get_sta(v_APs)
+    n_APs_good = len(v_APs_good)
+    if n_APs_good > 5:
+        sta_mean_good_APs, sta_std_good_APs = get_sta(v_APs_good)
+    else:
+        sta_mean_good_APs = sta_std_good_APs = init_nan(len(sta_mean))
+
+    return sta_mean, sta_std, sta_mean_good_APs, sta_std_good_APs, n_APs_good
+
+
+def get_v_APs(v, dt, AP_max_idxs, do_detrend, before_AP, after_AP, AP_criterion, t_vref):
     before_AP_idx = to_idx(before_AP, dt)
     after_AP_idx = to_idx(after_AP, dt)
 
@@ -48,15 +61,7 @@ def get_sta_criterion(v, dt, AP_max_idxs, do_detrend, before_AP, after_AP, AP_cr
 
     AP_amps, AP_widths = get_AP_amps_and_widths(v_APs, t_AP, dt, before_AP_idx, t_vref)
     v_APs_good = select_APs(AP_amps, AP_widths, AP_criterion, v_APs)
-
-    sta_mean, sta_std = get_sta(v_APs)
-    n_APs_good = len(v_APs_good)
-    if n_APs_good > 5:
-        sta_mean_good_APs, sta_std_good_APs = get_sta(v_APs_good)
-    else:
-        sta_mean_good_APs = sta_std_good_APs = init_nan(len(sta_mean))
-
-    return sta_mean, sta_std, sta_mean_good_APs, sta_std_good_APs, n_APs_good
+    return v_APs, v_APs_good
 
 
 def get_AP_amps_and_widths(v_APs, t_AP, dt, before_AP_idx, t_vref):

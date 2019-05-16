@@ -98,7 +98,7 @@ def doublet_prevalence_assuming_geometric(count_events):
     p1 = count_events[0] / float(np.sum(count_events))
     p2 = count_events[1] / float(np.sum(count_events))
     p3 = count_events[2] / float(np.sum(count_events))
-    return p2**2 - p1 * p3
+    return p2**2 - p1 * p3, 1 - p1*p3*(p2**-2)
 
 # not sig. different with alpha 0.05
 # s79_0003
@@ -132,6 +132,7 @@ if __name__ == '__main__':
 
     p_vals = np.zeros(len(cell_ids))
     prevalence_doublets = np.zeros(len(cell_ids))
+    prevalence_doublets2 = np.zeros(len(cell_ids))
 
     for cell_idx, cell_id in enumerate(cell_ids):
         # load
@@ -158,8 +159,9 @@ if __name__ == '__main__':
         p_vals[cell_idx] = test_geom_dist_with_chi_square(count_spikes[cell_idx], bins[:-1])
         print cell_id
         print 'p-val: %.3f' % p_vals[cell_idx]
-        prevalence_doublets[cell_idx] = doublet_prevalence_assuming_geometric(count_spikes[cell_idx])
+        prevalence_doublets[cell_idx], prevalence_doublets2[cell_idx] = doublet_prevalence_assuming_geometric(count_spikes[cell_idx])
         print '[p(2)]^2-p(1)*p(3): %.2f' % prevalence_doublets[cell_idx]
+        print '1 - [p(2)]^-2*p(1)*p(3): %.2f' % prevalence_doublets2[cell_idx]
 
         # pl.close('all')
         # pl.figure()
@@ -187,8 +189,8 @@ if __name__ == '__main__':
     plot_n_spikes_in_burst_all_cells(cell_type_dict, bins, count_spikes)
     #pl.show()
 
-df = pd.DataFrame(data=np.vstack((p_vals, prevalence_doublets)).T,
-                  columns=['p-val (chi-square)', '[p(2)]^2-p(1)*p(3)'], index=cell_ids)
+df = pd.DataFrame(data=np.vstack((p_vals, prevalence_doublets, prevalence_doublets2)).T,
+                  columns=['p-val (chi-square)', '[p(2)]^2-p(1)*p(3)', '1-p(1)*p(3)*p(2)^{-2}'], index=cell_ids)
 df.index.name = 'Cell ID'
 df = df.astype(float).round(3)
 df.to_csv(os.path.join(save_dir_img, 'spike_events.csv'))
