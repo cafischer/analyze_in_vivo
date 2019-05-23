@@ -15,7 +15,6 @@ folder = 'max_lag_' + str(max_lag) + '_bin_width_' + str(bin_width) + '_sigma_sm
     sigma_smooth) + '_normalization_' + str(normalization)
 save_dir_autocorr = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/autocorr'
 autocorr_cells = np.load(os.path.join(save_dir_autocorr, folder, 'autocorr.npy'))
-autocorr_cells = 2 * autocorr_cells  # *2 to normalize it to the positive half (instead of the whole) autocorrelation
 t_autocorr = np.arange(-max_lag, max_lag + bin_width, bin_width)
 
 # ISI hist

@@ -1,22 +1,24 @@
 from __future__ import division
 import numpy as np
+import matplotlib.pyplot as pl
 import os
 from analyze_in_vivo.load.load_domnisoru import load_cell_ids, get_cell_ids_burstgroups, get_celltype_dict
+from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_with_markers
 from cell_characteristics.analyze_APs import get_spike_characteristics, get_AP_onset_idxs
 from cell_characteristics import to_idx
 from analyze_in_vivo.analyze_domnisoru.spike_characteristics import get_spike_characteristics_dict
 from cell_fitting.util import init_nan
 from scipy.stats import pearsonr
+pl.style.use('paper')
 
 
 if __name__ == '__main__':
     save_dir_sta = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/STA/good_AP_criterion/not_detrended'
     save_dir = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
-    save_dir_fig2 = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/paper/fig2'
 
     # parameters
     with_selection = True
-    use_avg_times = False
+    use_avg_times = True
     thresh = '1der'
     AP_thresh_derivative = 15
     dt = 0.05
@@ -43,8 +45,6 @@ if __name__ == '__main__':
     DAP_max_idx_cells = init_nan(len(grid_cells))
     AP_onset_idx_cells = np.zeros(len(grid_cells), dtype=int)
     for cell_idx, cell_id in enumerate(grid_cells):
-        print cell_id
-
         if np.isnan(sta_mean_cells[cell_idx][0]):
             continue
 
@@ -78,6 +78,9 @@ if __name__ == '__main__':
     time_AP_DAP_std = np.nanstd((DAP_max_idx_cells - AP_max_idx_cells) * dt)
     print 'Time_AP-fAHP: %.2f +- %.2f' % (time_AP_fAHP_avg, time_AP_fAHP_std)
     print 'Time_AP-fAHP: %.2f +- %.2f' % (time_AP_DAP_avg, time_AP_DAP_std)
+
+    time_AP_fAHP_avg = 1.8
+    time_AP_DAP_avg = 4.6
 
     # compute v_rest_fAHP, delta_DAP
     v_onset_fAHP = np.zeros(len(grid_cells))
@@ -113,3 +116,14 @@ if __name__ == '__main__':
         #pl.plot(t_AP[fAHP_idx], sta_mean_cells[cell_idx][fAHP_idx], 'ob')
         #pl.plot(t_AP[DAP_idx], sta_mean_cells[cell_idx][DAP_idx], 'or')
         #pl.show()
+
+    fig, ax = pl.subplots()
+    plot_with_markers(ax, v_onset_fAHP, v_DAP_fAHP, grid_cells, get_celltype_dict(save_dir))
+    ax.spines['left'].set_position('zero')
+    ax.spines['bottom'].set_position('zero')
+    ax.set_ylabel(r'$\mathrm{\Delta V_{DAP}}$', horizontalalignment='left', y=0.0)
+    ax.set_xlabel(r'$\mathrm{\Delta V_{fAHP}}$', horizontalalignment='right', x=1.0)
+    name = 'avg' if use_avg_times else 'no_avg'
+    pl.savefig(os.path.join(save_dir_sta, 'delta_fAHP_delta_DAP_'+name+'.png'))
+    #pl.tight_layout()
+    pl.show()

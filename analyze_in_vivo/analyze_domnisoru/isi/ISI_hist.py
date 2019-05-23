@@ -31,13 +31,14 @@ if __name__ == '__main__':
     theta_cells = load_cell_ids(save_dir, 'giant_theta')
     DAP_cells, DAP_cells_additional = get_cell_ids_DAP_cells()
     param_list = ['Vm_ljpc', 'spiketimes']
-    max_ISI = 200  # None if you want to take all ISIs
+    max_ISI = None  # None if you want to take all ISIs
+    max_ISI_plot = 200
     burst_ISI = 8  # ms
     bin_width = 1  # ms
-    bins = np.arange(0, max_ISI+bin_width, bin_width)
-    sigma_smooth = 1  # ms  None for no smoothing
+    bins = np.arange(0, max_ISI_plot+bin_width, bin_width)
+    sigma_smooth = None  # ms  None for no smoothing
     dt_kde = 0.05  # ms
-    t_kde = np.arange(0, max_ISI + dt_kde, dt_kde)
+    t_kde = np.arange(0, max_ISI_plot + dt_kde, dt_kde)
 
     folder = 'max_ISI_' + str(max_ISI) + '_bin_width_' + str(bin_width) + '_sigma_smooth_' + str(sigma_smooth)
     save_dir_img = os.path.join(save_dir_img, folder)
@@ -49,7 +50,7 @@ if __name__ == '__main__':
     ISIs_cells = [0] * len(cell_ids)
     n_ISIs = [0] * len(cell_ids)
     ISI_hist_cells = np.zeros((len(cell_ids), len(bins) - 1))
-    ISI_kde_cells = np.zeros((len(cell_ids), int(max_ISI / dt_kde) + 1))
+    ISI_kde_cells = np.zeros((len(cell_ids), int(max_ISI_plot / dt_kde) + 1))
     cum_ISI_hist_y = [0] * len(cell_ids)
     cum_ISI_hist_x = [0] * len(cell_ids)
     fraction_ISIs_filtered = np.zeros(len(cell_ids))

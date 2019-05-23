@@ -8,6 +8,7 @@ import os
 from analyze_in_vivo.load.load_domnisoru import load_cell_ids, get_cell_ids_DAP_cells, get_celltype_dict, \
     get_label_burstgroups, get_colors_burstgroups, get_cell_layer_dict
 from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_with_markers
+from sklearn.linear_model import LinearRegression
 pl.style.use('paper')
 
 
@@ -59,6 +60,32 @@ if __name__ == '__main__':
     v_onset = np.load(os.path.join(save_dir_fig2, 'v_onset.npy'))
     v_fAHP = np.load(os.path.join(save_dir_fig2, 'v_fAHP.npy'))
     v_DAP = np.load(os.path.join(save_dir_fig2, 'v_DAP.npy'))
+
+    # average v_onset values
+    print 'mean v_onset B+D: %.2f' % np.mean(v_onset[labels_burstgroups['B+D']])
+    print 'mean v_onset B: %.2f' % np.mean(v_onset[labels_burstgroups['B']])
+    print 'mean v_onset NB: %.2f' % np.mean(v_onset[labels_burstgroups['NB']])
+    print 'std v_onset B+D: %.2f' % np.std(v_onset[labels_burstgroups['B+D']])
+    print 'std v_onset B: %.2f' % np.std(v_onset[labels_burstgroups['B']])
+    print 'std v_onset NB: %.2f' % np.std(v_onset[labels_burstgroups['NB']])
+
+    # linear regression
+    v_onset_fAHP_bursty = v_onset_fAHP[np.logical_or(labels_burstgroups['B'], labels_burstgroups['B+D'])]
+    v_DAP_fAHP_bursty = v_DAP_fAHP[np.logical_or(labels_burstgroups['B'], labels_burstgroups['B+D'])]
+    slope = LinearRegression().fit(np.array([v_onset_fAHP_bursty]).T, v_DAP_fAHP_bursty).coef_[0]
+    print 'Slope: %.3f' % slope
+
+    # bootstraping
+    n_bootstraps = 10000
+    slopes = np.zeros(n_bootstraps)
+    for i in range(n_bootstraps):
+        idxs = np.random.randint(0, len(v_onset_fAHP_bursty), len(v_onset_fAHP_bursty))
+        v_onset_fAHP_sample = v_onset_fAHP_bursty[idxs]
+        v_DAP_fAHP_sample = v_DAP_fAHP_bursty[idxs]
+        slopes[i] = LinearRegression().fit(np.array([v_onset_fAHP_sample]).T, v_DAP_fAHP_sample).coef_
+    print 'Mean slope: %.3f' % np.mean(slopes)
+    print 'SE slope: %.3f' % np.std(slopes)
+    print 'Bias: %.3f' % (np.mean(slopes) - slope)
 
     # plot
     fig = pl.figure(figsize=(6, 7.5))

@@ -5,26 +5,28 @@ import matplotlib.gridspec as gridspec
 import numpy as np
 import os
 from scipy.stats import ttest_ind
-from analyze_in_vivo.load.load_domnisoru import load_cell_ids, get_celltype_dict, get_cell_ids_bursty, get_cell_ids_DAP_cells
+from analyze_in_vivo.load.load_domnisoru import load_cell_ids, get_celltype_dict, get_cell_ids_bursty, \
+    get_cell_ids_DAP_cells, get_label_burstgroups
 from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_with_markers
 from analyze_in_vivo.analyze_domnisoru.plot_utils import horizontal_square_bracket, get_star_from_p_val
 from cell_characteristics import to_idx
 from cell_characteristics.analyze_APs import get_AP_onset_idxs
 from scipy.stats import f_oneway, ttest_ind, kruskal
 import pandas as pd
-pl.style.use('paper_subplots')
+pl.style.use('paper')
 
 
-save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/paper'
-save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
-save_dir_ISI_hist = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/ISI_hist'
-save_dir_ISI_hist_latuske = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/latuske/ISI/ISI_hist'
-save_dir_n_spikes_in_burst = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/bursting/grid_cells'
-save_dir_ISI_return_map = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/ISI_return_map/cut_ISIs_at_200/grid_cells'
-save_dir_sta = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/STA/good_AP_criterion/not_detrended'
+save_dir_img = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/paper'
+save_dir = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
+save_dir_ISI_hist = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/ISI_hist'
+save_dir_ISI_hist_latuske = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/latuske/ISI/ISI_hist'
+save_dir_n_spikes_in_burst = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/bursting/grid_cells'
+save_dir_ISI_return_map = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/ISI_return_map'
+save_dir_sta = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/STA/good_AP_criterion/not_detrended'
 cell_type_dict = get_celltype_dict(save_dir)
 theta_cells = load_cell_ids(save_dir, 'giant_theta')
 DAP_cells = get_cell_ids_DAP_cells(new=True)
+labels_burstgroups = get_label_burstgroups(save_dir)
 
 if not os.path.exists(save_dir_img):
     os.makedirs(save_dir_img)
@@ -52,7 +54,9 @@ width_ISI_hist_latuske = np.load(os.path.join(save_dir_ISI_hist_latuske, folder,
 cell_ids_latuske = [str(i) for i in range(len(peak_ISI_hist_latuske))]
 fraction_burst = np.load(os.path.join(save_dir_ISI_hist, folder, 'fraction_burst.npy'))
 fraction_single = np.load(os.path.join(save_dir_n_spikes_in_burst, 'fraction_single_' + str(ISI_burst) + '.npy'))
-fraction_ISI_or_ISI_next_burst = np.load(os.path.join(save_dir_ISI_return_map, 'fraction_ISI_or_ISI_next_burst.npy'))
+fraction_ISI_or_ISI_next_burst = np.load(os.path.join(save_dir_ISI_return_map,
+                                                      'max_ISI_' + str(max_ISI) + '_bin_width_' + str(bin_width),
+                                                      'fraction_ISI_or_ISI_next_burst.npy'))
 folder_name = AP_criterion.keys()[0] + str(AP_criterion.values()[0]) \
               + '_before_after_AP_' + str((before_AP, after_AP)) + '_t_vref_' + str(t_vref)
 sta_mean_cells = np.load(os.path.join(save_dir_sta, folder_name, 'sta_mean.npy'))
@@ -63,8 +67,16 @@ AP_thresh_derivative = 3.0
 AP_thresh_idx = np.array([get_AP_onset_idxs(sta_derivative[:to_idx(before_AP, dt)], AP_thresh_derivative)[-1] for sta_derivative in sta_derivative_cells])
 v_onset = np.array([sta_mean_cells[i][AP_thresh_idx[i]] for i in range(len(sta_mean_cells))])
 t_onset = np.array([t_sta[AP_thresh_idx[i]] + before_AP for i in range(len(sta_mean_cells))])
-v_start = np.array([sta_mean_cells[i][0] for i in range(len(sta_mean_cells))])
+v_start = np.array([sta_mean_cells[i][AP_thresh_idx[i] - to_idx(10, dt)] for i in range(len(sta_mean_cells))])
 vdiff_onset_start = (v_onset - v_start) / t_onset
+print 'mean onset_slope B+D: %.2f' % np.mean(vdiff_onset_start[labels_burstgroups['B+D']])
+print 'mean onset_slope B-D: %.2f' % np.mean(vdiff_onset_start[labels_burstgroups['B']])
+print 'mean onset_slope NB: %.2f' % np.mean(vdiff_onset_start[labels_burstgroups['NB']])
+print 'mean onset_slope B: %.2f' % np.mean(vdiff_onset_start[np.logical_or(labels_burstgroups['B'], labels_burstgroups['B+D'])])
+print 'std onset_slope B+D: %.2f' % np.std(vdiff_onset_start[labels_burstgroups['B+D']])
+print 'std onset_slope B-D: %.2f' % np.std(vdiff_onset_start[labels_burstgroups['B']])
+print 'std onset_slope NB: %.2f' % np.std(vdiff_onset_start[labels_burstgroups['NB']])
+print 'std onset_slope B: %.2f' % np.std(vdiff_onset_start[np.logical_or(labels_burstgroups['B'], labels_burstgroups['B+D'])])
 
 cell_ids = np.array(load_cell_ids(save_dir, 'grid_cells'))
 burst_label = np.array([True if cell_id in get_cell_ids_bursty() else False for cell_id in cell_ids])

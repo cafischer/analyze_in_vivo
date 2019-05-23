@@ -43,8 +43,6 @@ if __name__ == '__main__':
     DAP_max_idx_cells = init_nan(len(grid_cells))
     AP_onset_idx_cells = np.zeros(len(grid_cells), dtype=int)
     for cell_idx, cell_id in enumerate(grid_cells):
-        print cell_id
-
         if np.isnan(sta_mean_cells[cell_idx][0]):
             continue
 

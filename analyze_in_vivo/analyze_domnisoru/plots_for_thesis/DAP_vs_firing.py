@@ -19,7 +19,7 @@ import scipy.stats as st
 pl.style.use('paper')
 
 
-def check_sig_corr(x, y, fun, n_shuffles=1000000):
+def check_sig_corr(x, y, fun, n_shuffles=10000):
     statistic = np.zeros(n_shuffles)
     for i in range(n_shuffles):
         x_shuffle = np.random.choice(x, len(x))
