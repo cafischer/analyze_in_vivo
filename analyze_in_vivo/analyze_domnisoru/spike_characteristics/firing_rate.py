@@ -1,18 +1,12 @@
 from __future__ import division
-import matplotlib.pyplot as pl
 import numpy as np
 import os
 from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data
-#pl.style.use('paper_subplots')
 
 
 if __name__ == '__main__':
-    #save_dir_img2 = '/home/cf/Dropbox/thesis/figures_results'
     save_dir_img = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/firing_rate'
     save_dir = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
-
-    #save_dir_img = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/firing_rate'
-    #save_dir = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
 
     cell_type = 'grid_cells'
     cell_ids = load_cell_ids(save_dir, cell_type)
@@ -36,7 +30,7 @@ if __name__ == '__main__':
 
         # compute firing rate
         len_recording[cell_idx] = t[-1]
-        firing_rate[cell_idx] = len(AP_max_idxs) / (len_recording[cell_idx] / 1000.)
+        firing_rate[cell_idx] = len(AP_max_idxs) / (len_recording[cell_idx] / 1000.)  # Hz
 
     # save
     np.save(os.path.join(save_dir_img, 'firing_rate.npy'), firing_rate)

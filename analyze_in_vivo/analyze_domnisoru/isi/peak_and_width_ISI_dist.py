@@ -58,12 +58,12 @@ if __name__ == '__main__':
             peak_ISI_hist[cell_idx], width_ISI_hist[cell_idx] = get_ISI_hist_peak_and_width(kde_ISI_dist_cells[cell_idx], t_kde)
 
         # save and plot
-        print peak_ISI_hist[cell_idx]
-        print width_ISI_hist[cell_idx]
-        pl.figure()
-        pl.plot(t_kde, kde_ISI_dist_cells[cell_idx], 'k')
-        pl.show()
-        pl.close('all')
+        # print peak_ISI_hist[cell_idx]
+        # print width_ISI_hist[cell_idx]
+        # pl.figure()
+        # pl.plot(t_kde, kde_ISI_dist_cells[cell_idx], 'k')
+        # pl.show()
+        # pl.close('all')
 
     # save
     if sigma_smooth is not None:

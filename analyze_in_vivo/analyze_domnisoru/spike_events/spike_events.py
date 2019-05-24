@@ -48,7 +48,7 @@ def plot_n_spikes_in_burst_all_cells(cell_type_dict, bins, count_spikes):
         plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_fun, plot_kwargs,
                                 xlabel='# Spikes \nin event', ylabel='Rel. frequency',
                                 colors_marker=colors_marker, wspace=0.18,
-                                save_dir_img=os.path.join(save_dir_img, 'count_spikes_' + str(burst_ISI) + '.png'))
+                                save_dir_img=os.path.join(save_dir_img, 'count_spikes.png'))
 
         # plot_for_all_grid_cells(cell_ids, cell_type_dict, plot_fun, plot_kwargs,
         #                         xlabel='# Spikes \nin event', ylabel='Rel. frequency',
@@ -98,7 +98,7 @@ def doublet_prevalence_assuming_geometric(count_events):
     p1 = count_events[0] / float(np.sum(count_events))
     p2 = count_events[1] / float(np.sum(count_events))
     p3 = count_events[2] / float(np.sum(count_events))
-    return p2**2 - p1 * p3, 1 - p1*p3*(p2**-2)
+    return p2**2 - p1 * p3
 
 # not sig. different with alpha 0.05
 # s79_0003
@@ -109,30 +109,25 @@ def doublet_prevalence_assuming_geometric(count_events):
 
 if __name__ == '__main__':
     #save_dir_img2 = '/home/cf/Dropbox/thesis/figures_results'
-    save_dir_img = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/bursting'
+    save_dir_img = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/spike_events'
     save_dir = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
-
-    #save_dir_img = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/bursting'
-    #save_dir = '/home/cfischer/PycharmProjects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
 
     cell_type = 'grid_cells'
     cell_ids = load_cell_ids(save_dir, cell_type)
     cell_type_dict = get_celltype_dict(save_dir)
     param_list = ['Vm_ljpc', 'spiketimes']
 
-    save_dir_img = os.path.join(save_dir_img, cell_type)
-    if not os.path.exists(save_dir_img):
-        os.makedirs(save_dir_img)
-
     bins = np.arange(1, 15 + 1, 1)
     burst_ISI = 8  # ms
 
+    save_dir_img = os.path.join(save_dir_img, 'burst_ISI_'+str(burst_ISI))
+    if not os.path.exists(save_dir_img):
+        os.makedirs(save_dir_img)
+
     count_spikes = np.zeros((len(cell_ids), len(bins)-1))
     fraction_single = np.zeros(len(cell_ids))
-
     p_vals = np.zeros(len(cell_ids))
     prevalence_doublets = np.zeros(len(cell_ids))
-    prevalence_doublets2 = np.zeros(len(cell_ids))
 
     for cell_idx, cell_id in enumerate(cell_ids):
         # load
@@ -140,13 +135,11 @@ if __name__ == '__main__':
         v = data['Vm_ljpc']
         t = np.arange(0, len(v)) * data['dt']
         dt = t[1] - t[0]
-
-        # get APs
         AP_max_idxs = data['spiketimes']
 
         # find burst indices
         ISIs = get_ISIs(AP_max_idxs, t)
-        burst_ISI_indicator = ISIs <= burst_ISI
+        burst_ISI_indicator = ISIs < burst_ISI
         starts_burst, ends_burst = get_starts_ends_burst(burst_ISI_indicator)
         AP_max_idxs_burst = AP_max_idxs[starts_burst]
         AP_max_idxs_single = AP_max_idxs[get_idxs_single(burst_ISI_indicator, ends_burst)]
@@ -159,9 +152,8 @@ if __name__ == '__main__':
         p_vals[cell_idx] = test_geom_dist_with_chi_square(count_spikes[cell_idx], bins[:-1])
         print cell_id
         print 'p-val: %.3f' % p_vals[cell_idx]
-        prevalence_doublets[cell_idx], prevalence_doublets2[cell_idx] = doublet_prevalence_assuming_geometric(count_spikes[cell_idx])
+        prevalence_doublets[cell_idx] = doublet_prevalence_assuming_geometric(count_spikes[cell_idx])
         print '[p(2)]^2-p(1)*p(3): %.2f' % prevalence_doublets[cell_idx]
-        print '1 - [p(2)]^-2*p(1)*p(3): %.2f' % prevalence_doublets2[cell_idx]
 
         # pl.close('all')
         # pl.figure()
@@ -183,14 +175,14 @@ if __name__ == '__main__':
     # pl.plot(np.ones(sum(~burst_label)), fraction_single[~burst_label], 'ob')
 
     # plot all cells
-    np.save(os.path.join(save_dir_img, 'fraction_single_' + str(burst_ISI) + '.npy'), fraction_single)
+    np.save(os.path.join(save_dir_img, 'fraction_single.npy'), fraction_single)
 
     pl.close('all')
     plot_n_spikes_in_burst_all_cells(cell_type_dict, bins, count_spikes)
     #pl.show()
 
-df = pd.DataFrame(data=np.vstack((p_vals, prevalence_doublets, prevalence_doublets2)).T,
-                  columns=['p-val (chi-square)', '[p(2)]^2-p(1)*p(3)', '1-p(1)*p(3)*p(2)^{-2}'], index=cell_ids)
-df.index.name = 'Cell ID'
-df = df.astype(float).round(3)
-df.to_csv(os.path.join(save_dir_img, 'spike_events.csv'))
+    df = pd.DataFrame(data=np.vstack((p_vals, prevalence_doublets)).T,
+                      columns=['p-val (chi-square)', '[p(2)]^2-p(1)*p(3)'], index=cell_ids)
+    df.index.name = 'Cell ID'
+    df = df.astype(float).round(3)
+    df.to_csv(os.path.join(save_dir_img, 'spike_events.csv'))
