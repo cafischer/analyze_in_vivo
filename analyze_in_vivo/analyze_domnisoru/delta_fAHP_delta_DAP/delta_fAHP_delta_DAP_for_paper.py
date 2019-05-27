@@ -16,7 +16,7 @@ if __name__ == '__main__':
 
     # parameters
     with_selection = True
-    use_avg_times = False
+    use_avg_times = True
     thresh = '1der'
     AP_thresh_derivative = 15
     dt = 0.05
@@ -70,12 +70,14 @@ if __name__ == '__main__':
                                                                                                      **spike_characteristics_dict)).astype(float)
 
     # compute average Time_AP-fAHP and Time_AP-DAP
-    time_AP_fAHP_avg = np.nanmean((fAHP_min_idx_cells - AP_max_idx_cells) * dt)
-    time_AP_DAP_avg = np.nanmean((DAP_max_idx_cells - AP_max_idx_cells) * dt)
-    time_AP_fAHP_std = np.nanstd((fAHP_min_idx_cells - AP_max_idx_cells) * dt)
-    time_AP_DAP_std = np.nanstd((DAP_max_idx_cells - AP_max_idx_cells) * dt)
-    print 'Time_AP-fAHP: %.2f +- %.2f' % (time_AP_fAHP_avg, time_AP_fAHP_std)
-    print 'Time_AP-fAHP: %.2f +- %.2f' % (time_AP_DAP_avg, time_AP_DAP_std)
+    time_AP_fAHP_avg = 1.8  #np.nanmean((fAHP_min_idx_cells - AP_max_idx_cells) * dt)
+    time_AP_DAP_avg = 4.6  #np.nanmean((DAP_max_idx_cells - AP_max_idx_cells) * dt)
+    # time_AP_fAHP_std = np.nanstd((fAHP_min_idx_cells - AP_max_idx_cells) * dt)
+    # time_AP_DAP_std = np.nanstd((DAP_max_idx_cells - AP_max_idx_cells) * dt)
+    # time_AP_fAHP_avg_rounded = round(time_AP_fAHP_avg * 2.0 * 10.0) / 2.0 / 10.0
+    # time_AP_DAP_avg_rounded = round(time_AP_DAP_avg * 2.0 * 10.0) / 2.0 / 10.0
+    # print 'Time_AP-fAHP: %.2f +- %.2f' % (time_AP_fAHP_avg, time_AP_fAHP_std)
+    # print 'Time_AP-fAHP: %.2f +- %.2f' % (time_AP_DAP_avg, time_AP_DAP_std)
 
     # compute v_rest_fAHP, delta_DAP
     v_onset_fAHP = np.zeros(len(grid_cells))
@@ -94,10 +96,8 @@ if __name__ == '__main__':
             fAHP_idx = int(fAHP_min_idx_cells[cell_idx])
             DAP_idx = int(DAP_max_idx_cells[cell_idx])
         else:
-            time_AP_fAHP_avg_rounded = round(time_AP_fAHP_avg * 2.0 * 10.0) / 2.0 / 10.0
-            time_AP_DAP_avg_rounded = round(time_AP_DAP_avg * 2.0 * 10.0) / 2.0 / 10.0
-            fAHP_idx = to_idx(before_AP + time_AP_fAHP_avg_rounded, dt, 2)
-            DAP_idx = to_idx(before_AP + time_AP_DAP_avg_rounded, dt, 2)
+            fAHP_idx = to_idx(before_AP + time_AP_fAHP_avg, dt, 2)
+            DAP_idx = to_idx(before_AP + time_AP_DAP_avg, dt, 2)
         v_onset_fAHP[cell_idx] = sta_mean_cells[cell_idx][fAHP_idx] - sta_mean_cells[cell_idx][AP_onset_idx_cells[cell_idx]]
         v_DAP_fAHP[cell_idx] = sta_mean_cells[cell_idx][DAP_idx] - sta_mean_cells[cell_idx][fAHP_idx]
         v_fAHP[cell_idx] = sta_mean_cells[cell_idx][fAHP_idx]

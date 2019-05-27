@@ -2,9 +2,8 @@ from __future__ import division
 import numpy as np
 import matplotlib.pyplot as pl
 import os
-from analyze_in_vivo.load.load_domnisoru import load_cell_ids, get_celltype_dict, load_data
-from analyze_in_vivo.analyze_domnisoru.sta import plot_sta_grid_on_ax, get_v_APs
-from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_for_all_grid_cells_grid
+from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data
+from analyze_in_vivo.analyze_domnisoru.sta import get_v_APs
 from cell_characteristics.sta_stc import get_sta
 pl.style.use('paper')
 
@@ -12,8 +11,7 @@ pl.style.use('paper')
 if __name__ == '__main__':
     save_dir_img = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/STA/bootstrap'
     save_dir = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
-    cell_type = 'grid_cells'
-    cell_ids = load_cell_ids(save_dir, cell_type)
+    cell_ids = load_cell_ids(save_dir, 'grid_cells')
     param_list = ['Vm_ljpc', 'spiketimes']
 
     # parameters

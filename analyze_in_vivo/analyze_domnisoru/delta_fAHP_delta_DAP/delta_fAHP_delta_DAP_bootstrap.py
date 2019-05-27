@@ -19,8 +19,6 @@ def compute_delta_fAHP_delta_DAP(sta_mean_cells):
     DAP_max_idx_cells = init_nan(len(grid_cells))
     AP_onset_idx_cells = np.zeros(len(grid_cells), dtype=int)
     for cell_idx, cell_id in enumerate(grid_cells):
-        print cell_id
-
         if np.isnan(sta_mean_cells[cell_idx][0]):
             continue
 
@@ -31,27 +29,25 @@ def compute_delta_fAHP_delta_DAP(sta_mean_cells):
             AP_onset_idx_cells[cell_idx] = get_AP_onset_idxs(sta_derivative[:before_AP_idx], AP_thresh_derivative)[-1]
         elif thresh == '2der':
             AP_onset_idx_cells[cell_idx] = np.argmax(sta_2derivative[:before_AP_idx])
-        # pl.figure()
-        # pl.plot(t_AP, sta_mean_cells[cell_idx])
-        # pl.plot(t_AP[AP_thresh_idx:], sta_mean_cells[cell_idx][AP_thresh_idx:])
-        # pl.show()
 
-        v_AP_onset = sta_mean_cells[cell_idx][AP_onset_idx_cells[cell_idx]]
-        spike_characteristics_dict = get_spike_characteristics_dict()
-        spike_characteristics_dict['AP_max_idx'] = before_AP_idx
-        spike_characteristics_dict['AP_onset'] = before_AP_idx - to_idx(1.0, dt)
-        (AP_max_idx_cells[cell_idx], fAHP_min_idx_cells[cell_idx],
-         DAP_max_idx_cells[cell_idx]) = np.array(get_spike_characteristics(sta_mean_cells[cell_idx], t_AP,
-                                                                           ['AP_max_idx', 'fAHP_min_idx',
-                                                                            'DAP_max_idx'],
-                                                                           v_AP_onset, check=False,
-                                                                           **spike_characteristics_dict)).astype(float)
+        # v_AP_onset = sta_mean_cells[cell_idx][AP_onset_idx_cells[cell_idx]]
+        # spike_characteristics_dict = get_spike_characteristics_dict()
+        # spike_characteristics_dict['AP_max_idx'] = before_AP_idx
+        # spike_characteristics_dict['AP_onset'] = before_AP_idx - to_idx(1.0, dt)
+        # (AP_max_idx_cells[cell_idx], fAHP_min_idx_cells[cell_idx],
+        #  DAP_max_idx_cells[cell_idx]) = np.array(get_spike_characteristics(sta_mean_cells[cell_idx], t_AP,
+        #                                                                    ['AP_max_idx', 'fAHP_min_idx',
+        #                                                                     'DAP_max_idx'],
+        #                                                                    v_AP_onset, check=False,
+        #                                                                    **spike_characteristics_dict)).astype(float)
 
     # compute average Time_AP-fAHP and Time_AP-DAP
-    time_AP_fAHP_avg = np.nanmean((fAHP_min_idx_cells - AP_max_idx_cells) * dt)
-    time_AP_DAP_avg = np.nanmean((DAP_max_idx_cells - AP_max_idx_cells) * dt)
+    time_AP_fAHP_avg = 1.8  # np.nanmean((fAHP_min_idx_cells - AP_max_idx_cells) * dt)
+    time_AP_DAP_avg = 4.6  # np.nanmean((DAP_max_idx_cells - AP_max_idx_cells) * dt)
     # time_AP_fAHP_std = np.nanstd((fAHP_min_idx_cells - AP_max_idx_cells) * dt)
     # time_AP_DAP_std = np.nanstd((DAP_max_idx_cells - AP_max_idx_cells) * dt)
+    # time_AP_fAHP_avg_rounded = round(time_AP_fAHP_avg * 2.0 * 10.0) / 2.0 / 10.0
+    # time_AP_DAP_avg_rounded = round(time_AP_DAP_avg * 2.0 * 10.0) / 2.0 / 10.0
 
     # compute v_rest_fAHP, delta_DAP
     v_onset_fAHP = np.zeros(len(grid_cells))
@@ -60,27 +56,23 @@ def compute_delta_fAHP_delta_DAP(sta_mean_cells):
     v_DAP = np.zeros(len(grid_cells))
     v_onset = np.zeros(len(grid_cells))
     for cell_idx, cell_id in enumerate(grid_cells):
-        print cell_id
         if np.isnan(sta_mean_cells[cell_idx][0]):
             v_onset_fAHP[cell_idx] = np.nan
             v_DAP_fAHP[cell_idx] = np.nan
             continue
 
-        time_AP_fAHP_avg_rounded = round(time_AP_fAHP_avg * 2.0 * 10.0) / 2.0 / 10.0
-        time_AP_DAP_avg_rounded = round(time_AP_DAP_avg * 2.0 * 10.0) / 2.0 / 10.0
-
         if not use_avg_times and cell_id in DAP_cells:
             if not np.isnan(fAHP_min_idx_cells[cell_idx]):
                 fAHP_idx = int(fAHP_min_idx_cells[cell_idx])
             else:
-                fAHP_idx = to_idx(before_AP + time_AP_fAHP_avg_rounded, dt, 2)  # TODO: this can highly increase variance
+                fAHP_idx = to_idx(before_AP + time_AP_fAHP_avg, dt, 2)  # TODO: this can highly increase variance
             if not np.isnan(DAP_max_idx_cells[cell_idx]):
                 DAP_idx = int(DAP_max_idx_cells[cell_idx])
             else:
-                DAP_idx = to_idx(before_AP + time_AP_DAP_avg_rounded, dt, 2)
+                DAP_idx = to_idx(before_AP + time_AP_DAP_avg, dt, 2)
         else:
-            fAHP_idx = to_idx(before_AP + time_AP_fAHP_avg_rounded, dt, 2)
-            DAP_idx = to_idx(before_AP + time_AP_DAP_avg_rounded, dt, 2)
+            fAHP_idx = to_idx(before_AP + time_AP_fAHP_avg, dt, 2)
+            DAP_idx = to_idx(before_AP + time_AP_DAP_avg, dt, 2)
 
         v_onset_fAHP[cell_idx] = sta_mean_cells[cell_idx][fAHP_idx] - sta_mean_cells[cell_idx][
             AP_onset_idx_cells[cell_idx]]
@@ -89,13 +81,14 @@ def compute_delta_fAHP_delta_DAP(sta_mean_cells):
         v_DAP[cell_idx] = sta_mean_cells[cell_idx][DAP_idx]
         v_onset[cell_idx] = sta_mean_cells[cell_idx][AP_onset_idx_cells[cell_idx]]
 
-        # pl.figure()
-        # pl.title(cell_id)
-        # pl.plot(t_AP, sta_mean_cells[cell_idx], 'k')
-        # pl.plot(t_AP[AP_thresh_idx], sta_mean_cells[cell_idx][AP_thresh_idx], 'oy')
-        # pl.plot(t_AP[fAHP_idx], sta_mean_cells[cell_idx][fAHP_idx], 'ob')
-        # pl.plot(t_AP[DAP_idx], sta_mean_cells[cell_idx][DAP_idx], 'or')
-        # pl.show()
+        # if cell_id in get_cell_ids_burstgroups()['B+D'][5]:
+        #     pl.figure()
+        #     pl.title(cell_id)
+        #     pl.plot(t_AP, sta_mean_cells[cell_idx], 'k')
+        #     pl.plot(t_AP[AP_onset_idx_cells[cell_idx]], sta_mean_cells[cell_idx][AP_onset_idx_cells[cell_idx]], 'oy')
+        #     pl.plot(t_AP[fAHP_idx], sta_mean_cells[cell_idx][fAHP_idx], 'ob')
+        #     pl.plot(t_AP[DAP_idx], sta_mean_cells[cell_idx][DAP_idx], 'or')
+        #     pl.show()
 
     return (v_onset_fAHP, v_DAP_fAHP, AP_onset_idx_cells, DAP_max_idx_cells, fAHP_min_idx_cells, AP_max_idx_cells,
             v_onset, v_fAHP, v_DAP)
@@ -109,7 +102,7 @@ if __name__ == '__main__':
 
     # parameters
     with_selection = True
-    use_avg_times = False
+    use_avg_times = True
     thresh = '1der'
     AP_thresh_derivative = 15
     dt = 0.05
@@ -161,19 +154,19 @@ if __name__ == '__main__':
                 v_DAP_fAHP_mean[labels_burstgroups['B']],
                 xerr=v_onset_fAHP_std[labels_burstgroups['B']],
                 yerr=v_DAP_fAHP_std[labels_burstgroups['B']],
-                marker='o', linestyle='',
+                marker='o', linestyle='', markersize=4,
                 color=colors_burstgroups['B'])
     ax.errorbar(v_onset_fAHP_mean[labels_burstgroups['B+D']],
                 v_DAP_fAHP_mean[labels_burstgroups['B+D']],
                 xerr=v_onset_fAHP_std[labels_burstgroups['B+D']],
                 yerr=v_DAP_fAHP_std[labels_burstgroups['B+D']],
-                marker='o', linestyle='',
+                marker='o', linestyle='', markersize=4,
                 color=colors_burstgroups['B+D'])
     ax.errorbar(v_onset_fAHP_mean[labels_burstgroups['NB']],
                 v_DAP_fAHP_mean[labels_burstgroups['NB']],
                 xerr=v_onset_fAHP_std[labels_burstgroups['NB']],
                 yerr=v_DAP_fAHP_std[labels_burstgroups['NB']],
-                marker='o', linestyle='',
+                marker='o', linestyle='', markersize=4,
                 color=colors_burstgroups['NB'])
     ax.set_ylabel(r'$\mathrm{\Delta V_{DAP}}$', horizontalalignment='left', y=0.0)
     ax.set_xlabel(r'$\mathrm{\Delta V_{fAHP}}$', horizontalalignment='right', x=1.0)

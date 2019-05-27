@@ -38,4 +38,5 @@ linear_slope_APonset = (v_onset - v_start) / dur
 # pl.plot(t_sta[AP_thresh_idx[0] - to_idx(dur, dt)], v_start[0], 'or')
 # pl.show()
 
+np.save(os.path.join(save_dir_sta, folder, 'v_onset.npy'), v_onset)
 np.save(os.path.join(save_dir_sta, folder, 'linear_slope_APonset'), linear_slope_APonset)

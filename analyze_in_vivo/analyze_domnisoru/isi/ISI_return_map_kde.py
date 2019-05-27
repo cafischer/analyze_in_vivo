@@ -18,8 +18,7 @@ if __name__ == '__main__':
     save_dir_img = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/ISI_return_map'
     save_dir = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
 
-    cell_type = 'grid_cells'
-    cell_ids = load_cell_ids(save_dir, cell_type)
+    cell_ids = load_cell_ids(save_dir, 'grid_cells')
     cell_type_dict = get_celltype_dict(save_dir)
     param_list = ['Vm_ljpc', 'spiketimes']
     max_ISI = None  # None if you want to take all ISIs
@@ -53,18 +52,17 @@ if __name__ == '__main__':
 
 
         # compute KDE
-        if sigma_smooth is not None:
-            kde = perform_kde(np.vstack([ISIs_cells[cell_idx][:-1], ISIs_cells[cell_idx][1:]]), sigma_smooth)
-            t_kde = np.arange(0, max_ISI + dt_kde, dt_kde)
-            X, Y = np.meshgrid(t_kde, t_kde)
-            kde_mat = evaluate_kde(np.vstack([X.flatten(), Y.flatten()]), kde)
-            kde_mat = kde_mat.reshape(len(t_kde), len(t_kde))
-            ISI_return_map_kde_cells[cell_idx] = kde_mat
+        kde = perform_kde(np.vstack([ISIs_cells[cell_idx][:-1], ISIs_cells[cell_idx][1:]]), sigma_smooth)
+        t_kde = np.arange(0, max_ISI + dt_kde, dt_kde)
+        X, Y = np.meshgrid(t_kde, t_kde)
+        kde_mat = evaluate_kde(np.vstack([X.flatten(), Y.flatten()]), kde)
+        kde_mat = kde_mat.reshape(len(t_kde), len(t_kde))
+        ISI_return_map_kde_cells[cell_idx] = kde_mat
 
-            # pl.figure()
-            # pl.pcolor(X, Y, kde_mat)
-            # pl.scatter(ISIs_cells[cell_idx][:-1], ISIs_cells[cell_idx][1:], color='k', s=3, alpha=0.3)
-            # pl.show()
+        # pl.figure()
+        # pl.pcolor(X, Y, kde_mat)
+        # pl.scatter(ISIs_cells[cell_idx][:-1], ISIs_cells[cell_idx][1:], color='k', s=3, alpha=0.3)
+        # pl.show()
 
     # save and plot
     np.save(os.path.join(save_dir_img, folder, 'ISI_return_map_kde.npy'), ISI_return_map_kde_cells)

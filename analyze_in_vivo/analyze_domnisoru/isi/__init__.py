@@ -7,10 +7,13 @@ def get_ISI_hist_peak_and_width(ISI_hist, t_hist):
     peak_ISI_hist = t_hist[peak_idx]
     half_max = ISI_hist[peak_idx] / 2.
 
-    root1_idx = np.nonzero(np.diff(np.sign(ISI_hist[:peak_idx] - half_max
-                                           + np.spacing(ISI_hist[:peak_idx] - half_max))) == 2)[0][-1]
-    root2_idx = np.nonzero(np.diff(np.sign(ISI_hist[peak_idx:] - half_max
-                                           + np.spacing(ISI_hist[peak_idx:] - half_max))) == -2)[0][0] + peak_idx
+    try:
+        root1_idx = np.nonzero(np.diff(np.sign(ISI_hist[:peak_idx] - half_max
+                                               + np.spacing(ISI_hist[:peak_idx] - half_max))) == 2)[0][-1]
+        root2_idx = np.nonzero(np.diff(np.sign(ISI_hist[peak_idx:] - half_max
+                                               + np.spacing(ISI_hist[peak_idx:] - half_max))) == -2)[0][0] + peak_idx
+    except IndexError:  # if first or second point cannot be found (because of restricted range)
+        return peak_ISI_hist, np.nan
     root1 = t_hist[root1_idx]
     root2 = t_hist[root2_idx]
     width_at_half_max = root2 - root1
