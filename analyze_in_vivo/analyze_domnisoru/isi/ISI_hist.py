@@ -23,7 +23,7 @@ if __name__ == '__main__':
     theta_cells = load_cell_ids(save_dir, 'giant_theta')
     DAP_cells, DAP_cells_additional = get_cell_ids_DAP_cells()
     param_list = ['Vm_ljpc', 'spiketimes']
-    max_ISI = None  # None if you want to take all ISIs
+    max_ISI = 200  # None if you want to take all ISIs
     max_ISI_plot = 200
     burst_ISI = 8  # ms
     bin_width = 1  # ms

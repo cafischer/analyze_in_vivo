@@ -7,7 +7,7 @@ from scipy.stats import ttest_ind
 from analyze_in_vivo.load.load_domnisoru import load_cell_ids, get_celltype_dict, get_cell_ids_bursty, get_cell_ids_DAP_cells
 from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_with_markers
 from analyze_in_vivo.analyze_domnisoru.plot_utils import horizontal_square_bracket, get_star_from_p_val
-pl.style.use('paper_subplots')
+pl.style.use('paper')
 
 
 save_dir_img2 = '/home/cf/Dropbox/thesis/figures_results'

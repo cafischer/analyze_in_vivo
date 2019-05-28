@@ -22,7 +22,7 @@ if __name__ == '__main__':
     cell_ids = load_cell_ids(save_dir, cell_type)
     cell_type_dict = get_celltype_dict(save_dir)
     param_list = ['Vm_ljpc', 'spiketimes']
-    max_ISI = None  # None if you want to take all ISIs
+    max_ISI = 200  # None if you want to take all ISIs
     max_ISI_plot = 200  # ms
     burst_ISI = 8  # ms
 
