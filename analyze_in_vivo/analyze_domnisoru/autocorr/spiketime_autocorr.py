@@ -18,13 +18,13 @@ if __name__ == '__main__':
     save_dir_img = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/autocorr'
     save_dir = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
 
-    cell_ids = load_cell_ids(save_dir, 'grid_cells')
+    cell_ids = load_cell_ids(save_dir, 'non_grid_cells')
     cell_type_dict = get_celltype_dict(save_dir)
     param_list = ['Vm_ljpc', 'spiketimes']
 
     # parameters
     bin_width = 1  # ms
-    max_lag = 50
+    max_lag = 1000
     normalization = 'sum'  # 'sum
     save_dir_img = os.path.join(save_dir_img)
 

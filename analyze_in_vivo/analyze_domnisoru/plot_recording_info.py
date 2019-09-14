@@ -8,22 +8,17 @@ from analyze_in_vivo.analyze_domnisoru.plot_utils import plot_with_markers
 from grid_cell_stimuli import get_AP_max_idxs
 import matplotlib.gridspec as gridspec
 from scipy.stats import median_test
-#pl.style.use('paper')
+pl.style.use('paper')
 
 
 if __name__ == '__main__':
-    save_dir_img = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/recording_info'
-    save_dir = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
+    save_dir_img = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/results/domnisoru/whole_trace/recording_info'
+    save_dir = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
     cell_type = 'grid_cells'
     cell_ids = load_cell_ids(save_dir, cell_type)
-
-    AP_thresholds = {'s73_0004': -50, 's90_0006': -45, 's82_0002': -38,
-                     's117_0002': -60, 's119_0004': -50, 's104_0007': -55,
-                     's79_0003': -50, 's76_0002': -50, 's101_0009': -45}
     param_list = ['Vm_ljpc', 'spiketimes', 'Y_cm']
 
     # parameters
-    use_AP_max_idxs_domnisoru = True
     save_dir_img = os.path.join(save_dir_img, cell_type)
     if not os.path.exists(save_dir_img):
         os.makedirs(save_dir_img)
@@ -43,10 +38,7 @@ if __name__ == '__main__':
         position = data['Y_cm']
 
         # get APs
-        if use_AP_max_idxs_domnisoru:
-            AP_max_idxs = data['spiketimes']
-        else:
-            AP_max_idxs = get_AP_max_idxs(v, AP_thresholds[cell_id], dt)
+        AP_max_idxs = data['spiketimes']
 
         # length of recording, total number of spikes, average firing rate
         len_recording[cell_idx] = t[-1] / 1000.0 / 60.0  # min

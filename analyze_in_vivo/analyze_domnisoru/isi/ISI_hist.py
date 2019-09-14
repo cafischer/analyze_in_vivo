@@ -18,8 +18,7 @@ if __name__ == '__main__':
     save_dir = '/home/cfischer/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
 
     cell_type_dict = get_celltype_dict(save_dir)
-    cell_type = 'grid_cells'
-    cell_ids = load_cell_ids(save_dir, cell_type)
+    cell_ids = load_cell_ids(save_dir, 'grid_cells')
     theta_cells = load_cell_ids(save_dir, 'giant_theta')
     DAP_cells, DAP_cells_additional = get_cell_ids_DAP_cells()
     param_list = ['Vm_ljpc', 'spiketimes']

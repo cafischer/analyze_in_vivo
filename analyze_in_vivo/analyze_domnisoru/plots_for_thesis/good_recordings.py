@@ -31,7 +31,7 @@ if __name__ == '__main__':
         os.makedirs(save_dir_img)
 
     # main
-    sta_mean_cells = np.load(os.path.join(save_dir_sta, folder, 'sta_mean.npy'))
+    sta_mean_cells = np.load(os.path.join(save_dir_sta, folder, 'sta_mean.npy'), allow_pickle=True)
     #sta_std_cells = np.load(os.path.join(save_dir_sta, folder, 'sta_std.npy'))
     #v_hist_cells = np.load(os.path.join(save_dir_sta, folder, 'v_hist.npy'))
     t_AP = np.arange(len(sta_mean_cells[0])) * dt
@@ -237,6 +237,28 @@ if __name__ == '__main__':
     ax.legend(handles=handles,  #+handles_extra,
               loc='upper right')
     pl.tight_layout()
-    pl.savefig(os.path.join(save_dir_img, 'good_recordings.png'))
+    #pl.savefig(os.path.join(save_dir_img, 'good_recordings.png'))
+    #pl.show()
 
+    # old plot
+    fig, ax = pl.subplots()
+    fig.add_subplot(ax)
+    plot_with_markers(ax, AP_width[labels_predicted], AP_amp[labels_predicted], np.array(grid_cells)[labels_predicted],
+                      cell_type_dict, edgecolor='#A11E22', theta_cells=theta_cells, DAP_cells=DAP_cells, legend=False)
+    handles = plot_with_markers(ax, AP_width[~labels_predicted],
+                                AP_amp[~labels_predicted], np.array(grid_cells)[~labels_predicted],
+                                cell_type_dict, edgecolor='#EBA631', theta_cells=theta_cells, DAP_cells=DAP_cells,
+                                legend=False)
+
+    ax.set_xlim(0.5, None)
+    pl.axvline(threshold_AP_width, color='k')
+    pl.axhline(threshold_AP_amp, color='k')
+    ax.set_xlabel('AP width (ms)')
+    ax.set_ylabel('AP amp. (mV)')
+    ax.set_ylim(15, 83)
+    handles_extra = [Patch(color='#A11E22', label='Good rec.'), Patch(color='#EBA631', label='Bad rec.')]
+    ax.legend(handles=handles+handles_extra,
+              loc='upper right')
+    pl.tight_layout()
+    pl.savefig(os.path.join(save_dir_img, 'good_recordings.png'))
     pl.show()

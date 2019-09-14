@@ -52,9 +52,13 @@ def load_cell_ids(save_dir, cell_type='grid_cells'):
     giant_theta_cells = [str(x[0][0]) for x in giant_theta_cells_tmp[0, 0]]
     small_theta_cells_tmp = file['st_grid']  # small theta
     small_theta_cells = [str(x[0][0]) for x in small_theta_cells_tmp[0, 0]]
+    #non_grid_cells_tmp = file['principal_cells_clearnongridlist']
+    #non_grid_cells = [str(x[0]) for x in grid_cells_tmp[0][0][0]]
 
     if cell_type == 'grid_cells':
         cell_ids = grid_cells
+    #elif cell_type == 'non_grid_cells':
+    #    cell_ids = non_grid_cells
     elif cell_type == 'stellate_cells':
         cell_ids = stellate_cells
     elif cell_type == 'pyramidal_cells':
@@ -96,7 +100,7 @@ def get_cell_layer_dict(save_dir):
     return cell_layer_dict
 
 
-def get_cell_ids_DAP_cells(new=False):
+def get_cell_ids_DAP_cells(new=False):  # for thesis
     if new:
         return ['s67_0000', 's73_0004', 's79_0003', 's104_0007', 's109_0002', 's110_0002', 's119_0004']
     else:

@@ -155,9 +155,6 @@ if __name__ == '__main__':
 
     max_after_0 = np.array([np.max(sta[before_AP_idx:before_AP_idx+to_idx(time_for_max, dt)]) for sta in sta_diff_cells])
     max_after_0_good = np.array([np.max(sta[before_AP_idx:before_AP_idx+to_idx(time_for_max, dt)]) for sta in sta_diff_good_APs_cells])
-    # comp_max = (max_after_0_good > max_after_0).astype(float)
-    # comp_max[np.isnan(max_after_0)] = np.nan
-    # diff_selected_all2 = max_after_0_good - max_after_0  # TODO
     sign = (max_after_0_good > max_after_0).astype(float)
     sign[sign == 0] = -1
     diff_selected_all = sign * np.abs(max_after_0_good - max_after_0)
@@ -169,18 +166,11 @@ if __name__ == '__main__':
     np.save(os.path.join(save_dir_img, 'sta_std_' + str(before_AP) + '_' + str(after_AP) + '.npy'), sta_std_good_APs_cells)
 
     if cell_type == 'grid_cells':
-        # fig, ax = pl.subplots()
-        # plot_with_markers(ax, DAP_width_substitute, DAP_deflections, np.array(cell_ids), get_celltype_dict(save_dir),
-        #                   theta_cells=load_cell_ids(save_dir, 'giant_theta'), DAP_cells=get_cell_ids_DAP_cells())
-        # ax.set_xlabel('DAP width approximation (ms)')
-        # ax.set_ylabel('DAP deflection (mV)')
-
         fig, ax = pl.subplots()
         DAP_cells, DAP_cells_additional = get_cell_ids_DAP_cells()
         handles = plot_with_markers(ax, DAP_times, DAP_deflections, np.array(cell_ids), get_celltype_dict(save_dir),
-                                 theta_cells=load_cell_ids(save_dir, 'giant_theta'), DAP_cells=get_cell_ids_DAP_cells(),
-                                 DAP_cells_additional=DAP_cells_additional,
-                                 legend=False)
+                                 theta_cells=load_cell_ids(save_dir, 'giant_theta'), DAP_cells=DAP_cells,
+                                 DAP_cells_additional=DAP_cells_additional, legend=False)
         ax.set_xlabel('Time$_{AP-DAP}$ (ms)')
         ax.set_ylabel('DAP deflection (mV)')
         ax.set_xlim(0, 7.0)
@@ -189,7 +179,7 @@ if __name__ == '__main__':
         print 'DAP_deflections', DAP_deflections[~np.isnan(DAP_deflections)]
         print 'DAP time', DAP_times[~np.isnan(DAP_times)]
         pl.legend(handles=handles, loc='upper left')
-        # pl.savefig(os.path.join(save_dir_img2, 'dap_characteristics_selected_APs.png'))
+        pl.savefig(os.path.join(save_dir_img2, 'dap_characteristics_selected_APs.png'))
         np.save(os.path.join(save_dir_img, 'DAP_times.npy'), DAP_times)
 
         t_AP = np.arange(-before_AP_idx, after_AP_idx + 1) * dt

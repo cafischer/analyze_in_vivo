@@ -2,13 +2,8 @@ from __future__ import division
 import matplotlib.pyplot as pl
 import numpy as np
 import os
-from grid_cell_stimuli import get_AP_max_idxs
-from grid_cell_stimuli.ISI_hist import get_ISIs, get_ISI_hist, get_cumulative_ISI_hist, \
-    plot_ISI_hist, plot_cumulative_ISI_hist, plot_cumulative_ISI_hist_all_cells, plot_cumulative_comparison_all_cells
+from grid_cell_stimuli.ISI_hist import get_ISIs
 from analyze_in_vivo.load.load_domnisoru import load_cell_ids, load_data, get_celltype
-from scipy.stats import ks_2samp
-from itertools import combinations
-from analyze_in_vivo.analyze_domnisoru.check_basic.in_out_field import get_starts_ends_group_of_ones
 pl.style.use('paper')
 
 if __name__ == '__main__':
@@ -19,10 +14,6 @@ if __name__ == '__main__':
     cell_type = 'grid_cells'
     cell_ids = load_cell_ids(save_dir, cell_type)
     param_list = ['Vm_ljpc', 'spiketimes']
-    AP_thresholds = {'s73_0004': -55, 's90_0006': -45, 's82_0002': -35,
-                     's117_0002': -60, 's119_0004': -50, 's104_0007': -55,
-                     's79_0003': -50, 's76_0002': -50, 's101_0009': -45}
-    use_AP_max_idxs_domnisoru = True
 
     # parameter
     max_ISIs = np.arange(5, 100, 5)  #[5, 10, 15, 20, 50, 100]
@@ -43,10 +34,7 @@ if __name__ == '__main__':
             dt = t[1] - t[0]
 
             # ISIs
-            if use_AP_max_idxs_domnisoru:
-                AP_max_idxs = data['spiketimes']
-            else:
-                AP_max_idxs = get_AP_max_idxs(v, AP_thresholds[cell_id], dt)
+            AP_max_idxs = data['spiketimes']
             ISIs = get_ISIs(AP_max_idxs, t)
             ISIs = ISIs[ISIs <= max_ISI]
 
